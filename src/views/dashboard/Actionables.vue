@@ -293,7 +293,7 @@ const chartConfig = computed(() => {
 }
 
 .table-primary {
-  background-color: #007bff;
+  background-color: #696CFF;
   color: #fff;
 }
 

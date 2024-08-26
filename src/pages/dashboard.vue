@@ -6,7 +6,7 @@ import GraduationForecast from '@/views/dashboard/GraduationForecast.vue'
 import NumberOfEmails from '@/views/dashboard/NumberOfEmails.vue'
 import ProjectDetails from '@/views/dashboard/ProjectDetails.vue'
 import ProjectSelector from '@/views/dashboard/ProjectSelector.vue'
-import { default as SocialNetwork } from '@/views/dashboard/SocialNetwork.vue'
+import SocialNetwork from '@/views/dashboard/SocialNetwork.vue'
 import TechnicalNetwork from '@/views/dashboard/TechnicalNetwork.vue'
 
 // 👉 Images
@@ -43,32 +43,31 @@ import CommitBox from '@/views/dashboard/CommitBox.vue'
     </VCol>
     <!-- First Row ends -->
   </VRow>
+  
   <VRow>
     <!-- Second Row -->
     <VCol
-          cols="12"
-          md="4"
-        >
-          <VCard style="height: 400px;"> <!-- Set a fixed height -->
-            <ProjectDetails />
-          </VCard>
-        </VCol>
+      cols="12"
+      md="4"
+    >
+      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+        <ProjectDetails />
+      </VCard>
+    </VCol>
 
-        <VCol
-          cols="12"
-          md="8"
-        >
-          <VCard style="height: 400px;"> <!-- Set a fixed height -->
-            <Actionables />
-          </VCard>
-        </VCol>
-        <!-- Second Row ends-->
-
-    </VRow>
+    <VCol
+      cols="12"
+      md="8"
+    >
+      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+        <Actionables />
+      </VCard>
+    </VCol>
+    <!-- Second Row ends -->
+  </VRow>
     
   <VRow>
-<!--Third row-->
-    <!-- See advanced options -->
+    <!-- Third Row -->
     <VCol
       cols="12"
       sm="12"
@@ -81,99 +80,94 @@ import CommitBox from '@/views/dashboard/CommitBox.vue'
         }"
       />
     </VCol>
-    </VRow>
-    <!--Third row ends-->
+    <!-- Third Row ends -->
+  </VRow>
 
   <VRow>
-    <!-- Fourth Row -->
-    <!-- 👉 Total Revenue 1 (50% width) -->
+    <!-- Fourth Row: Social and Technical Network Cards -->
     <VCol
       cols="12"
       md="6"
       order="1"
     >
-      <SocialNetwork />
+      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+        <SocialNetwork />
+      </VCard>
     </VCol>
 
-    <!-- 👉 Social & Technical n/w -->
     <VCol
       cols="12"
       md="6"
       order="1"
     >
-      <TechnicalNetwork />
+      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+        <TechnicalNetwork />
+      </VCard>
     </VCol>
     <!-- Fourth Row ends -->
   </VRow>
-    
 
   <VRow>
- <!-- Fifth Row (Email and Commit links) -->
-    <!-- 👉 Profit 1 (Same size as Transactions) -->
+    <!-- Fifth Row: Commit and Email Links -->
     <VCol
       cols="6"
       md="6"
       sm="6"
     >
-        <CommitLinks/>
-      </VCol>
+      <CommitLinks />
+    </VCol>
 
-      <VCol
+    <VCol
       cols="6"
       md="6"
-      sm="6">
-       <EmailLinks/>
-      </VCol>
-    </VRow>
+      sm="6"
+    >
+      <EmailLinks />
+    </VCol>
+  </VRow>
 
-        <!-- 👉 Transactions -->
-   
-        <!--Sixth Row (static info 6 boxes)-->
-    <VRow>
-        <!-- This is where the three boxes for static data would go -->
-        <!-- Parent VCol for the first VRow -->
-        <VCol
-          cols="2"
-          sm="2"
-        >
-            <NumberOfEmails/>
-          </VCol>
+  <!-- Sixth Row: Static Info Boxes -->
+  <VRow>
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <NumberOfEmails />
+    </VCol>
 
-            <VCol
-              cols="2"
-              sm="2"
-            >
-              <SendersBox/>
-            </VCol>
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <SendersBox />
+    </VCol>
 
-            <VCol
-              cols="2"
-              sm="2"
-            >
-              <EmailsPerSender/>
-            </VCol>
-  <VCol
-            cols="2"
-            sm="2"
-          >
-              <NumberOfCommits/>
-              </VCol>
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <EmailsPerSender />
+    </VCol>
 
-              <VCol
-                cols="2"
-                sm="2"
-              >
-              <CommitBox/>
-              </VCol>
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <NumberOfCommits />
+    </VCol>
 
-              <VCol
-                cols="2"
-                sm="2"
-              >
-                <CommitsPerCommitters/>
-              </VCol>
-            </VRow>
-      
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <CommitBox />
+    </VCol>
 
-    
+    <VCol
+      cols="2"
+      sm="2"
+    >
+      <CommitsPerCommitters />
+    </VCol>
+  </VRow>
 </template>
