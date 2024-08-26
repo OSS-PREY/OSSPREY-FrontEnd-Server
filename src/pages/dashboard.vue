@@ -1,6 +1,9 @@
 <script setup>
 import Actionables from '@/views/dashboard/Actionables.vue'
+import CommitLinks from '@/views/dashboard/CommitLinks.vue'
+import EmailLinks from '@/views/dashboard/EmailLinks.vue'
 import GraduationForecast from '@/views/dashboard/GraduationForecast.vue'
+import NumberOfEmails from '@/views/dashboard/NumberOfEmails.vue'
 import ProjectDetails from '@/views/dashboard/ProjectDetails.vue'
 import ProjectSelector from '@/views/dashboard/ProjectSelector.vue'
 import { default as SocialNetwork } from '@/views/dashboard/SocialNetwork.vue'
@@ -9,7 +12,13 @@ import TechnicalNetwork from '@/views/dashboard/TechnicalNetwork.vue'
 // 👉 Images
 import card from '@images/cards/credit-card-primary.png'
 import paypal from '@images/cards/paypal-error.png'
+import email from '@images/cards/email.png'
 import { VRow } from 'vuetify/components'
+import EmailsPerSender from '@/views/dashboard/EmailsPerSender.vue'
+import SendersBox from '@/views/dashboard/SendersBox.vue'
+import NumberOfCommits from '@/views/dashboard/NumberOfCommits.vue'
+import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue'
+import CommitBox from '@/views/dashboard/CommitBox.vue'
 </script>
 
 <template>
@@ -106,110 +115,62 @@ import { VRow } from 'vuetify/components'
       md="6"
       sm="6"
     >
-        <CardStatisticsVertical
-            v-bind="{
-              title: 'Payments',
-              image: paypal,
-              stats: '$2,468',
-            }"
-          />
+        <CommitLinks/>
       </VCol>
 
       <VCol
       cols="6"
       md="6"
       sm="6">
-       <CardStatisticsVertical
-            v-bind="{
-              title: 'Transactions',
-              image: card,
-              stats: '$14,857',
-            }"
-          />
+       <EmailLinks/>
       </VCol>
     </VRow>
 
         <!-- 👉 Transactions -->
    
         <!--Sixth Row (static info 6 boxes)-->
-<VRow>
+    <VRow>
         <!-- This is where the three boxes for static data would go -->
         <!-- Parent VCol for the first VRow -->
         <VCol
           cols="2"
           sm="2"
         >
-            <CardStatisticsVertical
-                v-bind="{
-                  title: 'Payments',
-                  image: paypal,
-                  stats: '$2,468',
-                }"
-              />
+            <NumberOfEmails/>
           </VCol>
 
             <VCol
               cols="2"
               sm="2"
             >
-              <CardStatisticsVertical
-                v-bind="{
-                  title: 'Transactions',
-                  image: card,
-                  stats: '$14,857',
-                }"
-              />
+              <SendersBox/>
             </VCol>
 
             <VCol
               cols="2"
               sm="2"
             >
-              <CardStatisticsVertical
-                v-bind="{
-                  title: 'Transactions',
-                  image: card,
-                  stats: '$14,857',
-                }"
-              />
+              <EmailsPerSender/>
             </VCol>
   <VCol
             cols="2"
             sm="2"
           >
-              <CardStatisticsVertical
-                  v-bind="{
-                    title: 'Payments',
-                    image: paypal,
-                    stats: '$2,468',
-                  }"
-                />
+              <NumberOfCommits/>
               </VCol>
 
               <VCol
                 cols="2"
                 sm="2"
               >
-                <CardStatisticsVertical
-                  v-bind="{
-                    title: 'Transactions',
-                    image: card,
-                    stats: '$14,857',
-                  }"
-                />
+              <CommitBox/>
               </VCol>
 
               <VCol
                 cols="2"
                 sm="2"
               >
-                <CardStatisticsVertical
-                  v-bind="{
-                    title: 'Transactions',
-                    image: card,
-                    stats: '$14,857',
-                  }"
-                />
+                <CommitsPerCommitters/>
               </VCol>
             </VRow>
       
