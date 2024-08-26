@@ -19,6 +19,7 @@ import SendersBox from '@/views/dashboard/SendersBox.vue'
 import NumberOfCommits from '@/views/dashboard/NumberOfCommits.vue'
 import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue'
 import CommitBox from '@/views/dashboard/CommitBox.vue'
+import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue'
 </script>
 
 <template>
@@ -72,13 +73,7 @@ import CommitBox from '@/views/dashboard/CommitBox.vue'
       cols="12"
       sm="12"
     >
-      <CardStatisticsVertical
-        v-bind="{
-          title: 'See advanced analytics',
-          image: paypal,
-          change: 0
-        }"
-      />
+      <SeeAdvancedAnalytics/>
     </VCol>
     <!-- Third Row ends -->
   </VRow>
