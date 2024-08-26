@@ -8,14 +8,29 @@ const vuetifyTheme = useTheme()
 const series = {
   income: [{
     data: [
-      24,
-      21,
-      30,
-      22,
-      42,
-      26,
-      35,
-      29,
+      0.4,
+      0.45,
+      0.52,
+      0.59,
+      0.60,
+      0.65,
+      0.69,
+      0.71,
+      0.75,
+      0.78,
+      0.79,
+      0.82,
+      0.71,
+      0.59,
+      0.51,
+      0.42,
+      0.21,
+      0.11,
+      0.07,
+      0.03,
+
+
+
     ],
   }]
 }
@@ -27,7 +42,7 @@ const tabData = computed(() => {
     income: {
       avatar: statsVerticalWallet,
       title: 'Current Project: CommonsRDF',
-      stats: 'Current Period: <start date> - <end date>',
+      stats: 'Current Period: 2015-03-06  to 2016-11-28',
       profitLoss: 65,
       profitLossAmount: '6.5',
       compareToLastWeek: '$39k',
@@ -101,13 +116,26 @@ const chartConfig = computed(() => {
       axisBorder: { show: false },
       categories: [
         '',
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '8',
+        '9',
+        '10',
+        '11',
+        '12',
+        '13',
+        '14',
+        '15',
+        '16',
+        '17',
+        '18',
+        '19',
+        '20',
+
       ],
       offsetY: 20,
       offsetX: -24,
@@ -120,8 +148,8 @@ const chartConfig = computed(() => {
       },
     },
     yaxis: {
-      min: 10,
-      max: 50,
+      min: 0,
+      max: 1,
       show: false,
       tickAmount: 4,
     },
@@ -152,7 +180,7 @@ const chartConfig = computed(() => {
         v-model="currentTab"
         class="v-tabs-pill"
       >
-        <VTab value="income">
+        <VTab value="income" class="highlighted-tab">
           Graduation Forecast
         </VTab>
       </VTabs>
@@ -209,3 +237,63 @@ const chartConfig = computed(() => {
     </VCardText> -->
   </VCard>
 </template>
+
+
+
+<style scoped>
+.highlighted-tab {
+  display: flex;
+  justify-content: flex-start; /* Align horizontally to the left */
+  align-items: center; /* Align vertically center */
+  padding: 5px 10px; /* Add padding for better spacing */
+  background-color: #f0f8ff; /* Light background color */
+  border-radius: 3px; /* Rounded corners */
+  font-weight: bold; /* Bold text */
+  font-size: 16px;
+  color: #333; /* Dark text color */
+  border: 1px solid #007bff; /* Border to highlight */
+  margin: 0; /* Remove margin to align it properly */
+  text-align: left; /* Ensure text is left-aligned */
+}
+
+.v-tabs {
+  justify-content: flex-start; /* Align tabs to the left */
+}
+
+.table-container {
+  max-height: 400px; /* Adjust based on your needs */
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th, .table-bordered td {
+  border: 1px solid #dee2e6;
+  padding: 8px;
+  text-align: left;
+}
+
+.table-primary {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.table-primary th {
+  color: #fff;
+}
+
+.table-primary td {
+  color: #fff;
+}
+
+.center {
+  text-align: center;
+}
+</style>

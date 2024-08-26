@@ -15,7 +15,7 @@
     "@floating-ui/dom": "1.6.3",
     "@vueuse/core": "^10.5.0",
     "@vueuse/math": "^10.5.0",
-    "apexcharts": "3.49.2",
+    "apexcharts": "^3.49.2",
     "pinia": "^2.1.7",
     "prismjs": "^1.29.0",
     "roboto-fontface": "^0.10.0",
@@ -24,11 +24,12 @@
     "vue-flatpickr-component": "11.0.5",
     "vue-prism-component": "^2.0.0",
     "vue-router": "^4.3.0",
-    "vue3-apexcharts": "^1.5.2",
+    "vue3-apexcharts": "^1.5.3",
     "vue3-perfect-scrollbar": "^1.6.1",
     "vuetify": "3.6.1",
     "webfontloader": "^1.6.28"
   },
+
   "devDependencies": {
     "@antfu/eslint-config-vue": "^0.43.1",
     "@antfu/utils": "^0.7.6",
