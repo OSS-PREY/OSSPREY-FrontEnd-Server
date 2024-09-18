@@ -181,7 +181,7 @@ const chartConfig = computed(() => {
         class="v-tabs-pill"
       >
         <VTab value="income" class="highlighted-tab">
-          Graduation Forecast
+          Project Health Indicator
         </VTab>
       </VTabs>
     </VCardText>

@@ -11,11 +11,11 @@ const { global } = useTheme();
       <VRow>
         <VCol cols="auto">
           <div>
-            <h6 class="text-h6 font-weight-medium mb-2">Number of Commits</h6>
+            <h6 class="text-h6 font-weight-medium mb-2">Commiters</h6>
             <br>
           </div>
           <div class="d-flex">
-            <span>324</span>
+            <span>6</span>
           </div>
           
         </VCol>

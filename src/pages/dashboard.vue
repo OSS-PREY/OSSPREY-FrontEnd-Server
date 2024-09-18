@@ -1,168 +1,122 @@
 <script setup>
-import Actionables from '@/views/dashboard/Actionables.vue'
-import CommitLinks from '@/views/dashboard/CommitLinks.vue'
-import EmailLinks from '@/views/dashboard/EmailLinks.vue'
-import GraduationForecast from '@/views/dashboard/GraduationForecast.vue'
-import NumberOfEmails from '@/views/dashboard/NumberOfEmails.vue'
-import ProjectDetails from '@/views/dashboard/ProjectDetails.vue'
-import ProjectSelector from '@/views/dashboard/ProjectSelector.vue'
-import SocialNetwork from '@/views/dashboard/SocialNetwork.vue'
-import TechnicalNetwork from '@/views/dashboard/TechnicalNetwork.vue'
+import { ref } from 'vue'; // Import ref to manage collapse state
+import Actionables from '@/views/dashboard/Actionables.vue';
+import CommitLinks from '@/views/dashboard/CommitLinks.vue';
+import EmailLinks from '@/views/dashboard/EmailLinks.vue';
+import GraduationForecast from '@/views/dashboard/GraduationForecast.vue';
+import NumberOfEmails from '@/views/dashboard/NumberOfEmails.vue';
+import ProjectDetails from '@/views/dashboard/ProjectDetails.vue';
+import ProjectSelector from '@/views/dashboard/ProjectSelector.vue';
+import SocialNetwork from '@/views/dashboard/SocialNetwork.vue';
+import TechnicalNetwork from '@/views/dashboard/TechnicalNetwork.vue';
+import EmailsPerSender from '@/views/dashboard/EmailsPerSender.vue';
+import SendersBox from '@/views/dashboard/SendersBox.vue';
+import NumberOfCommits from '@/views/dashboard/NumberOfCommits.vue';
+import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue';
+import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue';
+import Committers from '@/views/dashboard/Committers.vue';
 
-// 👉 Images
-import card from '@images/cards/credit-card-primary.png'
-import paypal from '@images/cards/paypal-error.png'
-import email from '@images/cards/email.png'
-import { VRow } from 'vuetify/components'
-import EmailsPerSender from '@/views/dashboard/EmailsPerSender.vue'
-import SendersBox from '@/views/dashboard/SendersBox.vue'
-import NumberOfCommits from '@/views/dashboard/NumberOfCommits.vue'
-import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue'
-import CommitBox from '@/views/dashboard/CommitBox.vue'
-import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue'
+const isCollapsed = ref(true); // Manage collapse state here
+
+// Function to toggle the collapse state for all cards
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
 </script>
 
 <template>
   <VRow>
     <!-- First Row -->
-    <VCol
-      cols="12"
-      md="4"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+    <VCol cols="12" md="4">
+      <VCard style="height: 400px;">
         <ProjectSelector />
       </VCard>
     </VCol>
 
-    <VCol
-      cols="12"
-      md="8"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+    <VCol cols="12" md="8">
+      <VCard style="height: 400px;">
         <GraduationForecast />
       </VCard>
     </VCol>
-    <!-- First Row ends -->
   </VRow>
-  
+
   <VRow>
     <!-- Second Row -->
-    <VCol
-      cols="12"
-      md="4"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+    <VCol cols="12" md="4">
+      <VCard style="height: 400px;">
         <ProjectDetails />
       </VCard>
     </VCol>
 
-    <VCol
-      cols="12"
-      md="8"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
+    <VCol cols="12" md="8">
+      <VCard style="height: 400px;">
         <Actionables />
       </VCard>
     </VCol>
-    <!-- Second Row ends -->
-  </VRow>
-    
-  <VRow>
-    <!-- Third Row -->
-    <VCol
-      cols="12"
-      sm="12"
-    >
-      <SeeAdvancedAnalytics/>
-    </VCol>
-    <!-- Third Row ends -->
   </VRow>
 
   <VRow>
-    <!-- Fourth Row: Social and Technical Network Cards -->
-    <VCol
-      cols="12"
-      md="6"
-      order="1"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
-        <SocialNetwork />
-      </VCard>
-    </VCol>
-
-    <VCol
-      cols="12"
-      md="6"
-      order="1"
-    >
-      <VCard style="height: 400px;"> <!-- Set a fixed height -->
-        <TechnicalNetwork />
-      </VCard>
-    </VCol>
-    <!-- Fourth Row ends -->
-  </VRow>
-
-  <VRow>
-    <!-- Fifth Row: Commit and Email Links -->
-    <VCol
-      cols="6"
-      md="6"
-      sm="6"
-    >
-      <CommitLinks />
-    </VCol>
-
-    <VCol
-      cols="6"
-      md="6"
-      sm="6"
-    >
-      <EmailLinks />
+    <!-- Third Row: See Advanced Analytics -->
+    <VCol cols="12" sm="12">
+      <SeeAdvancedAnalytics :isCollapsed="isCollapsed" @toggleCollapse="toggleCollapse" />
     </VCol>
   </VRow>
 
-  <!-- Sixth Row: Static Info Boxes -->
-  <VRow>
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <NumberOfEmails />
-    </VCol>
+  <!-- Fourth and Fifth Rows that collapse based on isCollapsed -->
+  <transition name="fade">
+    <div v-show="!isCollapsed">
+      <VRow>
+        <!-- Fourth Row: Social and Technical Network Cards -->
+        <VCol cols="12" md="6">
+          <VCard style="height: 400px;">
+            <SocialNetwork />
+          </VCard>
+        </VCol>
 
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <SendersBox />
-    </VCol>
+        <VCol cols="12" md="6">
+          <VCard style="height: 400px;">
+            <TechnicalNetwork />
+          </VCard>
+        </VCol>
+      </VRow>
 
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <EmailsPerSender />
-    </VCol>
+      <VRow>
+        <!-- Fifth Row: Commit and Email Links -->
+        <VCol cols="6" md="6" sm="6">
+          <CommitLinks />
+        </VCol>
 
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <NumberOfCommits />
-    </VCol>
+        <VCol cols="6" md="6" sm="6">
+          <EmailLinks />
+        </VCol>
+      </VRow>
 
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <CommitBox />
-    </VCol>
+      <VRow>
+        <!-- Sixth Row: Static Info Boxes -->
+        <VCol cols="12" md="2">
+          <NumberOfEmails />
+        </VCol>
 
-    <VCol
-      cols="2"
-      sm="2"
-    >
-      <CommitsPerCommitters />
-    </VCol>
-  </VRow>
+        <VCol cols="12" md="2">
+          <SendersBox />
+        </VCol>
+
+        <VCol cols="12" md="2">
+          <EmailsPerSender />
+        </VCol>
+
+        <VCol cols="12" md="2">
+          <NumberOfCommits />
+        </VCol>
+
+        <VCol cols="12" md="2">
+          <Committers />
+        </VCol>
+
+        <VCol cols="12" md="2">
+          <CommitsPerCommitters />
+        </VCol>
+      </VRow>
+    </div>
+  </transition>
 </template>
