@@ -1,26 +1,25 @@
 <script setup>
 import Footer from '@/layouts/components/Footer.vue';
-import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
 </script>
 
 <template>
   <VerticalNavLayout>
     <!-- 👉 navbar -->
-    <template #navbar="{ toggleVerticalOverlayNavActive }">
-      <div class="d-flex h-100 w-100 align-center position-relative">
+    <!-- <template #navbar="{ toggleVerticalOverlayNavActive }"> -->
+      <!-- <div class="d-flex h-100 w-100 align-center position-relative"> -->
         
         <!-- Left-aligned empty space for centering -->
-        <div class="d-flex align-center">
-          <!-- Empty div to balance the left side -->
-        </div>
+        <!-- <div class="d-flex align-center">
+          <Empty div to balance the left side -->
+        <!-- </div> -->
 
         <!-- 👉 Project Title -->
-        <div class="flex-grow-1 d-flex align-center justify-center position-absolute w-100">
+        <!-- <div class="flex-grow-1 d-flex align-center justify-center position-absolute w-100">
           <span class="app-logo-title">ASFI Project Explorer (APEX)</span>
-        </div>
+        </div> -->
 
-        <VSpacer />
+        <!-- <VSpacer /> -->
 
         <!-- 👉 Search (Commented out) -->
         <!-- 
@@ -40,11 +39,11 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
         -->
 
         <!-- Right-aligned section with Theme Switcher -->
-        <div class="d-flex align-center ms-auto">
+        <!-- <div class="d-flex align-center ms-auto">
           <NavbarThemeSwitcher class="me-1" />
-        </div>
-      </div>
-    </template>
+        </div> -->
+      <!-- </div> -->
+    <!-- </template> -->
 
     <!-- 👉 Pages -->
     <slot />

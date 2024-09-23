@@ -12,12 +12,7 @@ export default defineComponent({
     syncRef(isOverlayNavActive, isLayoutOverlayVisible)
 
     return () => {
-      // 👉 Navbar
-      const navbar = h('header', { class: ['layout-navbar navbar-blur'] }, [
-        h('div', { class: 'navbar-content-container d-flex align-center justify-between w-100' }, slots.navbar?.({
-          toggleVerticalOverlayNavActive: toggleIsOverlayNavActive,
-        })),
-      ])
+      
 
       // 👉 Main Content
       const main = h('main', { class: 'layout-page-content' }, h('div', { class: 'page-content-container' }, slots.default?.()))
@@ -41,7 +36,6 @@ export default defineComponent({
         ],
       }, [
         h('div', { class: 'layout-content-wrapper' }, [
-          navbar,
           main,
           footer,
         ]),
