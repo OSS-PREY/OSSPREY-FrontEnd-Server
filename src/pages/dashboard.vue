@@ -27,7 +27,7 @@ const toggleCollapse = () => {
 
 <template>
   <VRow>
-    <VCol cols="4" md="12">
+    <VCol cols="12" sm="12">
       <VCard style="height: 80px;">
         <Title />
       </VCard>

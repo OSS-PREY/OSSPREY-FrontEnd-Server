@@ -7,21 +7,21 @@ const { global } = useTheme();
 </script>
 
 <template>
-  <VCard class="text-center text-sm-start" style="height: 80px;">
-    <VRow no-gutters style="height: 100%;" class="align-center">
-      
-      <!-- Center-aligned Title -->
-      <VCol class="d-flex align-items-center justify-content-center flex-grow-1">
-        <VCardTitle class="text-primary">
-          ASFI Project Explorer (APEX)
-        </VCardTitle>
-      </VCol>
+  <VCard class="statistics-card">
+    <VCardText class="text-center d-flex align-center justify-center" style="height: 80px;">
+        <VRow class="w-100 align-center justify-center">
+             <!-- Center-aligned Title -->
+            <VCol class="auto">
+                <VCardTitle class="text-primary font-weight-bold">ASFI Project Explorer (APEX)</VCardTitle>
+            </VCol>
 
-      <!-- Right-aligned Theme Switcher button -->
-      <VCol class="d-flex align-items-center justify-content-end" style="max-width: 50px;">
-        <NavbarThemeSwitcher class="me-2" />
-      </VCol>
-
-    </VRow>
+            <!-- Right-aligned Theme Switcher button -->
+            <VCol class="justify-content-end" style="max-width: 70px;">
+                <NavbarThemeSwitcher class="me-2" />
+            </VCol>
+        
+        </VRow>
+    </VCardText>
+    
   </VCard>
 </template>
