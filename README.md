@@ -1,6 +1,6 @@
 # vue
 
-This template should help get you started developing with Vue 3 in Vite.
+This template should help get you started developing with Vue 3 in Vite. Ensure that the node version installed is 14.x or above.
 
 ## Recommended IDE Setup
 
@@ -32,4 +32,11 @@ npm run dev
 
 ```sh
 npm run build
+```
+### In case the project doesn't build locally, clear cache and re-try
+
+```sh
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
 ```
