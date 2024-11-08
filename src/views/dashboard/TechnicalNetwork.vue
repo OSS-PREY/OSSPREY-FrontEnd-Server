@@ -12,7 +12,7 @@ const sankeyDiv = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-const apiBaseUrl = 'https://oss-backend-8stu.onrender.com'; // Replace with your actual API URL
+const apiBaseUrl = 'https://oss-backend-8stu.onrender.com/api/projects'; // Update to your backend's actual URL
 
 const allData = ref(null);
 const dates = ref([]);
@@ -33,19 +33,10 @@ watch(
   { immediate: true }
 );
 
-// Update dateRange when rangeValue changes
-watch(
-  () => projectStore.rangeValue,
-  (newValue) => {
-    dateRange.value = newValue;
-    preparePlotData();
-  }
-);
-
 const fetchSankeyData = () => {
   loading.value = true;
-  const projectName = projectStore.selectedProject.toLowerCase(); // Adjust if needed
-  fetch(`${apiBaseUrl}/api/sankey/${projectName}`)
+  const projectName = projectStore.selectedProject.toLowerCase().replace(/\s+/g, '-'); // Adjust if needed
+  fetch(`${apiBaseUrl}/api/tech_net/${projectName}`)
     .then((response) =>
       response.text().then((text) => {
         try {
@@ -63,7 +54,7 @@ const fetchSankeyData = () => {
       } else {
         allData.value = data;
         dates.value = data.dates;
-        // Initialize date range based on the store
+        // Initialize date range based on dates length
         dateRange.value = [0, dates.value.length - 1];
         projectStore.rangeValue = dateRange.value;
         preparePlotData();

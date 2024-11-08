@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';
 
@@ -11,11 +11,14 @@ const projects = ref([]);
 const loadingProjects = ref(true);
 const error = ref(null);
 
+// API Base URL
+const apiBaseUrl = 'https://oss-backend-8stu.onrender.com'; // Update to your backend's actual URL
+
 // Fetch projects from backend
 const fetchProjects = async () => {
   loadingProjects.value = true;
   try {
-    const response = await fetch('https://oss-backend-8stu.onrender.com/api/projects');
+    const response = await fetch(`${apiBaseUrl}/api/projects`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -23,7 +26,13 @@ const fetchProjects = async () => {
     if (data.error) {
       throw new Error(data.error);
     }
-    projects.value = data.projects;
+    // Remove "Apache" from project names
+    projects.value = data.projects.map(project => {
+      return {
+        ...project,
+        name: project.project_name.replace(/^Apache\s+/i, '').trim(),
+      };
+    });
   } catch (err) {
     console.error('Error fetching projects:', err);
     error.value = 'Failed to fetch projects.';
@@ -32,18 +41,55 @@ const fetchProjects = async () => {
   }
 };
 
+// Function to format dates
+const formatDate = (dateStr) => {
+  if (!dateStr || dateStr === 'N/A') return 'N/A';
+  const date = new Date(dateStr);
+  if (isNaN(date)) return dateStr; // Return original string if invalid date
+  return date.toLocaleDateString();
+};
+
+// Compute slider min and max based on start and end dates
+const sliderMin = computed(() => 0);
+const sliderMax = computed(() => {
+  if (projectStore.startDate && projectStore.endDate) {
+    const startDate = new Date(projectStore.startDate);
+    const endDate = new Date(projectStore.endDate);
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return 100; // Default value
+    }
+    // Calculate the difference in months
+    const months =
+      (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (endDate.getMonth() - startDate.getMonth()) +
+      1; // +1 to include both months
+    return months - 1; // Since slider starts at 0
+  }
+  return 100; // Default value if dates are not available
+});
+
 // Watch the selected project and update details
-watch(() => projectStore.selectedProject, (newProject) => {
-  if (newProject) {
-    const selected = projects.value.find(p => p.name === newProject);
-    if (selected) {
-      projectStore.startDate = selected.start_date || 'N/A';
-      projectStore.endDate = selected.end_date || 'N/A';
-      projectStore.status = selected.status || 'N/A';
-      projectStore.description = selected.description || 'N/A';
+watch(
+  () => projectStore.selectedProject,
+  (newProject) => {
+    if (newProject) {
+      const selected = projects.value.find(p => p.name === newProject);
+      if (selected) {
+        projectStore.startDate = selected.start_date || 'N/A';
+        projectStore.endDate = selected.end_date || 'N/A';
+        projectStore.status = selected.status || 'N/A';
+        projectStore.description = selected.description || 'N/A';
+        projectStore.sponsor = selected.sponsor || 'N/A';
+        projectStore.champion = selected.champion || 'N/A';
+        projectStore.mentors = selected.mentors || [];
+
+        // Update slider values
+        projectStore.rangeValue = [0, sliderMax.value];
+        projectStore.singleValue = 0;
+      }
     }
   }
-});
+);
 
 // Fetch projects on component mount
 onMounted(() => {
@@ -77,19 +123,13 @@ onMounted(() => {
               dense
             />
 
-            <!-- Display project details -->
+            <!-- Display start date and end date -->
             <div v-if="projectStore.selectedProject">
-              <div class="mt-4">
-                <strong>Description:</strong> {{ projectStore.description }}
+              <div class="mt-2">
+                <strong>Start Date:</strong> {{ formatDate(projectStore.startDate) }}
               </div>
               <div class="mt-2">
-                <strong>Status:</strong> {{ projectStore.status }}
-              </div>
-              <div class="mt-2">
-                <strong>Start Date:</strong> {{ projectStore.startDate }}
-              </div>
-              <div class="mt-2">
-                <strong>End Date:</strong> {{ projectStore.endDate }}
+                <strong>End Date:</strong> {{ formatDate(projectStore.endDate) }}
               </div>
             </div>
 
@@ -101,27 +141,34 @@ onMounted(() => {
             />
 
             <!-- Conditional rendering based on checkbox state -->
+            <!-- Update :min and :max based on project data -->
             <VSlider
               v-if="projectStore.showRangeSlider"
               v-model="projectStore.rangeValue"
               range
-              :min="0"
-              :max="100"
+              :min="sliderMin"
+              :max="sliderMax"
+              :step="1"
               class="mt-4"
               style="width: calc(100% - 10px); margin-right: 10px;"
               label="Select Range"
               ticks="always"
+              tick-size="4"
+              thumb-label
             />
 
             <VSlider
               v-else
               v-model="projectStore.singleValue"
-              :min="0"
-              :max="100"
+              :min="sliderMin"
+              :max="sliderMax"
+              :step="1"
               class="mt-4"
               style="width: calc(100% - 10px); margin-right: 10px;"
               label="Select Month"
               ticks="always"
+              tick-size="4"
+              thumb-label
             />
 
             <VBtn variant="tonal" class="mt-6" size="small">

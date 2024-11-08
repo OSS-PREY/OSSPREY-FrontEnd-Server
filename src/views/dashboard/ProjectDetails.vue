@@ -1,43 +1,40 @@
 <script setup>
 import { useTheme } from 'vuetify';
+import { useProjectStore } from '@/stores/projectStore';
 
-const { global } = useTheme()
+const { global } = useTheme();
+const projectStore = useProjectStore();
 </script>
 
 <template>
   <VCard class="text-center text-sm-start" style="height: 400px;">
     <VRow no-gutters style="height: 100%;">
-      <VCol
-        cols="12"
-        sm="12"
-        order="2"
-        order-sm="1"
-      >
+      <VCol cols="12" sm="12">
         <VCardItem class="pb-3">
           <VCardTitle class="text-primary">
-            Project details
+            Project Details
           </VCardTitle>
         </VCardItem>
 
         <VCardText style="height: 100%;">
-          <!-- Project Name -->
+          <!-- About (Description) -->
           <VRow class="mb-1" style="height: 49%;">
             <VCol cols="12" class="d-flex align-items-center">
-              <strong>About:</strong> &nbsp; [Your About Text Here]
+              <strong>About:</strong>&nbsp; {{ projectStore.description || 'N/A' }}
             </VCol>
           </VRow>
 
           <!-- Status -->
           <VRow class="mb-1" style="height: 14%;">
             <VCol cols="12" class="d-flex align-items-center">
-              <strong>Status:</strong> &nbsp; [Your Status Here]
+              <strong>Status:</strong>&nbsp; {{ projectStore.status || 'N/A' }}
             </VCol>
           </VRow>
 
           <!-- Sponsor -->
           <VRow class="mb-1" style="height: 19%;">
             <VCol cols="12" class="d-flex align-items-center">
-              <strong>Sponsor:</strong> &nbsp; [Your Sponsor Name Here]
+              <strong>Sponsor:</strong>&nbsp; {{ projectStore.sponsor || 'N/A' }}
             </VCol>
           </VRow>
         </VCardText>
