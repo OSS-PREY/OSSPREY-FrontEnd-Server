@@ -91,7 +91,7 @@ const actionablesData = [
     actionables: [
       {
         action:
-          'Create a live FAQ section. Create FAQ sections to help developers find answers to recurrent questions. The FAQ must not be a static section; it must be live and grow according to questions and issues recurrently asked or reported. The community can build the FAQ cooperatively, in a wiki-like page, enabling anyone to contribute with entries (question + answer) [REF]',
+          'Create a live FAQ section to help developers find answers to recurrent questions. The FAQ must be live and grow according to recurrent issues. The community can build the FAQ cooperatively in a wiki-like page, enabling anyone to contribute entries [REF]',
         priority: 'critical',
       },
       {
@@ -160,12 +160,12 @@ const sortedActionablesData = computed(() => {
     </VCardText>
 
     <VCardText>
-      <div class="col-md-12 table-container">
+      <div class="table-container">
         <table class="table table-bordered">
           <thead>
             <tr class="table-primary">
-              <th>Feature Name</th>
-              <th>Actionables</th>
+              <th class="feature-name-header">Feature Name</th>
+              <th class="actionable-header">Actionables</th>
             </tr>
           </thead>
           <tbody>
@@ -180,11 +180,11 @@ const sortedActionablesData = computed(() => {
                 <td
                   v-if="index === 0"
                   :rowspan="feature.actionables.length"
-                  style="max-width: 150px;"
+                  class="feature-name-cell"
                 >
                   {{ feature.featureName }}
                 </td>
-                <td style="max-width: 600px;">
+                <td class="actionable-cell">
                   <div class="priority">
                     <span
                       :class="['priority-indicator', actionable.priority]"
@@ -200,6 +200,7 @@ const sortedActionablesData = computed(() => {
     </VCardText>
   </VCard>
 </template>
+
 
 <style scoped>
 .highlighted-tab {
@@ -222,13 +223,14 @@ const sortedActionablesData = computed(() => {
 }
 
 .table-container {
-  max-height: 400px;
+  max-height: 400px; /* Adjust as needed */
   overflow-y: auto;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* Ensures consistent column widths */
 }
 
 .table-bordered {
@@ -240,6 +242,7 @@ const sortedActionablesData = computed(() => {
   border: 1px solid #dee2e6;
   padding: 8px;
   text-align: left;
+  word-wrap: break-word;
 }
 
 .table-primary {
@@ -279,6 +282,7 @@ const sortedActionablesData = computed(() => {
   background-color: green;
 }
 
+/* Legend styling */
 .priority-legend {
   display: flex;
   align-items: center;
@@ -289,5 +293,17 @@ const sortedActionablesData = computed(() => {
   display: flex;
   align-items: center;
   margin-right: 16px;
+}
+
+/* Adjusting cell widths */
+.feature-name-header,
+.feature-name-cell {
+  width: 25%; /* Adjust as needed */
+  min-width: 150px;
+}
+
+.actionable-header,
+.actionable-cell {
+  width: 75%; /* Adjust as needed */
 }
 </style>

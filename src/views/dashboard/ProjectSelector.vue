@@ -89,7 +89,17 @@ watch(
         // Update slider values
         projectStore.rangeValue = [0, sliderMax.value];
         projectStore.singleValue = 0;
+
+        // Placeholder values for GitHub metrics
+        projectStore.watchers = 123; // Replace with actual data later
+        projectStore.forks = 456;    // Replace with actual data later
+        projectStore.stars = 789;    // Replace with actual data later
       }
+    } else {
+      // Reset metrics if no project is selected
+      projectStore.watchers = 0;
+      projectStore.forks = 0;
+      projectStore.stars = 0;
     }
   }
 );
@@ -99,6 +109,7 @@ onMounted(() => {
   fetchProjects();
 });
 </script>
+
 
 <template>
   <VCard class="text-center text-sm-start" style="height: 450px;">
@@ -174,6 +185,25 @@ onMounted(() => {
               thumb-label
             />
 
+            <!-- Styled GitHub Metrics -->
+            <VCard class="metrics-container mt-4" outlined>
+              <VRow align="center" justify="space-around">
+                <VCol class="d-flex align-center" cols="auto">
+                  <VIcon size="20">fa-solid fa-eye</VIcon>
+                  <span class="ml-1">Watch: {{ projectStore.watchers }}</span>
+                </VCol>
+                <VCol class="d-flex align-center" cols="auto">
+                  <VIcon size="20">fa-solid fa-code-fork</VIcon>
+                  <span class="ml-1">Fork: {{ projectStore.forks }}</span>
+                </VCol>
+                <VCol class="d-flex align-center" cols="auto">
+                  <VIcon size="20">fa-solid fa-star</VIcon>
+                  <span class="ml-1">Star: {{ projectStore.stars }}</span>
+                </VCol>
+              </VRow>
+            </VCard>
+
+            <!-- Open Parallel Window button -->
             <VBtn variant="tonal" class="mt-6" size="small">
               Open Parallel Window
             </VBtn>
@@ -183,3 +213,23 @@ onMounted(() => {
     </VRow>
   </VCard>
 </template>
+
+<style scoped lang="scss">
+@use "@configured-variables" as variables;
+@use "@core/scss/template/mixins" as templateMixins;
+
+.metrics-container {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-primary), 0.08);
+  @include templateMixins.custom-elevation(var(--v-theme-primary), "sm");
+}
+
+.ml-1 {
+  margin-left: 4px;
+}
+.mt-4 {
+  margin-top: 16px;
+}
+</style>
+
