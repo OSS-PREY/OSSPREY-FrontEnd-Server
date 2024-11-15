@@ -1,31 +1,28 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import Plotly from 'plotly.js-dist-min';
-import { useTheme } from 'vuetify';
+import { useDisplay, useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';
 
-const { global } = useTheme();
+const vuetifyTheme = useTheme();
+const display = useDisplay();
 const projectStore = useProjectStore();
 
-// References and state variables
 const sankeyDiv = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-// Correct API Base URL (remove '/api/projects')
-const apiBaseUrl = 'https://oss-backend-8stu.onrender.com'; // Ensure this is your backend's base URL
+const apiBaseUrl = 'https://oss-backend-8stu.onrender.com/api/projects'; // Update to your backend's actual URL
 
-// Data holders
 const allData = ref(null);
 const dates = ref([]);
 const dateRange = ref([0, 0]);
-
-// Computed labels for the slider (optional customization)
 const dateLabels = computed(() =>
   dates.value.map((d, i) => (i % 2 === 0 ? d : '')) // Adjust labeling as needed
 );
+const selectedDates = ref([]);
 
-// Watch for changes in the selected project to fetch Sankey data
+// Fetch data when the selected project changes
 watch(
   () => projectStore.selectedProject,
   (newProject) => {
@@ -36,49 +33,46 @@ watch(
   { immediate: true }
 );
 
-// Function to fetch Sankey data for the selected project
-const fetchSankeyData = async () => {
+const fetchSankeyData = () => {
   loading.value = true;
-  error.value = null; // Reset error state
-
-  try {
-    // Construct the correct API endpoint
-    const projectName = projectStore.selectedProject.toLowerCase().replace(/\s+/g, '-'); // Adjust if needed
-    const response = await fetch(`${apiBaseUrl}/api/tech_net/${projectName}`);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Project not found.');
+  const projectName = projectStore.selectedProject.toLowerCase().replace(/\s+/g, '-'); // Adjust if needed
+  fetch(`${apiBaseUrl}/api/tech_net/${projectName}`)
+    .then((response) =>
+      response.text().then((text) => {
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          console.error('Response text:', text);
+          throw err;
+        }
+      })
+    )
+    .then((data) => {
+      if (data.error) {
+        console.error(data.error);
+        error.value = data.error;
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        allData.value = data;
+        dates.value = data.dates;
+        // Initialize date range based on dates length
+        dateRange.value = [0, dates.value.length - 1];
+        projectStore.rangeValue = dateRange.value;
+        preparePlotData();
       }
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    allData.value = data;
-    dates.value = data.dates;
-    // Initialize date range based on dates length
-    dateRange.value = [0, dates.value.length - 1];
-    projectStore.rangeValue = dateRange.value;
-    preparePlotData();
-  } catch (err) {
-    console.error('Error fetching Sankey data:', err);
-    error.value = err.message || 'Failed to fetch Sankey data.';
-  } finally {
-    loading.value = false;
-  }
+    })
+    .catch((err) => {
+      console.error('Error fetching Sankey data:', err);
+      error.value = 'Failed to fetch data.';
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
-// Function to prepare and render the Sankey diagram
 const preparePlotData = () => {
   if (!allData.value || dates.value.length === 0) return;
 
-  const selectedDates = dates.value.slice(
+  selectedDates.value = dates.value.slice(
     dateRange.value[0],
     dateRange.value[1] + 1
   );
@@ -90,7 +84,7 @@ const preparePlotData = () => {
   });
 
   const filteredLinks = allData.value.links.filter((link) =>
-    selectedDates.includes(link.date)
+    selectedDates.value.includes(link.date)
   );
 
   if (filteredLinks.length === 0) {
@@ -133,60 +127,33 @@ const preparePlotData = () => {
     Plotly.react(sankeyDiv.value, plotData, layout);
   }
 };
-
-// Fetch Sankey data when the component mounts if a project is already selected
-onMounted(() => {
-  if (projectStore.selectedProject) {
-    fetchSankeyData();
-  }
-});
 </script>
 
 <template>
-  <VCard class="text-center text-sm-start" style="height: 600px;">
-    <VRow no-gutters style="height: 100%;">
-      <VCol cols="12" sm="12">
+  <VCard class="text-center text-sm-start" style="height: 400px;">
+    <VRow no-gutters>
+      <VCol
+        cols="12"
+        sm="12"
+        xl="12"
+        :class="$vuetify.display.smAndUp ? 'border-e' : 'border-b'"
+      >
         <VCardItem class="pb-3">
           <VCardTitle class="text-primary">
             Technical Network
           </VCardTitle>
         </VCardItem>
 
-        <!-- Sankey Diagram and Controls -->
+        <!-- Sankey Diagram -->
         <VCardText style="height: 100%;">
-          <!-- Loading Indicator -->
-          <div v-if="loading">Loading Sankey diagram...</div>
-
-          <!-- Error Message -->
-          <div v-if="error" class="text-error mb-4">Error loading Sankey diagram: {{ error }}</div>
-
-          <!-- Sankey Diagram -->
-          <div ref="sankeyDiv" style="width: 100%; height: 60%;"></div>
-
-          <!-- Slider Controls -->
-          <div v-if="!loading && !error">
-            <!-- Date Range Slider -->
-            <VSlider
-              v-model="dateRange"
-              range
-              :min="0"
-              :max="dates.length - 1"
-              :step="1"
-              label="Select Date Range"
-              ticks="true"
-              tick-size="4"
-              thumb-label
-              class="mt-4"
-            />
-
-            <!-- Display Selected Date Range -->
-            <div class="mt-2">
-              <strong>Selected Dates:</strong>
-              <span>{{ formatDate(dates[dateRange[0]]) }}</span>
-              -
-              <span>{{ formatDate(dates[dateRange[1]]) }}</span>
-            </div>
-          </div>
+          <VRow class="mb-1" style="height: 90%;">
+            <VCol cols="12" class="d-flex align-items-center">
+              <!-- Div for Plotly diagram -->
+              <div ref="sankeyDiv" style="width: 100%; height: 100%;"></div>
+              <div v-if="loading">Loading Sankey diagram...</div>
+              <div v-if="error">Error loading Sankey diagram: {{ error }}</div>
+            </VCol>
+          </VRow>
         </VCardText>
       </VCol>
     </VRow>
@@ -194,5 +161,5 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-@use "@core/scss/template/libs/apex-chart.scss";
+@use "@core/scss/template/libs/apex-chart.scss"
 </style>
