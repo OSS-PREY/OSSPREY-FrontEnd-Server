@@ -1,3 +1,17 @@
+<template>
+  <VCard class="text-center text-sm-start" style="height: 100%;">
+    <VCardTitle class="text-h6 text-primary">
+      Technical Network
+    </VCardTitle>
+    <VCardText style="height: calc(100% - 64px);">
+      <!-- Sankey Diagram -->
+      <div ref="sankeyDiv" style="width: 100%; height: 100%;"></div>
+      <div v-if="loading">Loading Sankey diagram...</div>
+      <div v-if="error" class="error-message">{{ error }}</div>
+    </VCardText>
+  </VCard>
+</template>
+
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import Plotly from 'plotly.js-dist-min';
@@ -12,7 +26,7 @@ const sankeyDiv = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-const apiBaseUrl = 'https://oss-backend-8stu.onrender.com/api/projects'; // Update to your backend's actual URL
+const apiBaseUrl = 'https://oss-backend-8stu.onrender.com'; // Update to your backend's actual URL
 
 const allData = ref(null);
 const dates = ref([]);
@@ -24,9 +38,9 @@ const selectedDates = ref([]);
 
 // Fetch data when the selected project changes
 watch(
-  () => projectStore.selectedProject,
-  (newProject) => {
-    if (newProject) {
+  () => projectStore.selectedProjectGithubName,
+  (newGithubName) => {
+    if (newGithubName) {
       fetchSankeyData();
     }
   },
@@ -35,21 +49,16 @@ watch(
 
 const fetchSankeyData = () => {
   loading.value = true;
-  const projectName = projectStore.selectedProject.toLowerCase().replace(/\s+/g, '-'); // Adjust if needed
+  const projectName = projectStore.selectedProjectGithubName;
+  if (!projectName) {
+    error.value = 'No GitHub repository name available for the selected project.';
+    loading.value = false;
+    return;
+  }
   fetch(`${apiBaseUrl}/api/tech_net/${projectName}`)
-    .then((response) =>
-      response.text().then((text) => {
-        try {
-          return JSON.parse(text);
-        } catch (err) {
-          console.error('Response text:', text);
-          throw err;
-        }
-      })
-    )
     .then((data) => {
       if (data.error) {
-        console.error(data.error);
+        console.error('API Error:', data.error);
         error.value = data.error;
       } else {
         allData.value = data;
@@ -100,27 +109,32 @@ const preparePlotData = () => {
       orientation: 'h',
       node: {
         pad: 15,
-        thickness: 20,
+        thickness: 15,
         line: {
           color: 'black',
           width: 0.5,
         },
         label: nodes.map((node) => node.name),
-        color: 'blue',
+        color: '#1E88E5', // Adjust to match your theme
       },
       link: {
         source: filteredLinks.map((l) => l.source),
         target: filteredLinks.map((l) => l.target),
         value: filteredLinks.map((l) => l.value),
+        color: 'rgba(30, 136, 229, 0.5)', // Adjust link color and opacity
       },
     },
   ];
 
   const layout = {
-    title: `Contribution Sankey Diagram for ${projectStore.selectedProject}`,
+    title: '',
     font: {
-      size: 10,
+      size: 12,
+      color: '#424242',
     },
+    paper_bgcolor: 'transparent',
+    plot_bgcolor: 'transparent',
+    responsive: true,
   };
 
   if (sankeyDiv.value) {
@@ -129,37 +143,10 @@ const preparePlotData = () => {
 };
 </script>
 
-<template>
-  <VCard class="text-center text-sm-start" style="height: 400px;">
-    <VRow no-gutters>
-      <VCol
-        cols="12"
-        sm="12"
-        xl="12"
-        :class="$vuetify.display.smAndUp ? 'border-e' : 'border-b'"
-      >
-        <VCardItem class="pb-3">
-          <VCardTitle class="text-primary">
-            Technical Network
-          </VCardTitle>
-        </VCardItem>
-
-        <!-- Sankey Diagram -->
-        <VCardText style="height: 100%;">
-          <VRow class="mb-1" style="height: 90%;">
-            <VCol cols="12" class="d-flex align-items-center">
-              <!-- Div for Plotly diagram -->
-              <div ref="sankeyDiv" style="width: 100%; height: 100%;"></div>
-              <div v-if="loading">Loading Sankey diagram...</div>
-              <div v-if="error">Error loading Sankey diagram: {{ error }}</div>
-            </VCol>
-          </VRow>
-        </VCardText>
-      </VCol>
-    </VRow>
-  </VCard>
-</template>
-
 <style lang="scss">
-@use "@core/scss/template/libs/apex-chart.scss"
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 1rem;
+}
 </style>

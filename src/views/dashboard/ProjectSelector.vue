@@ -26,11 +26,12 @@ const fetchProjects = async () => {
     if (data.error) {
       throw new Error(data.error);
     }
-    // Remove "Apache" from project names
+    // Use projects with valid GitHub repositories
     projects.value = data.projects.map(project => {
       return {
         ...project,
         name: project.project_name.replace(/^Apache\s+/i, '').trim(),
+        github_repo_name: project.github_repo_name || ''
       };
     });
   } catch (err) {
@@ -82,6 +83,8 @@ watch(
         projectStore.sponsor = selected.sponsor || 'N/A';
         projectStore.champion = selected.champion || 'N/A';
         projectStore.mentors = selected.mentors || [];
+        projectStore.selectedProjectGithubName = selected.github_repo_name || '';
+        projectStore.github_url = selected.github_url || '';
 
         // Update slider values
         projectStore.rangeValue = [0, sliderMax.value];

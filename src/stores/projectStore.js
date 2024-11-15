@@ -14,6 +14,8 @@ export const useProjectStore = defineStore('projectStore', () => {
   const showRangeSlider = ref(false);
   const rangeValue = ref([0, 100]);
   const singleValue = ref(0);
+  const selectedProjectGithubName = ref(''); // Add this line
+  const github_url = ref(''); // Add this line
 
   return {
     selectedProject,
@@ -28,5 +30,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     showRangeSlider,
     rangeValue,
     singleValue,
+    selectedProjectGithubName, // Add this line
+    github_url, // Add this line
   };
 });
