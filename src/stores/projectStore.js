@@ -274,68 +274,74 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Social Network State and Actions --------------------
 
-  const socialNetData = ref(null);
-  const socialNetLoading = ref(false);
-  const socialNetError = ref(null);
+/**
+ * Fetches SocialNet data based on projectId and month.
+ */
+const socialNetData = ref(null);
+const socialNetLoading = ref(false);
+const socialNetError = ref(null);
 
-  /**
-   * Clears the existing SocialNet data.
-   */
-  const clearSocialNetData = () => {
-    console.log('Clearing SocialNet data.');
-    socialNetData.value = null;
-    socialNetError.value = null;
-  };
+/**
+ * Clears the existing SocialNet data.
+ */
+const clearSocialNetData = () => {
+  console.log('Clearing SocialNet data.');
+  socialNetData.value = null;
+  socialNetError.value = null;
+};
 
-  /**
-   * Fetches SocialNet data based on projectId and month.
-   */
-  const fetchSocialNetData = async (projectId, month) => {
-    socialNetLoading.value = true;
-    socialNetData.value = null;
-    socialNetError.value = null;
+/**
+ * Fetches SocialNet data based on projectId and month.
+ */
+const fetchSocialNetData = async (projectId, month) => {
+  console.log('Starting fetchSocialNetData...');
+  console.log(`Project ID: ${projectId}, Month: ${month}`);
+  
+  // Reset state
+  socialNetLoading.value = true;
+  socialNetData.value = null;
+  socialNetError.value = null;
 
-    // Convert month to string to match object keys
-    const monthStr = month.toString();
+  try {
+    console.log(`Fetching /api/social_net/${projectId}/${month}...`);
+    const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
 
-    // Check if month is valid for the current project
-    if (!monthlyRanges.value.hasOwnProperty(monthStr)) {
-      console.warn(`Month ${month} is not available for project ${projectId}. Skipping SocialNet data fetch.`);
-      socialNetLoading.value = false;
-      socialNetData.value = null;
-      socialNetError.value = null;
+    if (!response.ok) {
+      let errorMsg = `Failed to fetch SocialNet data: ${response.status}`;
+      console.warn('Response not OK:', response);
+      try {
+        const errorData = await response.json();
+        errorMsg += ` - ${errorData.error}`;
+      } catch {
+        console.warn('Response error is not JSON.');
+      }
+      console.error(errorMsg);
+      socialNetError.value = errorMsg;
       return;
     }
 
-    try {
-      console.log(`Fetching /api/social_net/${projectId}/${month}...`);
-      const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
+    // Parse and log the response data
+    const data = await response.json();
+    console.log('Fetched Data from Backend:', data);
 
-      if (!response.ok) {
-        let errorMsg = `Failed to fetch SocialNet data: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMsg += ` - ${errorData.error}`;
-        } catch {
-          // If response is not JSON
-        }
-        console.error(errorMsg);
-        socialNetError.value = errorMsg;
-        socialNetData.value = null;
-        return; // Exit function without throwing
-      }
-
-      const data = await response.json();
-      socialNetData.value = data.data;
-      console.log('Fetched SocialNet Data:', socialNetData.value);
-    } catch (err) {
-      console.error('Error fetching SocialNet data:', err);
-      socialNetError.value = 'Error fetching SocialNet data.';
-      socialNetData.value = null;
-    } finally {
-      socialNetLoading.value = false;
+    if (!Array.isArray(data.data)) {
+      console.warn('Unexpected data format:', data);
+      socialNetData.value = [];
+      return;
     }
-  };
+
+    // Assign fetched data
+    socialNetData.value = data.data;
+    console.log('SocialNet Data:', socialNetData.value);
+  } catch (err) {
+    console.error('Error fetching SocialNet data:', err);
+    socialNetError.value = 'Error fetching SocialNet data.';
+  } finally {
+    socialNetLoading.value = false;
+    console.log('Finished fetchSocialNetData.');
+  }
+};
+
 
   // -------------------- Commit Measures State and Actions --------------------
 

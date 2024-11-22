@@ -215,7 +215,9 @@ const sortedActionablesData = computed(() => {
 
 .table-container {
   max-height: 400px; /* Adjust as needed */
-  overflow-y: auto;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: auto; /* Enable horizontal scrolling for wide tables */
+  display: block;
 }
 
 .table {
@@ -234,6 +236,7 @@ const sortedActionablesData = computed(() => {
   padding: 8px;
   text-align: left;
   word-wrap: break-word;
+  white-space: normal;
 }
 
 .table-primary {
@@ -290,7 +293,6 @@ const sortedActionablesData = computed(() => {
 .feature-name-header,
 .feature-name-cell {
   width: 25%; /* Adjust as needed */
-  min-width: 150px;
 }
 
 .actionable-header,

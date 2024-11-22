@@ -7,7 +7,7 @@
     </VCardTitle>
     <VCardText style="height: calc(100% - 64px); position: relative;">
       <!-- Sankey Diagram -->
-      <div ref="sankeyDiv" style="width: 100%; height: 100%;"></div>
+      <div class="sankey-container" ref="sankeyDiv" ><div id="sankey"></div></div>
 
       <!-- Loading Indicator -->
       <div v-if="projectStore.socialNetLoading" class="overlay">
@@ -59,85 +59,141 @@ const clearSankeyDiagram = () => {
 /**
  * Prepares and renders the Sankey diagram using Plotly.
  */
-const preparePlotData = () => {
-  if (!projectStore.socialNetData) return;
+ const preparePlotData = () => {
+  console.log('Starting preparePlotData...');
 
-  // Extract the project name and selected month
-  const projectName = projectStore.selectedProject.project_id;
-  const selectedMonth = projectStore.selectedMonth;
-
-  // Extract the data for the selected month
-  const monthData = projectStore.socialNetData;
-
-  if (!monthData || monthData.length === 0) {
-    // No data available; clear the diagram
+  // Step 1: Check if SocialNet data is available
+  if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
+    console.warn('No social network data found to render.');
     clearSankeyDiagram();
-    console.warn('No SocialNet data available to render.');
     return;
   }
 
-  // Extract unique contributors
-  const contributors = [...new Set(monthData.flatMap(item => [item[0], item[1]]))];
+  // Step 2: Extract project details
+  const projectName = projectStore.selectedProject.project_id;
+  console.log(`Project Name: ${projectName}`);
+  console.log('SocialNet Data:', projectStore.socialNetData);
 
-  // Create nodes
-  const nodes = contributors.map(name => ({ name }));
+  // Step 3: Extract data for the selected month
+  const monthData = projectStore.socialNetData; // Directly use fetched data
+  console.log('Month Data:', monthData);
 
-  // Create a mapping from node names to indices
-  const nodeMap = {};
-  nodes.forEach((node, index) => {
-    nodeMap[node.name] = index;
+  // Step 4: Validate data format
+  if (!monthData.every(item => Array.isArray(item) && item.length === 3)) {
+    console.error('SocialNet data format is invalid:', monthData);
+    clearSankeyDiagram();
+    return;
+  }
+
+  // Step 5: Create separate nodes for sources and targets (allow duplicates)
+  const nodes = [];
+  const links = [];
+  monthData.forEach(([source, target, value]) => {
+    const sourceIndex = nodes.push({ name: source, side: 'source' }) - 1; // Add source node
+    const targetIndex = nodes.push({ name: target, side: 'target' }) - 1; // Add target node
+
+    links.push({
+      source: sourceIndex,
+      target: targetIndex,
+      value: parseInt(value, 10) || 0,
+    });
   });
 
-  // Create links
-  const links = monthData.map(item => ({
-    source: nodeMap[item[0]],
-    target: nodeMap[item[1]],
-    value: parseInt(item[2], 10),
-  }));
+  console.log('Nodes before grouping:', nodes);
+  console.log('Links before grouping:', links);
 
-  // Define colors (optional customization)
-  const nodeColors = contributors.map(() => '#FF5733'); // Orange for contributors
+  // Step 6: Group duplicate nodes
+  const nodeMap = {}; // Map to hold unique nodes and their new indices
+  const updatedNodes = []; // List of new grouped nodes
+  const updatedLinks = []; // Updated links to match grouped nodes
 
-  // Prepare the Sankey diagram data structure
+  // Group nodes and maintain a mapping for sources and targets
+  nodes.forEach((node, index) => {
+    const key = `${node.side}|${node.name}`;
+    if (!nodeMap[key]) {
+      nodeMap[key] = updatedNodes.push({ name: node.name, side: node.side }) - 1;
+    }
+  });
+
+  // Update links to use grouped node indices
+  links.forEach(link => {
+    const newSource = nodeMap[`source|${nodes[link.source].name}`];
+    const newTarget = nodeMap[`target|${nodes[link.target].name}`];
+    const existingLink = updatedLinks.find(
+      l => l.source === newSource && l.target === newTarget
+    );
+    if (existingLink) {
+      existingLink.value += link.value; // Aggregate values for merged links
+    } else {
+      updatedLinks.push({
+        source: newSource,
+        target: newTarget,
+        value: link.value,
+      });
+    }
+  });
+
+  console.log('Nodes after grouping:', updatedNodes);
+  console.log('Links after grouping:', updatedLinks);
+
+  // Step 7: Define colors
+  const nodeColors = updatedNodes.map(node =>
+    node.side === 'source' ? '#1E90FF' : '#FF4500'
+  ); // Blue for sources, Orange for targets
+  console.log('Node Colors:', nodeColors);
+
+  // Step 8: Prepare Sankey data
   const sankeyData = {
     type: 'sankey',
     orientation: 'h',
     node: {
-      pad: 15,
+      pad: 20,
       thickness: 20,
       line: {
         color: 'black',
         width: 0.5,
       },
-      label: nodes.map(node => node.name),
-      color: nodeColors, // Assign colors if available
+      label: updatedNodes.map(node => node.name),
+      color: nodeColors,
     },
     link: {
-      source: links.map(link => link.source),
-      target: links.map(link => link.target),
-      value: links.map(link => link.value),
-      color: links.map(() => 'rgba(255, 87, 51, 0.4)'), // Light orange for links
+      source: updatedLinks.map(link => link.source),
+      target: updatedLinks.map(link => link.target),
+      value: updatedLinks.map(link => link.value),
+      color: updatedLinks.map(() => 'rgba(30, 136, 229, 0.4)'), // Light blue for links
     },
   };
 
+  const containerWidth = document.querySelector('.sankey-container').offsetWidth;
+  const containerHeight = containerWidth; // Maintain a 16:9 aspect ratio
+
+
   const layout = {
-    title: `${projectName} - Social Network - Month ${selectedMonth}`,
     font: {
       size: 12,
       color: '#424242',
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
-    height: 600,
-    width: 800,
-    responsive: true,
+    height: containerWidth,
+    width: containerHeight,
+    margin: { t: 20, l: 20, r: 20, b: 20 },
   };
 
+  // Step 9: Render the Sankey diagram
   if (sankeyDiv.value) {
-    Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
-    console.log('SocialNet Sankey diagram rendered.');
+    try {
+      console.log('Rendering Sankey diagram...');
+      Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
+      console.log('SocialNet Sankey diagram rendered successfully.');
+    } catch (err) {
+      console.error('Error rendering Social Sankey diagram:', err);
+    }
   }
+
+  console.log('Finished preparePlotData.');
 };
+
 
 /**
  * Handles window resize events to make Plotly diagrams responsive.
@@ -181,9 +237,12 @@ watch(
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
+    console.log("Watcher triggered", { newProject, newMonth });
     if (newProject && newMonth !== null && newMonth !== undefined && !isNaN(newMonth)) {
+      console.log("Fetching and rendering Sankey");
       fetchAndRenderSankey();
     } else {
+      console.log("Clearing Sankey diagram");
       clearSankeyDiagram();
     }
   },
@@ -203,7 +262,7 @@ onUnmounted(() => {
 
 <style scoped>
 .overlay {
-  position: absolute;
+  position: relative;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -215,5 +274,16 @@ onUnmounted(() => {
   color: red;
   text-align: center;
   margin-top: 1rem;
+}
+
+.sankey-container {
+  width: 100%; /* Make it responsive */
+  max-width: 800px; /* Restrict the maximum width */
+  height: auto;
+  overflow: hidden; /* Prevent overflowing content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto; /* Center the diagram in the parent */
 }
 </style>
