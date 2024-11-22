@@ -41,6 +41,11 @@
                 <strong>Sponsor:</strong>&nbsp; {{ projectStore.selectedProject.sponsor }}
               </VCol>
             </VRow>
+            <VRow class="mb-3">
+              <VCol cols="12" class="d-flex align-items-center">
+                <strong>Category:</strong>&nbsp; Apache Project
+              </VCol>
+            </VRow>
           </div>
         </VCardText>
       </VCol>

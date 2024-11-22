@@ -37,28 +37,31 @@ const toggleCollapse = () => {
 
   <VRow>
     <!-- First Row -->
-    <VCol cols="12" md="4">
+    <VCol cols="12" md="6">
       <VCard style="height: 400px;">
         <ProjectSelector />
       </VCard>
     </VCol>
 
-    <VCol cols="12" md="8">
-      <VCard style="height: 400px;">
-        <GraduationForecast />
-      </VCard>
-    </VCol>
-  </VRow>
-
-  <VRow>
-    <!-- Second Row -->
-    <VCol cols="12" md="4">
+    <VCol cols="12" md="6">
       <VCard style="height: 400px;">
         <ProjectDetails />
       </VCard>
     </VCol>
+    
+  </VRow>
 
-    <VCol cols="12" md="8">
+  <VRow>
+
+    <VCol cols="12" md="6">
+      <VCard style="height: 400px;">
+        <GraduationForecast />
+      </VCard>
+    </VCol>
+    <!-- Second Row -->
+    
+
+    <VCol cols="12" md="6">
       <VCard style="height: 400px;">
         <Actionables />
       </VCard>

@@ -18,7 +18,7 @@
             <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
             <!-- Dropdown for selecting a project -->
             <VSelect
-              v-model="projectStore.selectedProject"
+              v-model="selectedProject"
               :items="projectStore.allDescriptions"
               item-title="project_name" 
               item-value="project_id"
@@ -56,9 +56,9 @@
               class="mb-4"
             />
 
-            <!-- Conditional rendering based on checkbox state -->
+            <!-- Conditional rendering based on checkbox state and availability of months -->
             <VSlider
-              v-if="projectStore.showRangeSlider"
+              v-if="projectStore.showRangeSlider && hasValidMonths"
               v-model="projectStore.rangeValue"
               range
               :min="sliderMin"
@@ -70,12 +70,12 @@
               ticks="always"
               tick-size="4"
               thumb-label
+              @update:modelValue="handleSingleValueChange"
             />
 
             <VSlider
-              v-else
+              v-else-if="!projectStore.showRangeSlider && hasValidMonths"
               v-model="projectStore.singleValue"
-              @change="handleSingleValueChange"
               :min="sliderMin"
               :max="sliderMax"
               :step="1"
@@ -85,7 +85,14 @@
               ticks="always"
               tick-size="4"
               thumb-label
+              @update:modelValue="handleSingleValueChange"
             />
+
+
+            <!-- Display a message if no months are available -->
+            <div v-if="projectStore.selectedProject && !hasValidMonths" class="mt-4 text-error">
+              No available months for the selected project.
+            </div>
 
             <!-- Styled GitHub Metrics -->
             <VCard class="metrics-container mt-4" outlined>
@@ -117,12 +124,15 @@
 </template>
 
 <script setup>
-import { onMounted, watch, computed } from 'vue';
+import { onMounted, watch, computed, ref } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { useRouter } from 'vue-router';
 
 const projectStore = useProjectStore();
 const router = useRouter();
+
+// Local ref for selectedProject to handle v-model separately
+const selectedProject = ref(null);
 
 // Function to format dates
 const formatDate = (dateStr) => {
@@ -136,6 +146,11 @@ const formatDate = (dateStr) => {
 const sliderMin = computed(() => projectStore.minMonth);
 const sliderMax = computed(() => projectStore.maxMonth);
 
+// Determine if there are valid months available
+const hasValidMonths = computed(() => {
+  return projectStore.availableMonths.length > 0;
+});
+
 // Fetch all project information and GitHub stars
 const fetchData = async () => {
   await projectStore.fetchAllProjectData();
@@ -143,28 +158,28 @@ const fetchData = async () => {
 
 // Handle single slider value change
 const handleSingleValueChange = () => {
+  console.log(`Single slider changed. New singleValue: ${projectStore.singleValue}`);
   projectStore.selectedMonth = projectStore.singleValue;
 };
 
-// Watch the selected project and update details
+// Handle range slider change
+const handleRangeChange = () => {
+  // For simplicity, set selectedMonth to the first value in the range
+  const newMonth = projectStore.rangeValue[0];
+  console.log(`Range slider changed. New rangeValue: ${projectStore.rangeValue}, Setting selectedMonth to ${newMonth}`);
+  projectStore.selectedMonth = newMonth;
+};
+
+// Watch the local selectedProject and update the store accordingly
 watch(
-  () => projectStore.selectedProject,
+  () => selectedProject.value,
   async (newProject) => {
     if (newProject) {
+      console.log(`Project selected: ${newProject.project_name}`);
       await projectStore.setCurrentProjectDetails(newProject);
     } else {
+      console.log('No project selected. Resetting project details.');
       projectStore.resetProjectDetails();
-    }
-  }
-);
-
-// Watch for changes in selectedMonth to trigger data fetching in other components
-watch(
-  () => projectStore.selectedMonth,
-  (newMonth) => {
-    if (newMonth !== null && newMonth !== undefined) {
-      // Optionally, perform any additional actions here
-      console.log(`Selected Month updated to: ${newMonth}`);
     }
   }
 );
@@ -174,6 +189,15 @@ const openParallelWindow = () => {
   // Implement the logic to open a parallel window if required
   window.open('/some-parallel-route', '_blank');
 };
+
+// Initialize selectedProject watcher
+watch(
+  () => projectStore.selectedProject,
+  (newProject) => {
+    selectedProject.value = newProject;
+    console.log(`Store selectedProject updated to: ${newProject?.project_name}`);
+  }
+);
 
 // Fetch data on component mount
 onMounted(() => {

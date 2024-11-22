@@ -14,14 +14,20 @@
         Loading Sankey diagram...
       </div>
 
-      <!-- Error Message -->
-      <div v-if="projectStore.socialNetError" class="error-message overlay">
-        {{ projectStore.socialNetError }}
+      <!-- No Data Message -->
+      <div
+        v-if="!projectStore.socialNetLoading && !projectStore.socialNetError && (!projectStore.socialNetData || projectStore.socialNetData.length === 0) && projectStore.selectedProject && projectStore.selectedMonth"
+        class="overlay"
+      >
+        No social network data available for the selected month.
       </div>
 
-      <!-- No Data Message -->
-      <div v-if="!projectStore.socialNetLoading && !projectStore.socialNetError && (!projectStore.socialNetData || projectStore.socialNetData.length === 0) && projectStore.selectedProject && projectStore.selectedMonth" class="overlay">
-        No social network data available for the selected month.
+      <!-- Error Message -->
+      <div
+        v-if="!projectStore.socialNetLoading && projectStore.socialNetError"
+        class="overlay error-message"
+      >
+        {{ projectStore.socialNetError }}
       </div>
 
       <!-- Prompt to Select a Project -->
@@ -46,6 +52,7 @@ const sankeyDiv = ref(null);
 const clearSankeyDiagram = () => {
   if (sankeyDiv.value) {
     Plotly.purge(sankeyDiv.value);
+    console.log('SocialNet Sankey diagram cleared.');
   }
 };
 
@@ -56,15 +63,16 @@ const preparePlotData = () => {
   if (!projectStore.socialNetData) return;
 
   // Extract the project name and selected month
-  const projectName = projectStore.selectedProject.project_name;
+  const projectName = projectStore.selectedProject.project_id;
   const selectedMonth = projectStore.selectedMonth;
 
   // Extract the data for the selected month
   const monthData = projectStore.socialNetData;
 
   if (!monthData || monthData.length === 0) {
-    projectStore.socialNetError = 'No social network data available for the selected month.';
+    // No data available; clear the diagram
     clearSankeyDiagram();
+    console.warn('No SocialNet data available to render.');
     return;
   }
 
@@ -88,7 +96,7 @@ const preparePlotData = () => {
   }));
 
   // Define colors (optional customization)
-  const nodeColors = contributors.map(() => '#1E88E5'); // Blue for contributors
+  const nodeColors = contributors.map(() => '#FF5733'); // Orange for contributors
 
   // Prepare the Sankey diagram data structure
   const sankeyData = {
@@ -102,13 +110,13 @@ const preparePlotData = () => {
         width: 0.5,
       },
       label: nodes.map(node => node.name),
-      color: nodeColors,
+      color: nodeColors, // Assign colors if available
     },
     link: {
       source: links.map(link => link.source),
       target: links.map(link => link.target),
       value: links.map(link => link.value),
-      color: links.map(() => 'rgba(30, 136, 229, 0.4)'), // Light blue for links
+      color: links.map(() => 'rgba(255, 87, 51, 0.4)'), // Light orange for links
     },
   };
 
@@ -127,6 +135,17 @@ const preparePlotData = () => {
 
   if (sankeyDiv.value) {
     Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
+    console.log('SocialNet Sankey diagram rendered.');
+  }
+};
+
+/**
+ * Handles window resize events to make Plotly diagrams responsive.
+ */
+const handleResize = () => {
+  if (sankeyDiv.value) {
+    Plotly.Plots.resize(sankeyDiv.value);
+    console.log('SocialNet Sankey diagram resized.');
   }
 };
 
@@ -150,7 +169,7 @@ const fetchAndRenderSankey = () => {
 watch(
   () => projectStore.socialNetData,
   (newData) => {
-    if (newData) {
+    if (newData && newData.length > 0) {
       preparePlotData();
     } else {
       clearSankeyDiagram();
@@ -180,15 +199,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
-
-/**
- * Handles window resize events to make Plotly diagrams responsive.
- */
-const handleResize = () => {
-  if (sankeyDiv.value) {
-    Plotly.Plots.resize(sankeyDiv.value);
-  }
-};
 </script>
 
 <style scoped>
