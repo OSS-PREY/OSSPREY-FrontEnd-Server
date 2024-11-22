@@ -132,14 +132,9 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString();
 };
 
-// Compute slider min and max based on store's sliderMax
-const sliderMin = computed(() => 0);
-const sliderMax = computed(() => {
-  if (projectStore.selectedProject) {
-    return projectStore.computeSliderMax(projectStore.selectedProject.start_date, projectStore.selectedProject.end_date);
-  }
-  return 12; // Default value
-});
+// Compute slider min and max based on store's minMonth and maxMonth
+const sliderMin = computed(() => projectStore.minMonth);
+const sliderMax = computed(() => projectStore.maxMonth);
 
 // Fetch all project information and GitHub stars
 const fetchData = async () => {
@@ -154,11 +149,11 @@ const handleSingleValueChange = () => {
 // Watch the selected project and update details
 watch(
   () => projectStore.selectedProject,
-  (newProject) => {
+  async (newProject) => {
     if (newProject) {
-      projectStore.setCurrentProjectDetails(newProject);
+      await projectStore.setCurrentProjectDetails(newProject);
     } else {
-      projectStore.setCurrentProjectDetails(null);
+      projectStore.resetProjectDetails();
     }
   }
 );

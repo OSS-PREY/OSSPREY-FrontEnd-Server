@@ -5,12 +5,12 @@ import { ref, computed } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // Configuration
-  const baseUrl = ref('https://oss-backend-8stu.onrender.com/');
+  const baseUrl = ref('http://127.0.0.1:5000');
 
   // Project Selection
   const selectedProject = ref(null);
   const showRangeSlider = ref(false);
-  const rangeValue = ref([1, 1]);
+  const rangeValue = ref([1, 12]); // Default range
   const singleValue = ref(1);
   const selectedMonth = ref(1);
 
@@ -27,8 +27,26 @@ export const useProjectStore = defineStore('projectStore', () => {
   const loading = ref(false);
   const error = ref(null);
 
+  // Monthly Ranges
+  const monthlyRanges = ref({});
+
+  // Computed Properties for Slider Min and Max
+  const minMonth = computed(() => {
+    if (selectedProject.value && Object.keys(monthlyRanges.value).length > 0) {
+      return Math.min(...Object.keys(monthlyRanges.value).map(Number));
+    }
+    return 1;
+  });
+
+  const maxMonth = computed(() => {
+    if (selectedProject.value && Object.keys(monthlyRanges.value).length > 0) {
+      return Math.max(...Object.keys(monthlyRanges.value).map(Number));
+    }
+    return 12;
+  });
+
   // Set current project details
-  const setCurrentProjectDetails = (project) => {
+  const setCurrentProjectDetails = async (project) => {
     if (!project) {
       resetProjectDetails();
       return;
@@ -40,12 +58,19 @@ export const useProjectStore = defineStore('projectStore', () => {
     stargazer_count.value = project.stargazer_count;
     watch_count.value = project.watch_count;
 
-    const maxMonthValue = computeSliderMax(project.start_date, project.end_date);
-    rangeValue.value = [1, maxMonthValue];
-    singleValue.value = 1;
-    selectedMonth.value = 1;
+    try {
+      await fetchMonthlyRanges(project.project_id);
+      const min = minMonth.value;
+      const max = maxMonth.value;
+      rangeValue.value = [min, max];
+      singleValue.value = min;
+      selectedMonth.value = min;
 
-    console.log(`Project details set for project ID: ${project.project_id}`);
+      console.log(`Project details set for project ID: ${project.project_id}`);
+    } catch (err) {
+      console.error(`Error setting project details for ${project.project_id}:`, err);
+      error.value = 'Failed to set project details.';
+    }
   };
 
   // Reset project details
@@ -55,12 +80,44 @@ export const useProjectStore = defineStore('projectStore', () => {
     fork_count.value = 0;
     stargazer_count.value = 0;
     watch_count.value = 0;
-    rangeValue.value = [1, 1];
+    rangeValue.value = [1, 12];
     singleValue.value = 1;
     selectedMonth.value = 1;
+    monthlyRanges.value = {};
   };
 
-  // Compute slider max
+  // Fetch Monthly Ranges for a Project
+  const fetchMonthlyRanges = async (project_id) => {
+    try {
+      const response = await fetch(`${baseUrl.value}/api/monthly_ranges`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+
+      // Access the 'project_ranges' array from the response
+      const projectRange = data.project_ranges.find(
+        (range) => range.project_id.toLowerCase() === project_id.toLowerCase()
+      );
+      if (!projectRange) {
+        throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
+      }
+
+      monthlyRanges.value = projectRange.monthly_ranges;
+      console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
+    } catch (err) {
+      console.error('Error fetching monthly ranges:', err);
+      error.value = 'Failed to fetch monthly ranges.';
+      // Reset to default if fetching monthly ranges fails
+      rangeValue.value = [1, 12];
+      singleValue.value = 1;
+      selectedMonth.value = 1;
+      monthlyRanges.value = {};
+    }
+  };
+
+  // Compute slider max based on store's sliderMax
   const computeSliderMax = (startDateStr, endDateStr) => {
     if (startDateStr && endDateStr) {
       const startDate = new Date(startDateStr);
@@ -75,14 +132,6 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
     return 12;
   };
-
-  const maxMonth = computed(() => {
-    if (selectedProject.value) {
-      return computeSliderMax(selectedProject.value.start_date, selectedProject.value.end_date);
-    } else {
-      return 12;
-    }
-  });
 
   // Fetch all project data
   const fetchAllProjectData = async () => {
@@ -256,6 +305,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     rangeValue,
     singleValue,
     selectedMonth,
+    minMonth,
     maxMonth,
 
     // GitHub Details
@@ -271,11 +321,15 @@ export const useProjectStore = defineStore('projectStore', () => {
     loading,
     error,
 
+    // Monthly Ranges
+    monthlyRanges,
+
     // Actions
     setCurrentProjectDetails,
     computeSliderMax,
     fetchAllProjectData,
     resetProjectDetails,
+    fetchMonthlyRanges,
 
     // Technical Network
     techNetData,
