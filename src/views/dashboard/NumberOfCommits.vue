@@ -7,7 +7,7 @@
         <VCol cols="auto">
           <div>
             <h6 class="text-h6 font-weight-medium mb-2">Number of Commits</h6>
-            <br />
+            <br>
           </div>
           <div class="d-flex">
             <span v-if="numCommits !== null">{{ numCommits }}</span>
