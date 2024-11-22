@@ -1,36 +1,298 @@
+// src/stores/projectStore.js
+
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
-  const selectedProject = ref('');
-  const project_name = ref('');
-  const startDate = ref('');
-  const endDate = ref('');
-  const status = ref('');
-  const description = ref('');
-  const sponsor = ref('');
-  const champion = ref('');
-  const mentors = ref([]);
+  // Configuration
+  const baseUrl = ref('https://oss-backend-8stu.onrender.com/');
+
+  // Project Selection
+  const selectedProject = ref(null);
   const showRangeSlider = ref(false);
-  const rangeValue = ref([0, 100]);
-  const singleValue = ref(0);
-  const selectedProjectGithubName = ref(''); // Add this line
-  const github_url = ref(''); // Add this line
+  const rangeValue = ref([1, 1]);
+  const singleValue = ref(1);
+  const selectedMonth = ref(1);
+
+  // GitHub Details
+  const github_url = ref('N/A');
+  const fork_count = ref(0);
+  const stargazer_count = ref(0);
+  const watch_count = ref(0);
+
+  // All Project Descriptions
+  const allDescriptions = ref([]);
+
+  // Loading and Error States
+  const loading = ref(false);
+  const error = ref(null);
+
+  // Set current project details
+  const setCurrentProjectDetails = (project) => {
+    if (!project) {
+      resetProjectDetails();
+      return;
+    }
+
+    selectedProject.value = project;
+    github_url.value = project.github_url;
+    fork_count.value = project.fork_count;
+    stargazer_count.value = project.stargazer_count;
+    watch_count.value = project.watch_count;
+
+    const maxMonthValue = computeSliderMax(project.start_date, project.end_date);
+    rangeValue.value = [1, maxMonthValue];
+    singleValue.value = 1;
+    selectedMonth.value = 1;
+
+    console.log(`Project details set for project ID: ${project.project_id}`);
+  };
+
+  // Reset project details
+  const resetProjectDetails = () => {
+    selectedProject.value = null;
+    github_url.value = 'N/A';
+    fork_count.value = 0;
+    stargazer_count.value = 0;
+    watch_count.value = 0;
+    rangeValue.value = [1, 1];
+    singleValue.value = 1;
+    selectedMonth.value = 1;
+  };
+
+  // Compute slider max
+  const computeSliderMax = (startDateStr, endDateStr) => {
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        const months =
+          (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+          (endDate.getMonth() - startDate.getMonth()) +
+          1;
+        return months;
+      }
+    }
+    return 12;
+  };
+
+  const maxMonth = computed(() => {
+    if (selectedProject.value) {
+      return computeSliderMax(selectedProject.value.start_date, selectedProject.value.end_date);
+    } else {
+      return 12;
+    }
+  });
+
+  // Fetch all project data
+  const fetchAllProjectData = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const [projectsRes, projectInfoRes] = await Promise.all([
+        fetch(`${baseUrl.value}/api/projects`),
+        fetch(`${baseUrl.value}/api/project_info`),
+      ]);
+
+      if (!projectsRes.ok) {
+        const errorText = await projectsRes.text();
+        throw new Error(`Failed to fetch projects: ${projectsRes.status} ${errorText}`);
+      }
+
+      if (!projectInfoRes.ok) {
+        const errorText = await projectInfoRes.text();
+        throw new Error(`Failed to fetch project_info: ${projectInfoRes.status} ${errorText}`);
+      }
+
+      const projectsData = await projectsRes.json();
+      const projectInfoData = await projectInfoRes.json();
+
+      const projects = projectsData.projects;
+      const projectInfos = projectInfoData.projects;
+
+      const projectInfoMap = new Map();
+      projectInfos.forEach((info) => {
+        projectInfoMap.set(info.project_id.toLowerCase(), info);
+      });
+
+      allDescriptions.value = projects
+        .filter((project) => projectInfoMap.has(project.name.toLowerCase()))
+        .map((project) => {
+          const info = projectInfoMap.get(project.name.toLowerCase());
+          return {
+            project_id: info.project_id,
+            project_name: info.project_name || 'N/A',
+            description: info.description || 'N/A',
+            sponsor: info.sponsor || 'N/A',
+            champion: info.champion || 'N/A',
+            mentors:
+              typeof info.mentor === 'string'
+                ? info.mentor.split(',').map((m) => m.trim())
+                : [],
+            start_date: info.start_date || 'N/A',
+            end_date: info.end_date || 'N/A',
+            status: info.status || 'N/A',
+            github_url: project.url || 'N/A',
+            fork_count: typeof project.fork_count === 'number' ? project.fork_count : 0,
+            stargazer_count:
+              typeof project.stargazer_count === 'number' ? project.stargazer_count : 0,
+            watch_count: typeof project.watch_count === 'number' ? project.watch_count : 0,
+          };
+        });
+
+      console.log('Mapped Projects:', allDescriptions.value);
+
+      if (allDescriptions.value.length === 0) {
+        throw new Error('No project data available.');
+      }
+    } catch (err) {
+      console.error('Error fetching and merging project data:', err);
+      error.value = 'Failed to fetch project information.';
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // -------------------- Technical Network State and Actions --------------------
+
+  const techNetData = ref(null);
+  const techNetLoading = ref(false);
+  const techNetError = ref(null);
+
+  const fetchTechNetData = async (projectId, month) => {
+    techNetLoading.value = true;
+    techNetError.value = null;
+    techNetData.value = null;
+
+    try {
+      console.log(`Fetching /api/tech_net/${projectId}/${month}...`);
+      const response = await fetch(`${baseUrl.value}/api/tech_net/${projectId}/${month}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch technical network data.');
+      }
+
+      const data = await response.json();
+      techNetData.value = data.data;
+      console.log('Fetched TechNet Data:', techNetData.value);
+    } catch (err) {
+      console.error('Error fetching TechNet data:', err);
+      techNetError.value = err.message;
+    } finally {
+      techNetLoading.value = false;
+    }
+  };
+
+  // -------------------- Social Network State and Actions --------------------
+
+  const socialNetData = ref(null);
+  const socialNetLoading = ref(false);
+  const socialNetError = ref(null);
+
+  const fetchSocialNetData = async (projectId, month) => {
+    socialNetLoading.value = true;
+    socialNetError.value = null;
+    socialNetData.value = null;
+
+    try {
+      console.log(`Fetching /api/social_net/${projectId}/${month}...`);
+      const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch social network data.');
+      }
+
+      const data = await response.json();
+      socialNetData.value = data.data;
+      console.log('Fetched SocialNet Data:', socialNetData.value);
+    } catch (err) {
+      console.error('Error fetching SocialNet data:', err);
+      socialNetError.value = err.message;
+    } finally {
+      socialNetLoading.value = false;
+    }
+  };
+
+  // -------------------- Commit Measures State and Actions --------------------
+
+  const commitMeasuresData = ref(null);
+  const commitMeasuresLoading = ref(false);
+  const commitMeasuresError = ref(null);
+
+  const fetchCommitMeasuresData = async (projectId, month) => {
+    commitMeasuresLoading.value = true;
+    commitMeasuresError.value = null;
+    commitMeasuresData.value = null;
+
+    try {
+      console.log(`Fetching /api/commit_measure/${projectId}/${month}...`);
+      const response = await fetch(`${baseUrl.value}/api/commit_measure/${projectId}/${month}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch commit measures data.');
+      }
+
+      const data = await response.json();
+      commitMeasuresData.value = data.data;
+      console.log('Fetched Commit Measures Data:', commitMeasuresData.value);
+    } catch (err) {
+      console.error('Error fetching Commit Measures data:', err);
+      commitMeasuresError.value = err.message;
+    } finally {
+      commitMeasuresLoading.value = false;
+    }
+  };
 
   return {
+    // Configuration
+    baseUrl,
+
+    // Project Selection
     selectedProject,
-    project_name,
-    startDate,
-    endDate,
-    status,
-    description,
-    sponsor,
-    champion,
-    mentors,
     showRangeSlider,
     rangeValue,
     singleValue,
-    selectedProjectGithubName, // Add this line
-    github_url, // Add this line
+    selectedMonth,
+    maxMonth,
+
+    // GitHub Details
+    github_url,
+    fork_count,
+    stargazer_count,
+    watch_count,
+
+    // All Project Descriptions
+    allDescriptions,
+
+    // Loading and Error States
+    loading,
+    error,
+
+    // Actions
+    setCurrentProjectDetails,
+    computeSliderMax,
+    fetchAllProjectData,
+    resetProjectDetails,
+
+    // Technical Network
+    techNetData,
+    techNetLoading,
+    techNetError,
+    fetchTechNetData,
+
+    // Social Network
+    socialNetData,
+    socialNetLoading,
+    socialNetError,
+    fetchSocialNetData,
+
+    // Commit Measures
+    commitMeasuresData,
+    commitMeasuresLoading,
+    commitMeasuresError,
+    fetchCommitMeasuresData,
   };
 });

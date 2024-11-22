@@ -164,8 +164,6 @@ const sortedActionablesData = computed(() => {
         <table class="table table-bordered">
           <thead>
             <tr class="table-primary">
-              <th class="feature-name-header">Feature Name</th>
-              <th class="actionable-header">Actionables</th>
             </tr>
           </thead>
           <tbody>
@@ -177,13 +175,6 @@ const sortedActionablesData = computed(() => {
                 v-for="(actionable, index) in feature.actionables"
                 :key="index"
               >
-                <td
-                  v-if="index === 0"
-                  :rowspan="feature.actionables.length"
-                  class="feature-name-cell"
-                >
-                  {{ feature.featureName }}
-                </td>
                 <td class="actionable-cell">
                   <div class="priority">
                     <span
