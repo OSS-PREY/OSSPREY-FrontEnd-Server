@@ -5,7 +5,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // Configuration
-  const baseUrl = ref('http://127.0.0.1:5000'); // Update this if your backend is hosted elsewhere
+  const baseUrl = ref('https://oss-backend-8stu.onrender.com'); // Update this if your backend is hosted elsewhere
 
   // Project Selection
   const selectedProject = ref(null);
@@ -22,6 +22,12 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // All Project Descriptions
   const allDescriptions = ref([]);
+
+  //Graduation Forecast 
+  const gradForecastData = ref([]);
+  const xAxisCategories = ref([]);
+  const gradForecastLoading = ref(false);
+  const gradForecastError = ref(null);
 
   // Loading and Error States
   const loading = ref(false);
@@ -136,6 +142,54 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
+  // Grad forecast
+  const fetchGradForecast = async (projectId) => {
+    if (!projectId) {
+      console.warn('No project selected.');
+      gradForecastError.value = 'No project selected.';
+      return;
+    }
+  
+    console.log('Starting fetchGradForecast...');
+    gradForecastLoading.value = true;
+    gradForecastData.value = [];
+    xAxisCategories.value = [];
+    gradForecastError.value = null;
+  
+    try {
+      console.log(`Fetching /api/grad_forecast/${projectId}...`);
+      const response = await fetch(`${baseUrl.value}/api/grad_forecast/${projectId}`);
+  
+      if (!response.ok) {
+        gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
+        console.error('Response not OK:', response);
+        throw new Error(`Failed to fetch grad forecast: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      console.log('Fetched Graduation Forecast Data:', data);
+  
+      // Process data for chart
+      const sortedData = Object.values(data)
+        .sort((a, b) => a.date - b.date) // Ensure data is sorted by date
+        .map((item) => ({
+          x: `Month ${item.date}`,
+          y: item.close,
+        }));
+  
+      gradForecastData.value = sortedData.map(item => item.y);
+      xAxisCategories.value = sortedData.map(item => item.x);
+  
+      console.log('Processed Graduation Forecast Data:', gradForecastData.value, xAxisCategories.value);
+    } catch (error) {
+      console.error('Error fetching Graduation Forecast data:', error);
+      gradForecastError.value = 'Error fetching Graduation Forecast data.';
+    } finally {
+      gradForecastLoading.value = false;
+      console.log('Finished fetchGradForecast.');
+    }
+  };
+
   // Fetch all project data
   const fetchAllProjectData = async () => {
     loading.value = true;
@@ -205,6 +259,8 @@ export const useProjectStore = defineStore('projectStore', () => {
       loading.value = false;
     }
   };
+
+
 
   // -------------------- Technical Network State and Actions --------------------
 
@@ -409,6 +465,7 @@ const fetchSocialNetData = async (projectId, month) => {
       ) {
         await fetchTechNetData(newProject.project_id, selectedMonth.value);
         await fetchSocialNetData(newProject.project_id, selectedMonth.value);
+        await fetchGradForecastData(newProject.project_id);
       } else {
         clearTechNetData();
         clearSocialNetData();
@@ -470,5 +527,13 @@ const fetchSocialNetData = async (projectId, month) => {
     commitMeasuresLoading,
     commitMeasuresError,
     fetchCommitMeasuresData,
+
+    //Graduation forecast
+    fetchGradForecast,
+    gradForecastData,
+    xAxisCategories,
+    gradForecastLoading,
+    gradForecastError,
+    selectedProject,
   };
 });

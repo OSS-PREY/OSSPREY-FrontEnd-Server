@@ -1,91 +1,101 @@
+<!-- src/components/Graduationforecast.vue -->
+
+<template>
+  <VCard>
+    <VCardText>
+      <VTabs v-model="currentTab" class="v-tabs-pill">
+        <VTab value="income" class="highlighted-tab">
+          Project Health Indicator
+        </VTab>
+      </VTabs>
+    </VCardText>
+
+    <VCardText class="d-flex align-center gap-3">
+      <VAvatar size="48" rounded :image="tabData.avatar" />
+      <div>
+        <p class="mb-0">{{ tabData.title }}</p>
+        <div class="d-flex align-center gap-2">
+          <h6 class="text-h6">{{ tabData.stats }}</h6>
+        </div>
+      </div>
+    </VCardText>
+
+    <VCardText v-if="gradForecastError" class="text-danger">
+      {{ gradForecastError }}
+    </VCardText>
+    <VCardText v-if="gradForecastLoading">Loading data...</VCardText>
+    <VCardText v-else>
+      <VueApexCharts
+        type="line"
+        :height="230"
+        :options="chartConfig"
+        :series="series"
+      />
+    </VCardText>
+  </VCard>
+</template>
+
 <script setup>
-import statsVerticalWallet from '@images/cards/wallet-primary.png';
-import { hexToRgb } from '@layouts/utils';
-import { useTheme } from 'vuetify';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import { useTheme } from 'vuetify';
+import CardStatisticsVertical from '@/@core/components/cards/CardStatisticsVertical.vue';
+import { useProjectStore } from '@/stores/projectStore'; // Adjust path if necessary
 
 const vuetifyTheme = useTheme();
+const projectStore = useProjectStore();
 
 const currentTab = ref('income');
+const gradForecastLoading = computed(() => projectStore.gradForecastLoading);
+const gradForecastError = computed(() => projectStore.gradForecastError);
+const gradForecastData = computed(() => projectStore.gradForecastData);
+const xAxisCategories = computed(() => projectStore.xAxisCategories);
 
-// Historical data (past to present)
-const historicalData = [
-  0.4,
-  0.45,
-  0.52,
-  0.59,
-  0.60,
-  0.65,
-  0.69,
-  0.71,
-  0.75,
-  0.78,
-  0.79,
-  0.82,
-];
-
-// Green trajectory (optimal future path)
-const greenTrajectoryData = [
-  0.82, // Starting from the last historical data point
-  0.85,
-  0.88,
-  0.90,
-  0.92,
-  0.95,
-  0.97,
-  0.99,
-  1.0,
-];
-
-// Red trajectory (suboptimal future path)
-const redTrajectoryData = [
-  0.82, // Starting from the last historical data point
-  0.80,
-  0.78,
-  0.75,
-  0.70,
-  0.65,
-  0.60,
-  0.55,
-  0.50,
-];
-
-const series = {
-  income: [
-    {
-      name: 'Historical Data',
-      data: historicalData,
-    },
-    {
-      name: 'Success Trajectory',
-      data: [
-        ...Array(historicalData.length - 1).fill(null),
-        ...greenTrajectoryData,
-      ],
-    },
-    {
-      name: 'Failure Trajectory',
-      data: [
-        ...Array(historicalData.length - 1).fill(null),
-        ...redTrajectoryData,
-      ],
-    },
-  ],
+/**
+ * Convert a HEX color to an RGB string.
+ * @param {string} hex - The HEX color (e.g., "#ffffff").
+ * @returns {string} The RGB color string (e.g., "255,255,255").
+ */
+const hexToRgb = (hex) => {
+  const cleanHex = hex.replace(/^#/, '');
+  const bigint = parseInt(cleanHex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `${r},${g},${b}`;
 };
 
-const tabData = computed(() => {
-  const data = {
-    income: {
-      avatar: statsVerticalWallet,
-      title: 'Current Project: CommonsRDF',
-      stats: 'Current Period: 2015-03-06 to 2016-11-28',
-    },
-  };
+// Fetch Graduation Forecast Data
+const fetchGradForecastData = async () => {
+  const projectId = projectStore.selectedProject?.project_id;
+  if (!projectId) {
+    console.warn('No project selected.');
+    return;
+  }
 
-  return data[currentTab.value];
-});
+  await projectStore.fetchGradForecast(projectId);
+};
 
+// Watch for project changes
+watch(
+  () => projectStore.selectedProject,
+  (newProject, oldProject) => {
+    if (newProject?.project_id !== oldProject?.project_id) {
+      fetchGradForecastData();
+    }
+  },
+  { immediate: true }
+);
+
+// Define the series for ApexCharts
+const series = computed(() => [
+  {
+    name: 'Graduation Forecast',
+    data: gradForecastData.value,
+  },
+]);
+
+// Define the chart configuration
 const chartConfig = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors;
   const variableTheme = vuetifyTheme.current.value.variables;
@@ -105,7 +115,6 @@ const chartConfig = computed(() => {
     stroke: {
       width: 3,
       curve: 'smooth',
-      dashArray: [0, 5, 5], // Solid line for historical, dashed for projections
     },
     grid: {
       strokeDashArray: 4.5,
@@ -117,48 +126,31 @@ const chartConfig = computed(() => {
         bottom: 7,
       },
     },
-    colors: [currentTheme.primary, '#28a745', '#dc3545'], // Colors for the lines
+    colors: [currentTheme.primary],
     markers: {
       size: 5,
       hover: { size: 7 },
     },
     xaxis: {
-      categories: [
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6',
-        '7',
-        '8',
-        '9',
-        '10',
-        '11',
-        '12',
-        '13',
-        '14',
-        '15',
-        '16',
-        '17',
-        '18',
-        '19',
-        '20',
-      ],
+      categories: xAxisCategories.value,
       axisTicks: { show: false },
       axisBorder: { show: false },
       labels: {
         style: {
           fontSize: '14px',
           colors: disabledTextColor,
-          fontFamily: 'Public Sans',
         },
       },
     },
     yaxis: {
       min: 0,
-      max: 1,
+      max: 1, // Ensure y-axis is between 0 and 1
       tickAmount: 4,
+      labels: {
+        formatter: function (val) {
+          return val.toFixed(2);
+        },
+      },
     },
     legend: {
       show: true,
@@ -170,39 +162,17 @@ const chartConfig = computed(() => {
     },
   };
 });
+
+// Define tab data
+const tabData = computed(() => ({
+  avatar: CardStatisticsVertical,
+  title: `Current Project: ${projectStore.selectedProject?.project_id || 'None'}`,
+  stats: gradForecastLoading.value
+    ? 'Loading forecast data...'
+    : `Forecast Data: ${gradForecastData.value.length} months available`,
+}));
+
 </script>
-
-<template>
-  <VCard>
-    <VCardText>
-      <VTabs v-model="currentTab" class="v-tabs-pill">
-        <VTab value="income" class="highlighted-tab">
-          Project Health Indicator
-        </VTab>
-      </VTabs>
-    </VCardText>
-
-    <VCardText class="d-flex align-center gap-3">
-      <VAvatar size="48" rounded :image="tabData.avatar" />
-
-      <div>
-        <p class="mb-0">{{ tabData.title }}</p>
-        <div class="d-flex align-center gap-2">
-          <h6 class="text-h6">{{ tabData.stats }}</h6>
-        </div>
-      </div>
-    </VCardText>
-
-    <VCardText>
-      <VueApexCharts
-        type="line"
-        :height="230"
-        :options="chartConfig"
-        :series="series[currentTab]"
-      />
-    </VCardText>
-  </VCard>
-</template>
 
 <style scoped>
 .highlighted-tab {
@@ -222,43 +192,5 @@ const chartConfig = computed(() => {
 
 .v-tabs {
   justify-content: flex-start;
-}
-
-.table-container {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table-bordered {
-  border: 1px solid #dee2e6;
-}
-
-.table-bordered th,
-.table-bordered td {
-  border: 1px solid #dee2e6;
-  padding: 8px;
-  text-align: left;
-}
-
-.table-primary {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.table-primary th {
-  color: #fff;
-}
-
-.table-primary td {
-  color: #fff;
-}
-
-.center {
-  text-align: center;
 }
 </style>
