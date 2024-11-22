@@ -1,17 +1,20 @@
 <!-- src/components/TechNet.vue -->
 
 <template>
-  <VCard class="text-center text-sm-start" style="height: 100%;">
+  <VCard class="text-center text-sm-start tech-net-card">
     <VCardTitle class="text-h6 text-primary">
       Technical Network
     </VCardTitle>
-    <VCardText style="height: calc(100% - 64px); position: relative;">
+    <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram -->
-      <div class="sankey-container" ref="sankeyDiv" ><div id="sankey"></div></div>
+      <div class="sankey-container" ref="sankeyDiv">
+        <div id="sankey"></div>
+      </div>
       
       <!-- Loading Indicator -->
       <div v-if="projectStore.techNetLoading" class="overlay">
-        Loading Sankey diagram...
+        <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
+        <span class="loading-text">Loading Sankey diagram...</span>
       </div>
       
       <!-- No Data Message -->
@@ -60,118 +63,142 @@ const clearSankeyDiagram = () => {
  * Prepares and renders the Sankey diagram using Plotly.
  */
 const preparePlotData = () => {
-  if (!projectStore.techNetData) return;
+  console.log('Starting preparePlotData for TechNet...');
 
-  // Extract the project name and selected month
+  // Step 1: Check if TechNet data is available
+  if (!projectStore.techNetData || projectStore.techNetData.length === 0) {
+    console.warn('No technical network data found to render.');
+    clearSankeyDiagram();
+    return;
+  }
+
+  // Step 2: Extract project details
   const projectName = projectStore.selectedProject.project_id;
-  const selectedMonth = projectStore.selectedMonth;
+  console.log(`Project Name: ${projectName}`);
+  console.log('TechNet Data:', projectStore.techNetData);
 
-  const monthData = projectStore.techNetData;
+  // Step 3: Extract data for the selected month
+  const monthData = projectStore.techNetData; // Directly use fetched data
+  console.log('Month Data:', monthData);
 
-  // Validate data format
-  if (!Array.isArray(monthData) || !monthData.every(item => Array.isArray(item) && item.length === 3)) {
+  // Step 4: Validate data format
+  if (!monthData.every(item => Array.isArray(item) && item.length === 3)) {
     console.error('TechNet data format is invalid:', monthData);
     clearSankeyDiagram();
     return;
   }
 
+  // Step 5: Create separate nodes for sources and targets (allow duplicates)
+  const nodes = [];
+  const links = [];
+  monthData.forEach(([source, target, value]) => {
+    const sourceIndex = nodes.push({ name: source, side: 'source' }) - 1; // Add source node
+    const targetIndex = nodes.push({ name: target, side: 'target' }) - 1; // Add target node
 
-  if (!monthData || monthData.length === 0) {
-    // No data available; clear the diagram
-    clearSankeyDiagram();
-    console.warn('No TechNet data available to render.');
-    return;
-  }
-
-  // Extract unique contributors and technologies
-  const contributors = [...new Set(monthData.map(item => item[0]))];
-  const technologies = [...new Set(monthData.map(item => item[1]))];
-
-  // Create nodes: contributors first, then technologies
-  const nodes = [...contributors, ...technologies].map(name => ({ name }));
-
-  // Create a mapping from node names to indices
-  const nodeMap = {};
-  nodes.forEach((node, index) => {
-    nodeMap[node.name] = index;
+    links.push({
+      source: sourceIndex,
+      target: targetIndex,
+      value: parseInt(value, 10) || 0,
+    });
   });
 
-  // Create links
-  const links = monthData.map(item => ({
-    source: nodeMap[item[0]],
-    target: nodeMap[item[1]],
-    value: parseInt(item[2], 10),
-  }));
+  console.log('Nodes before grouping:', nodes);
+  console.log('Links before grouping:', links);
 
-  console.log('Contributors:', contributors);
-  console.log('Technologies:', technologies);
-  console.log('Nodes:', nodes);
-  console.log('Links:', links);
+  // Step 6: Group duplicate nodes
+  const nodeMap = {}; // Map to hold unique nodes and their new indices
+  const updatedNodes = []; // List of new grouped nodes
+  const updatedLinks = []; // Updated links to match grouped nodes
 
-  if (!links.every(link => Number.isInteger(link.source) && Number.isInteger(link.target) && link.value > 0)) {
-  console.error('Invalid link data:', links);
-  clearSankeyDiagram();
-  return;
-}
+  // Group nodes and maintain a mapping for sources and targets
+  nodes.forEach((node, index) => {
+    const key = `${node.side}|${node.name}`;
+    if (!nodeMap[key]) {
+      nodeMap[key] = updatedNodes.push({ name: node.name, side: node.side }) - 1;
+    }
+  });
 
+  // Update links to use grouped node indices
+  links.forEach(link => {
+    const newSource = nodeMap[`source|${nodes[link.source].name}`];
+    const newTarget = nodeMap[`target|${nodes[link.target].name}`];
+    const existingLink = updatedLinks.find(
+      l => l.source === newSource && l.target === newTarget
+    );
+    if (existingLink) {
+      existingLink.value += link.value; // Aggregate values for merged links
+    } else {
+      updatedLinks.push({
+        source: newSource,
+        target: newTarget,
+        value: link.value,
+      });
+    }
+  });
 
+  console.log('Nodes after grouping:', updatedNodes);
+  console.log('Links after grouping:', updatedLinks);
 
-  // Define colors (optional customization)
-  const nodeColors = [...contributors.map(() => '#1E88E5'), ...technologies.map(() => '#E53935')]; // Blue for contributors, Red for technologies
+  // Step 7: Define colors
+  const nodeColors = updatedNodes.map(node =>
+    node.side === 'source' ? '#4CAF50' : '#FF9800'
+  ); // Green for sources, Orange for targets
+  console.log('Node Colors:', nodeColors);
 
-  // Prepare the Sankey diagram data structure
+  // Step 8: Prepare Sankey data
   const sankeyData = {
-  type: 'sankey',
-  orientation: 'h',
-  node: {
-    pad: 10, // Reduce padding between nodes
-    thickness: 15, // Reduce node thickness
-    line: {
-      color: '#333', // Darker border for nodes
-      width: 1,
+    type: 'sankey',
+    orientation: 'h',
+    node: {
+      pad: 20,
+      thickness: 20,
+      line: {
+        color: '#333', // Darker border for nodes
+        width: 0.5,
+      },
+      label: updatedNodes.map(node => node.name),
+      color: nodeColors,
+      hovertemplate: '%{label}<extra></extra>',
     },
-    label: nodes.map(node => node.name),
-    color: [...contributors.map(() => '#1E88E5'), ...technologies.map(() => '#E53935')], // Customize node colors
-    hoverinfo: 'label+value+percent entry', // More detailed hover info
-  },
-  link: {
-    source: links.map(link => link.source),
-    target: links.map(link => link.target),
-    value: links.map(link => link.value),
-    color: links.map(() => 'rgba(0, 150, 136, 0.5)'), // Use a unique link color (greenish tint)
-    hoverinfo: 'source+target+value', // Show source, target, and value on hover
-  },
-};
+    link: {
+      source: updatedLinks.map(link => link.source),
+      target: updatedLinks.map(link => link.target),
+      value: updatedLinks.map(link => link.value),
+      color: updatedLinks.map(() => 'rgba(76, 175, 80, 0.4)'), // Light green for links
+      hovertemplate: 'Source: %{source.label}<br>Target: %{target.label}<br>Value: %{value}<extra></extra>',
+    },
+  };
 
+  const containerWidth = document.querySelector('.sankey-container').offsetWidth;
+  const containerHeight = containerWidth * 0.6; // Maintain a 3:2 aspect ratio
 
-const containerWidth = document.querySelector('.sankey-container').offsetWidth;
-const containerHeight = containerWidth * 0.4; // Maintain a 16:9 aspect ratio
+  const layout = {
+    font: {
+      size: 12,
+      color: '#424242',
+    },
+    paper_bgcolor: 'transparent',
+    plot_bgcolor: 'transparent',
+    height: containerHeight,
+    width: containerWidth,
+    margin: { t: 20, l: 20, r: 20, b: 20 },
+    autosize: true,
+  };
 
-const layout = {
-  font: {
-    size: 12,
-    color: '#424242',
-  },
-  paper_bgcolor: 'transparent',
-  plot_bgcolor: 'transparent',
-  width: containerWidth,
-  height: containerHeight,
-  margin: { t: 20, l: 20, r: 20, b: 20 },
-};
-
-
-
-
+  // Step 9: Render the Sankey diagram
   if (sankeyDiv.value) {
     try {
+      console.log('Rendering Sankey diagram...');
       Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
-      console.log('TechNet Sankey diagram rendered.');
+      console.log('TechNet Sankey diagram rendered successfully.');
     } catch (err) {
-      console.error('Error rendering Sankey diagram:', err);
+      console.error('Error rendering TechNet Sankey diagram:', err);
     }
   }
 
+  console.log('Finished preparePlotData for TechNet.');
 };
+
 
 /**
  * Handles window resize events to make Plotly diagrams responsive.
@@ -215,12 +242,12 @@ watch(
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
-    console.log("Watcher triggered", { newProject, newMonth });
+    console.log("Watcher triggered for TechNet", { newProject, newMonth });
     if (newProject && newMonth !== null && newMonth !== undefined && !isNaN(newMonth)) {
-      console.log("Fetching and rendering Sankey");
+      console.log("Fetching and rendering TechNet Sankey");
       fetchAndRenderSankey();
     } else {
-      console.log("Clearing Sankey diagram");
+      console.log("Clearing TechNet Sankey diagram");
       clearSankeyDiagram();
     }
   },
@@ -239,31 +266,68 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.tech-net-card {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sankey-wrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+}
+
+.sankey-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#sankey {
+  width: 100%;
+  height: 100%;
+}
+
 .overlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: #424242;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 90%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.loading-text {
+  margin-top: 10px;
+  font-size: 1rem;
 }
 
 .error-message {
   color: red;
-  text-align: center;
-  margin-top: 1rem;
 }
 
-.sankey-container {
-  width: 100%; /* Make it responsive */
-  max-width: 800px; /* Restrict the maximum width */
-  height: auto;
-  overflow: hidden; /* Prevent overflowing content */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto; /* Center the diagram in the parent */
-}
+@media (max-width: 768px) {
+  .overlay {
+    padding: 10px;
+    max-width: 95%;
+  }
 
+  .loading-text {
+    font-size: 0.9rem;
+  }
+}
 </style>

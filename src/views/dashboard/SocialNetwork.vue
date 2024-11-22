@@ -1,17 +1,20 @@
 <!-- src/components/SocialNet.vue -->
 
 <template>
-  <VCard class="text-center text-sm-start" style="height: 100%;">
+  <VCard class="text-center text-sm-start social-net-card">
     <VCardTitle class="text-h6 text-primary">
       Social Network
     </VCardTitle>
-    <VCardText style="height: calc(100% - 64px); position: relative;">
+    <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram -->
-      <div class="sankey-container" ref="sankeyDiv" ><div id="sankey"></div></div>
+      <div class="sankey-container" ref="sankeyDiv">
+        <div id="sankey"></div>
+      </div>
 
       <!-- Loading Indicator -->
       <div v-if="projectStore.socialNetLoading" class="overlay">
-        Loading Sankey diagram...
+        <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
+        <span class="loading-text">Loading Sankey diagram...</span>
       </div>
 
       <!-- No Data Message -->
@@ -59,7 +62,7 @@ const clearSankeyDiagram = () => {
 /**
  * Prepares and renders the Sankey diagram using Plotly.
  */
- const preparePlotData = () => {
+const preparePlotData = () => {
   console.log('Starting preparePlotData...');
 
   // Step 1: Check if SocialNet data is available
@@ -150,23 +153,24 @@ const clearSankeyDiagram = () => {
       pad: 20,
       thickness: 20,
       line: {
-        color: 'black',
+        color: '#333', // Darker border for nodes
         width: 0.5,
       },
       label: updatedNodes.map(node => node.name),
       color: nodeColors,
+      hovertemplate: '%{label}<extra></extra>',
     },
     link: {
       source: updatedLinks.map(link => link.source),
       target: updatedLinks.map(link => link.target),
       value: updatedLinks.map(link => link.value),
       color: updatedLinks.map(() => 'rgba(30, 136, 229, 0.4)'), // Light blue for links
+      hovertemplate: 'Source: %{source.label}<br>Target: %{target.label}<br>Value: %{value}<extra></extra>',
     },
   };
 
   const containerWidth = document.querySelector('.sankey-container').offsetWidth;
-  const containerHeight = containerWidth; // Maintain a 16:9 aspect ratio
-
+  const containerHeight = containerWidth * 0.6; // Maintain a 3:2 aspect ratio
 
   const layout = {
     font: {
@@ -175,9 +179,10 @@ const clearSankeyDiagram = () => {
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
-    height: containerWidth,
-    width: containerHeight,
+    height: containerHeight,
+    width: containerWidth,
     margin: { t: 20, l: 20, r: 20, b: 20 },
+    autosize: true,
   };
 
   // Step 9: Render the Sankey diagram
@@ -249,6 +254,7 @@ watch(
   { immediate: true }
 );
 
+
 // Handle window resize to make Plotly responsive
 onMounted(() => {
   window.addEventListener('resize', handleResize);
@@ -260,30 +266,68 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-.overlay {
+<style scoped lang="scss">
+.social-net-card {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sankey-wrapper {
   position: relative;
+  flex: 1;
+  width: 100%;
+}
+
+.sankey-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#sankey {
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: #424242;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 90%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.loading-text {
+  margin-top: 10px;
+  font-size: 1rem;
 }
 
 .error-message {
   color: red;
-  text-align: center;
-  margin-top: 1rem;
 }
 
-.sankey-container {
-  width: 100%; /* Make it responsive */
-  max-width: 800px; /* Restrict the maximum width */
-  height: auto;
-  overflow: hidden; /* Prevent overflowing content */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto; /* Center the diagram in the parent */
+@media (max-width: 768px) {
+  .overlay {
+    padding: 10px;
+    max-width: 95%;
+  }
+
+  .loading-text {
+    font-size: 0.9rem;
+  }
 }
 </style>
