@@ -4,261 +4,109 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
-  // Configuration
-  const baseUrl = ref('https://oss-backend-8stu.onrender.com'); // Update this if your backend is hosted elsewhere
+  // -------------------- Configuration --------------------
+  
+  const baseUrl = ref('https://oss-backend-8stu.onrender.com'); // Update if your backend is hosted elsewhere
 
-  // Project Selection
-  const selectedProject = ref(null);
-  const showRangeSlider = ref(false);
-  const rangeValue = ref([1, 12]); // Default range, will be updated based on available months
-  const singleValue = ref(1);
-  const selectedMonth = ref(null); // Initialize as null
+  // -------------------- Project Selection State --------------------
+  
+  const selectedProject = ref(null); // Holds the currently selected project object
+  const selectedMonth = ref(null);   // Holds the currently selected month number
 
-  // GitHub Details
+  // -------------------- GitHub Details State --------------------
+  
   const github_url = ref('N/A');
   const fork_count = ref(0);
   const stargazer_count = ref(0);
   const watch_count = ref(0);
 
-  // All Project Descriptions
-  const allDescriptions = ref([]);
+  // -------------------- All Project Descriptions --------------------
+  
+  const allDescriptions = ref([]); // Array of all projects with their details
 
-  // Graduation Forecast 
-  const gradForecastData = ref([]);
-  const xAxisCategories = ref([]);
-  const gradForecastLoading = ref(false);
-  const gradForecastError = ref(null);
+  // -------------------- Monthly Ranges State --------------------
+  
+  const monthlyRanges = ref({}); // Object mapping project IDs to their monthly ranges
 
-  // Loading and Error States
-  const loading = ref(false);
-  const error = ref(null);
+  // -------------------- Loading and Error States --------------------
+  
+  const loading = ref(false); // Indicates if the store is fetching initial project data
+  const error = ref(null);    // Holds any error message related to fetching project data
 
-  // Monthly Ranges
-  const monthlyRanges = ref({});
+  // -------------------- Commit Measures State --------------------
+  
+  const commitMeasuresData = ref(null);      // Holds commit measures data
+  const commitMeasuresLoading = ref(false);  // Indicates if commit measures are being fetched
+  const commitMeasuresError = ref(null);     // Holds any error message related to fetching commit measures
 
-  // Computed Properties for Slider Min and Max
-  const availableMonths = computed(() => {
-    if (selectedProject.value && Object.keys(monthlyRanges.value).length > 0) {
-      return Object.keys(monthlyRanges.value).map(Number).sort((a, b) => a - b);
-    }
-    return [];
-  });
+  // -------------------- Email Measures State --------------------
+  
+  const emailMeasuresData = ref(null);       // Holds email measures data
+  const emailMeasuresLoading = ref(false);   // Indicates if email measures are being fetched
+  const emailMeasuresError = ref(null);      // Holds any error message related to fetching email measures
 
-  const minMonth = computed(() => {
-    if (availableMonths.value.length > 0) {
-      return availableMonths.value[0];
-    }
-    return 1;
-  });
+  // -------------------- Graduation Forecast State --------------------
+  
+  const gradForecastData = ref([]);          // Holds graduation forecast data for charts
+  const xAxisCategories = ref([]);           // Holds x-axis categories for charts
+  const gradForecastLoading = ref(false);     // Indicates if graduation forecast data is being fetched
+  const gradForecastError = ref(null);        // Holds any error message related to fetching graduation forecast data
 
-  const maxMonth = computed(() => {
-    if (availableMonths.value.length > 0) {
-      return availableMonths.value[availableMonths.value.length - 1];
-    }
-    return 12;
-  });
+  // -------------------- Technical Network State --------------------
+  
+  const techNetData = ref(null);             // Holds technical network data
+  const techNetLoading = ref(false);         // Indicates if technical network data is being fetched
+  const techNetError = ref(null);            // Holds any error message related to fetching technical network data
 
-  // Set current project details
-  const setCurrentProjectDetails = async (project) => {
-    if (!project) {
-      resetProjectDetails();
-      return;
-    }
+  // -------------------- Social Network State --------------------
+  
+  const socialNetData = ref(null);           // Holds social network data
+  const socialNetLoading = ref(false);       // Indicates if social network data is being fetched
+  const socialNetError = ref(null);          // Holds any error message related to fetching social network data
 
-    selectedProject.value = project;
-    github_url.value = project.github_url;
-    fork_count.value = project.fork_count;
-    stargazer_count.value = project.stargazer_count;
-    watch_count.value = project.watch_count;
+  // -------------------- Range Slider State --------------------
+  
+  const showRangeSlider = ref(false);         // Determines whether to show range slider
+  const rangeValue = ref([1, 12]);            // Holds the range slider values
+  const singleValue = ref(1);                 // Holds the single slider value
 
-    console.log(`Selected Project: ${project.project_name} (ID: ${project.project_id})`);
+  // -------------------- Watchers --------------------
+  
+  // Watch for changes in selectedProject and selectedMonth to fetch corresponding data
+  watch(
+    [selectedProject, selectedMonth],
+    async ([newProject, newMonth], [oldProject, oldMonth]) => {
+      console.log(`Project changed from ${oldProject?.project_name || 'None'} to ${newProject?.project_name || 'None'}`);
+      console.log(`Month changed from ${oldMonth || 'None'} to ${newMonth || 'None'}`);
 
-    try {
-      await fetchMonthlyRanges(project.project_id);
-      if (availableMonths.value.length === 0) {
-        selectedMonth.value = null;
-        console.warn(`No available months for project ID: ${project.project_id}`);
+      if (newProject && newMonth) {
+        await Promise.all([
+          fetchTechNetData(newProject.project_id, newMonth),
+          fetchSocialNetData(newProject.project_id, newMonth),
+          fetchCommitMeasuresData(newProject.project_id, newMonth),
+          fetchEmailMeasuresData(newProject.project_id, newMonth),
+          fetchGradForecast(newProject.project_id)
+        ]);
       } else {
-        const min = minMonth.value;
-        const max = maxMonth.value;
-        rangeValue.value = [min, max];
-        singleValue.value = min;
-        selectedMonth.value = min; // Set to first available month
-        console.log(`Project details set for project ID: ${project.project_id}`);
-        console.log(`Selected Month set to: ${selectedMonth.value}`);
+        // Clear all measures if project or month is not selected
+        clearTechNetData();
+        clearSocialNetData();
+        commitMeasuresData.value = null;
+        commitMeasuresError.value = null;
+        emailMeasuresData.value = null;
+        emailMeasuresError.value = null;
+        gradForecastData.value = [];
+        xAxisCategories.value = [];
+        gradForecastError.value = null;
       }
-    } catch (err) {
-      console.error(`Error setting project details for ${project.project_id}:`, err);
-      error.value = 'Failed to set project details.';
-      // Reset selectedMonth if fetching monthly ranges fails
-      selectedMonth.value = null;
     }
-  };
+  );
 
-  // Reset project details
-  const resetProjectDetails = () => {
-    console.log('Resetting project details.');
-    selectedProject.value = null;
-    github_url.value = 'N/A';
-    fork_count.value = 0;
-    stargazer_count.value = 0;
-    watch_count.value = 0;
-    showRangeSlider.value = false;
-    rangeValue.value = [1, 12];
-    singleValue.value = 1;
-    selectedMonth.value = null;
-    monthlyRanges.value = {};
-  };
+  // -------------------- Actions --------------------
 
-  // Fetch Monthly Ranges for a Project
-  const fetchMonthlyRanges = async (project_id) => {
-    try {
-      console.log(`Fetching monthly ranges for project ID: ${project_id}`);
-      const response = await fetch(`${baseUrl.value}/api/monthly_ranges`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
-      }
-      const data = await response.json();
-
-      // Access the 'project_ranges' array from the response
-      const projectRange = data.project_ranges.find(
-        (range) => range.project_id.toLowerCase() === project_id.toLowerCase()
-      );
-      if (!projectRange) {
-        throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
-      }
-
-      monthlyRanges.value = projectRange.monthly_ranges;
-      console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
-    } catch (err) {
-      console.error('Error fetching monthly ranges:', err);
-      error.value = 'Failed to fetch monthly ranges.';
-      // Reset to default if fetching monthly ranges fails
-      rangeValue.value = [1, 12];
-      singleValue.value = 1;
-      selectedMonth.value = null;
-      monthlyRanges.value = {};
-    }
-  };
-
-  // Grad forecast
-  const fetchGradForecast = async (projectId) => {
-    if (!projectId) {
-      console.warn('No project selected.');
-      gradForecastError.value = 'No project selected.';
-      return;
-    }
-  
-    console.log('Starting fetchGradForecast...');
-    gradForecastLoading.value = true;
-    gradForecastData.value = [];
-    xAxisCategories.value = [];
-    gradForecastError.value = null;
-  
-    try {
-      console.log(`Fetching /api/grad_forecast/${projectId}...`);
-      const response = await fetch(`${baseUrl.value}/api/grad_forecast/${projectId}`);
-  
-      if (!response.ok) {
-        gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
-        console.error('Response not OK:', response);
-        throw new Error(`Failed to fetch grad forecast: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      console.log('Fetched Graduation Forecast Data:', data);
-  
-      // Process data for chart
-      const sortedData = Object.values(data)
-        .sort((a, b) => a.date - b.date) // Ensure data is sorted by date
-        .map((item) => ({
-          x: `Month ${item.date}`,
-          y: item.close,
-        }));
-  
-      gradForecastData.value = sortedData.map(item => item.y);
-      xAxisCategories.value = sortedData.map(item => item.x);
-  
-      console.log('Processed Graduation Forecast Data:', gradForecastData.value, xAxisCategories.value);
-    } catch (error) {
-      console.error('Error fetching Graduation Forecast data:', error);
-      gradForecastError.value = 'Error fetching Graduation Forecast data.';
-    } finally {
-      gradForecastLoading.value = false;
-      console.log('Finished fetchGradForecast.');
-    }
-  };
-
-  
-  // -------------------- Fetch all commit data State and Actions --------------------
-
-  // Fetch Commit Measures Data
-  const commitMeasuresData = ref(null);
-  const commitMeasuresLoading = ref(false);
-  const commitMeasuresError = ref(null);
-
-  const fetchCommitMeasuresData = async (projectId, month) => {
-    if (!projectId || !month) {
-      console.warn('Project ID or month is missing.');
-      commitMeasuresError.value = 'Project ID or month is missing.';
-      commitMeasuresData.value = null;
-      return;
-    }
-  
-    console.log(`Fetching /api/commit_measure/${projectId}/${month}...`);
-    commitMeasuresLoading.value = true;
-    commitMeasuresError.value = null;
-    commitMeasuresData.value = null;
-  
-    try {
-      const response = await fetch(`${baseUrl.value}/api/commit_measure/${projectId}/${month}`);
-  
-      if (!response.ok) {
-        let errorMsg = `Failed to fetch commit measures: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMsg += ` ${errorData.error || ''}`;
-        } catch {}
-        commitMeasuresError.value = errorMsg;
-        console.error(`Error fetching commit measures: ${commitMeasuresError.value}`);
-        throw new Error(commitMeasuresError.value);
-      }
-  
-      const data = await response.json();
-      console.log('Fetched Commit Measures Data:', data);
-      
-      // Process data to transform array into object if necessary
-      if (data && data.data) {
-        if (Array.isArray(data.data)) {
-          const measures = {};
-          data.data.forEach(measure => {
-            if (typeof measure === 'object') {
-              Object.assign(measures, measure);
-            }
-          });
-          commitMeasuresData.value = measures;
-          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
-        } else {
-          // If data.data is already an object
-          commitMeasuresData.value = data.data;
-          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
-        }
-      } else {
-        throw new Error('Invalid commit measures data format.');
-      }
-    } catch (error) {
-      console.error('Error fetching Commit Measures data:', error);
-      commitMeasuresError.value = 'Error fetching Commit Measures data.';
-      commitMeasuresData.value = null;
-    } finally {
-      commitMeasuresLoading.value = false;
-      console.log('Finished fetchCommitMeasuresData.');
-    }
-  };
-
-// -------------------- Fetch all project data State and Actions --------------------
-
+  /**
+   * Fetches all project data and merges project information.
+   */
   const fetchAllProjectData = async () => {
     loading.value = true;
     error.value = null;
@@ -328,30 +176,337 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  // -------------------- Technical Network State and Actions --------------------
-
-  const techNetData = ref(null);
-  const techNetLoading = ref(false);
-  const techNetError = ref(null); // Added for error handling
-
   /**
-   * Clears the existing TechNet data.
+   * Sets the current project details and initializes selected month.
+   * @param {Object} project - The project object selected by the user.
    */
-  const clearTechNetData = () => {
-    console.log('Clearing TechNet data.');
-    techNetData.value = null;
-    techNetError.value = null;
+  const setCurrentProjectDetails = async (project) => {
+    if (!project) {
+      resetProjectDetails();
+      return;
+    }
+
+    selectedProject.value = project;
+    github_url.value = project.github_url;
+    fork_count.value = project.fork_count;
+    stargazer_count.value = project.stargazer_count;
+    watch_count.value = project.watch_count;
+
+    console.log(`Selected Project: ${project.project_name} (ID: ${project.project_id})`);
+
+    try {
+      await fetchMonthlyRanges(project.project_id);
+      if (availableMonths.value.length === 0) {
+        selectedMonth.value = null;
+        console.warn(`No available months for project ID: ${project.project_id}`);
+      } else {
+        const min = minMonth.value;
+        const max = maxMonth.value;
+        rangeValue.value = [min, max];
+        singleValue.value = min;
+        selectedMonth.value = min; // Automatically select the first available month
+        console.log(`Project details set for project ID: ${project.project_id}`);
+        console.log(`Selected Month set to: ${selectedMonth.value}`);
+      }
+    } catch (err) {
+      console.error(`Error setting project details for ${project.project_id}:`, err);
+      error.value = 'Failed to set project details.';
+      selectedMonth.value = null;
+    }
   };
 
   /**
-   * Fetches TechNet data based on projectId and month.
+   * Resets all project-related details and measures.
+   */
+  const resetProjectDetails = () => {
+    console.log('Resetting project details.');
+    selectedProject.value = null;
+    github_url.value = 'N/A';
+    fork_count.value = 0;
+    stargazer_count.value = 0;
+    watch_count.value = 0;
+    selectedMonth.value = null;
+    monthlyRanges.value = {};
+    
+    // Reset all measures
+    commitMeasuresData.value = null;
+    commitMeasuresError.value = null;
+    emailMeasuresData.value = null;
+    emailMeasuresError.value = null;
+    techNetData.value = null;
+    techNetError.value = null;
+    socialNetData.value = null;
+    socialNetError.value = null;
+    gradForecastData.value = [];
+    xAxisCategories.value = [];
+    gradForecastError.value = null;
+    showRangeSlider.value = false;
+    rangeValue.value = [1, 12];
+    singleValue.value = 1;
+  };
+
+  /**
+   * Fetches monthly ranges for a specific project.
+   * @param {String} project_id - The ID of the project.
+   */
+  const fetchMonthlyRanges = async (project_id) => {
+    try {
+      console.log(`Fetching monthly ranges for project ID: ${project_id}`);
+      const response = await fetch(`${baseUrl.value}/api/monthly_ranges`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+
+      // Access the 'project_ranges' array from the response
+      const projectRange = data.project_ranges.find(
+        (range) => range.project_id.toLowerCase() === project_id.toLowerCase()
+      );
+      if (!projectRange) {
+        throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
+      }
+
+      monthlyRanges.value = projectRange.monthly_ranges;
+      console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
+    } catch (err) {
+      console.error('Error fetching monthly ranges:', err);
+      error.value = 'Failed to fetch monthly ranges.';
+      // Reset to default if fetching monthly ranges fails
+      selectedMonth.value = null;
+      monthlyRanges.value = {};
+    }
+  };
+
+  // -------------------- Computed Properties --------------------
+
+  /**
+   * Returns an array of available months based on monthlyRanges.
+   */
+  const availableMonths = computed(() => {
+    if (selectedProject.value && Object.keys(monthlyRanges.value).length > 0) {
+      return Object.keys(monthlyRanges.value).map(Number).sort((a, b) => a - b);
+    }
+    return [];
+  });
+
+  /**
+   * Returns the minimum available month.
+   */
+  const minMonth = computed(() => {
+    if (availableMonths.value.length > 0) {
+      return availableMonths.value[0];
+    }
+    return 1;
+  });
+
+  /**
+   * Returns the maximum available month.
+   */
+  const maxMonth = computed(() => {
+    if (availableMonths.value.length > 0) {
+      return availableMonths.value[availableMonths.value.length - 1];
+    }
+    return 12;
+  });
+
+  // -------------------- Fetch Graduation Forecast --------------------
+  
+  /**
+   * Fetches graduation forecast data for a specific project.
+   * @param {String} projectId - The ID of the project.
+   */
+  const fetchGradForecast = async (projectId) => {
+    if (!projectId) {
+      console.warn('No project selected.');
+      gradForecastError.value = 'No project selected.';
+      return;
+    }
+  
+    console.log('Starting fetchGradForecast...');
+    gradForecastLoading.value = true;
+    gradForecastData.value = [];
+    xAxisCategories.value = [];
+    gradForecastError.value = null;
+  
+    try {
+      console.log(`Fetching /api/grad_forecast/${projectId}...`);
+      const response = await fetch(`${baseUrl.value}/api/grad_forecast/${projectId}`);
+
+      if (!response.ok) {
+        gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
+        console.error('Response not OK:', response);
+        throw new Error(`Failed to fetch grad forecast: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Fetched Graduation Forecast Data:', data);
+
+      // Process data for chart
+      const sortedData = Object.values(data)
+        .sort((a, b) => a.date - b.date) // Ensure data is sorted by date
+        .map((item) => ({
+          x: `Month ${item.date}`,
+          y: item.close,
+        }));
+
+      gradForecastData.value = sortedData.map(item => item.y);
+      xAxisCategories.value = sortedData.map(item => item.x);
+
+      console.log('Processed Graduation Forecast Data:', gradForecastData.value, xAxisCategories.value);
+    } catch (error) {
+      console.error('Error fetching Graduation Forecast data:', error);
+      gradForecastError.value = 'Error fetching Graduation Forecast data.';
+    } finally {
+      gradForecastLoading.value = false;
+      console.log('Finished fetchGradForecast.');
+    }
+  };
+
+  // -------------------- Fetch Commit Measures --------------------
+  
+  /**
+   * Fetches commit measures data for a specific project and month.
+   * @param {String} projectId - The ID of the project.
+   * @param {Number} month - The month number.
+   */
+  const fetchCommitMeasuresData = async (projectId, month) => {
+    if (!projectId || !month) {
+      console.warn('Project ID or month is missing.');
+      commitMeasuresError.value = 'Project ID or month is missing.';
+      commitMeasuresData.value = null;
+      return;
+    }
+
+    console.log(`Fetching /api/commit_measure/${projectId}/${month}...`);
+    commitMeasuresLoading.value = true;
+    commitMeasuresError.value = null;
+    commitMeasuresData.value = null;
+
+    try {
+      const response = await fetch(`${baseUrl.value}/api/commit_measure/${projectId}/${month}`);
+
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch commit measures: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg += ` ${errorData.error || ''}`;
+        } catch {}
+        commitMeasuresError.value = errorMsg;
+        console.error(`Error fetching commit measures: ${commitMeasuresError.value}`);
+        throw new Error(commitMeasuresError.value);
+      }
+
+      const data = await response.json();
+      console.log('Fetched Commit Measures Data:', data);
+      
+      // Process data to ensure it's an object
+      if (data && data.data) {
+        if (Array.isArray(data.data)) {
+          const measures = {};
+          data.data.forEach(measure => {
+            if (typeof measure === 'object') {
+              Object.assign(measures, measure);
+            }
+          });
+          commitMeasuresData.value = measures;
+          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
+        } else {
+          // If data.data is already an object
+          commitMeasuresData.value = data.data;
+          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
+        }
+      } else {
+        throw new Error('Invalid commit measures data format.');
+      }
+    } catch (error) {
+      console.error('Error fetching Commit Measures data:', error);
+      commitMeasuresError.value = 'Error fetching Commit Measures data.';
+      commitMeasuresData.value = null;
+    } finally {
+      commitMeasuresLoading.value = false;
+      console.log('Finished fetchCommitMeasuresData.');
+    }
+  };
+
+  // -------------------- Fetch Email Measures --------------------
+  
+  /**
+   * Fetches email measures data for a specific project and month.
+   * @param {String} projectId - The ID of the project.
+   * @param {Number} month - The month number.
+   */
+  const fetchEmailMeasuresData = async (projectId, month) => {
+    if (!projectId || !month) {
+      console.warn('Project ID or month is missing.');
+      emailMeasuresError.value = 'Project ID or month is missing.';
+      emailMeasuresData.value = null;
+      return;
+    }
+
+    console.log(`Fetching /api/email_measure/${projectId}/${month}...`);
+    emailMeasuresLoading.value = true;
+    emailMeasuresError.value = null;
+    emailMeasuresData.value = null;
+
+    try {
+      const response = await fetch(`${baseUrl.value}/api/email_measure/${projectId}/${month}`);
+
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch email measures: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg += ` ${errorData.error || ''}`;
+        } catch {}
+        emailMeasuresError.value = errorMsg;
+        console.error(`Error fetching email measures: ${emailMeasuresError.value}`);
+        throw new Error(emailMeasuresError.value);
+      }
+
+      const data = await response.json();
+      console.log('Fetched Email Measures Data:', data);
+      
+      // Process data to ensure it's an object
+      if (data && data.data) {
+        if (Array.isArray(data.data)) {
+          const measures = {};
+          data.data.forEach(measure => {
+            if (typeof measure === 'object') {
+              Object.assign(measures, measure);
+            }
+          });
+          emailMeasuresData.value = measures;
+          console.log('Processed Email Measures Data:', emailMeasuresData.value);
+        } else {
+          // If data.data is already an object
+          emailMeasuresData.value = data.data;
+          console.log('Processed Email Measures Data:', emailMeasuresData.value);
+        }
+      } else {
+        throw new Error('Invalid email measures data format.');
+      }
+    } catch (error) {
+      console.error('Error fetching Email Measures data:', error);
+      emailMeasuresError.value = 'Error fetching Email Measures data.';
+      emailMeasuresData.value = null;
+    } finally {
+      emailMeasuresLoading.value = false;
+      console.log('Finished fetchEmailMeasuresData.');
+    }
+  };
+
+  // -------------------- Fetch Technical Network Data --------------------
+  
+  /**
+   * Fetches technical network data for a specific project and month.
+   * @param {String} projectId - The ID of the project.
+   * @param {Number} month - The month number.
    */
   const fetchTechNetData = async (projectId, month) => {
     techNetLoading.value = true;
     techNetData.value = null;
     techNetError.value = null;
 
-    // Convert month to string to match object keys
     const monthStr = month.toString();
 
     // Check if month is valid for the current project
@@ -372,9 +527,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         try {
           const errorData = await response.json();
           errorMsg += ` - ${errorData.error}`;
-        } catch {
-          // If response is not JSON
-        }
+        } catch {}
         console.error(errorMsg);
         techNetError.value = errorMsg;
         techNetData.value = null;
@@ -382,44 +535,35 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
 
       const data = await response.json();
-      console.log(data, projectId, month);
+      console.log('Fetched TechNet Data:', data);
       techNetData.value = data.data;
-      console.log('Fetched TechNet Data:', techNetData.value);
     } catch (err) {
       console.error('Error fetching TechNet data:', err);
       techNetError.value = 'Error fetching TechNet data.';
       techNetData.value = null;
     } finally {
       techNetLoading.value = false;
+      console.log('Finished fetchTechNetData.');
     }
   };
 
-  // -------------------- Social Network State and Actions --------------------
-
   /**
-   * Fetches SocialNet data based on projectId and month.
+   * Clears the existing TechNet data.
    */
-  const socialNetData = ref(null);
-  const socialNetLoading = ref(false);
-  const socialNetError = ref(null);
-
-  /**
-   * Clears the existing SocialNet data.
-   */
-  const clearSocialNetData = () => {
-    console.log('Clearing SocialNet data.');
-    socialNetData.value = null;
-    socialNetError.value = null;
+  const clearTechNetData = () => {
+    console.log('Clearing TechNet data.');
+    techNetData.value = null;
+    techNetError.value = null;
   };
 
+  // -------------------- Fetch Social Network Data --------------------
+  
   /**
-   * Fetches SocialNet data based on projectId and month.
+   * Fetches social network data for a specific project and month.
+   * @param {String} projectId - The ID of the project.
+   * @param {Number} month - The month number.
    */
   const fetchSocialNetData = async (projectId, month) => {
-    console.log('Starting fetchSocialNetData...');
-    console.log(`Project ID: ${projectId}, Month: ${month}`);
-    
-    // Reset state
     socialNetLoading.value = true;
     socialNetData.value = null;
     socialNetError.value = null;
@@ -433,150 +577,108 @@ export const useProjectStore = defineStore('projectStore', () => {
         try {
           const errorData = await response.json();
           errorMsg += ` - ${errorData.error}`;
-        } catch {
-          // If response is not JSON
-        }
+        } catch {}
         console.error(errorMsg);
         socialNetError.value = errorMsg;
         socialNetData.value = null;
         return;
       }
 
-      // Parse and log the response data
       const data = await response.json();
-      console.log('Fetched Data from Backend:', data);
-
-      if (!Array.isArray(data.data)) {
-        console.warn('Unexpected data format:', data);
-        socialNetData.value = [];
-        return;
-      }
-
-      // Assign fetched data
+      console.log('Fetched SocialNet Data:', data);
       socialNetData.value = data.data;
-      console.log('SocialNet Data:', socialNetData.value);
     } catch (err) {
       console.error('Error fetching SocialNet data:', err);
       socialNetError.value = 'Error fetching SocialNet data.';
+      socialNetData.value = null;
     } finally {
       socialNetLoading.value = false;
       console.log('Finished fetchSocialNetData.');
     }
   };
 
-  // -------------------- Commit Measures State and Actions --------------------
+  /**
+   * Clears the existing SocialNet data.
+   */
+  const clearSocialNetData = () => {
+    console.log('Clearing SocialNet data.');
+    socialNetData.value = null;
+    socialNetError.value = null;
+  };
 
-  // The fetchCommitMeasuresData function is already defined above
-
-  // -------------------- Watchers for Selected Project and Month --------------------
-
-  watch(
-    selectedMonth,
-    async (newMonth, oldMonth) => {
-      console.log(`Month changed from ${oldMonth} to ${newMonth}`);
-      if (
-        selectedProject.value &&
-        newMonth !== null &&
-        newMonth !== undefined &&
-        !isNaN(newMonth)
-      ) {
-        await fetchTechNetData(selectedProject.value.project_id, newMonth);
-        await fetchSocialNetData(selectedProject.value.project_id, newMonth);
-        await fetchCommitMeasuresData(selectedProject.value.project_id, newMonth);
-        await fetchGradForecast(selectedProject.value.project_id);
-      } else {
-        clearTechNetData();
-        clearSocialNetData();
-        commitMeasuresData.value = null;
-        commitMeasuresError.value = null;
-      }
-    }
-  );
+  // -------------------- Return Statement --------------------
   
-  watch(
-    selectedProject,
-    async (newProject, oldProject) => {
-      console.log(
-        `Project changed from ${oldProject?.project_name} to ${newProject?.project_name}`
-      );
-      if (
-        newProject &&
-        selectedMonth.value !== null &&
-        selectedMonth.value !== undefined &&
-        !isNaN(selectedMonth.value)
-      ) {
-        await fetchTechNetData(newProject.project_id, selectedMonth.value);
-        await fetchSocialNetData(newProject.project_id, selectedMonth.value);
-        await fetchCommitMeasuresData(newProject.project_id, selectedMonth.value);
-        await fetchGradForecast(newProject.project_id);
-      } else {
-        clearTechNetData();
-        clearSocialNetData();
-        commitMeasuresData.value = null;
-        commitMeasuresError.value = null;
-      }
-    }
-  );
-
   return {
-    // Configuration
+    // -------------------- Configuration --------------------
     baseUrl,
 
-    // Project Selection
+    // -------------------- Project Selection --------------------
     selectedProject,
-    showRangeSlider,
-    rangeValue,
-    singleValue,
     selectedMonth,
-    minMonth,
-    maxMonth,
-    availableMonths,
 
-    // GitHub Details
+    // -------------------- GitHub Details --------------------
     github_url,
     fork_count,
     stargazer_count,
     watch_count,
 
-    // All Project Descriptions
+    // -------------------- All Project Descriptions --------------------
     allDescriptions,
 
-    // Loading and Error States
+    // -------------------- Monthly Ranges --------------------
+    monthlyRanges,
+
+    // -------------------- Loading and Error States --------------------
     loading,
     error,
 
-    // Monthly Ranges
-    monthlyRanges,
-
-    // Actions
-    setCurrentProjectDetails,
-    fetchAllProjectData,
-    resetProjectDetails,
-    fetchMonthlyRanges,
-
-    // Technical Network
-    techNetData,
-    techNetLoading,
-    techNetError,
-    fetchTechNetData,
-
-    // Social Network
-    socialNetData,
-    socialNetLoading,
-    socialNetError,
-    fetchSocialNetData,
-
-    // Commit Measures
+    // -------------------- Commit Measures --------------------
     commitMeasuresData,
     commitMeasuresLoading,
     commitMeasuresError,
     fetchCommitMeasuresData,
 
-    // Graduation Forecast
-    fetchGradForecast,
+    // -------------------- Email Measures --------------------
+    emailMeasuresData,
+    emailMeasuresLoading,
+    emailMeasuresError,
+    fetchEmailMeasuresData,
+
+    // -------------------- Graduation Forecast --------------------
     gradForecastData,
     xAxisCategories,
     gradForecastLoading,
     gradForecastError,
+    fetchGradForecast,
+
+    // -------------------- Technical Network --------------------
+    techNetData,
+    techNetLoading,
+    techNetError,
+    fetchTechNetData,
+    clearTechNetData,
+
+    // -------------------- Social Network --------------------
+    socialNetData,
+    socialNetLoading,
+    socialNetError,
+    fetchSocialNetData,
+    clearSocialNetData,
+
+    // -------------------- Range Slider --------------------
+    showRangeSlider,
+    rangeValue,
+    singleValue,
+
+    // -------------------- Computed Properties --------------------
+    availableMonths,
+    minMonth,
+    maxMonth,
+
+    // -------------------- Actions --------------------
+    fetchAllProjectData,
+    setCurrentProjectDetails,
+    resetProjectDetails,
+    fetchMonthlyRanges,
   };
 });

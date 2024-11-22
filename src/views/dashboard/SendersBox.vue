@@ -1,9 +1,4 @@
-<script setup>
-import { useTheme } from 'vuetify';
-import { VCard, VCardText, VCol, VRow } from 'vuetify/components';
-
-const { global } = useTheme();
-</script>
+<!-- src/components/Senders.vue -->
 
 <template>
   <VCard class="mx-auto" style="box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);">
@@ -15,11 +10,39 @@ const { global } = useTheme();
             <br>
           </div>
           <div class="d-flex">
-            <span>7</span>
+            <span v-if="numSenders !== null">{{ numSenders }}</span>
+            <span v-else-if="emailMeasuresLoading">Loading...</span>
+            <span v-else-if="emailMeasuresError" class="text-error">
+              {{ emailMeasuresError }}
+            </span>
+            <span v-else>
+              Data Unavailable
+            </span>
           </div>
-          
         </VCol>
       </VRow>
     </VCardText>
   </VCard>
 </template>
+
+<script setup>
+import { computed } from 'vue';
+import { useProjectStore } from '@/stores/projectStore';
+import { VCard, VCardText, VRow, VCol } from 'vuetify/components';
+
+const projectStore = useProjectStore();
+
+const emailMeasuresData = computed(() => projectStore.emailMeasuresData);
+const emailMeasuresLoading = computed(() => projectStore.emailMeasuresLoading);
+const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
+
+const numSenders = computed(() => {
+  return emailMeasuresData.value ? emailMeasuresData.value.num_senders : null;
+});
+</script>
+
+<style scoped>
+.text-error {
+  color: red;
+}
+</style>
