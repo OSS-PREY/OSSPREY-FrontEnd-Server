@@ -23,7 +23,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   // All Project Descriptions
   const allDescriptions = ref([]);
 
-  //Graduation Forecast 
+  // Graduation Forecast 
   const gradForecastData = ref([]);
   const xAxisCategories = ref([]);
   const gradForecastLoading = ref(false);
@@ -190,7 +190,75 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  // Fetch all project data
+  
+  // -------------------- Fetch all commit data State and Actions --------------------
+
+  // Fetch Commit Measures Data
+  const commitMeasuresData = ref(null);
+  const commitMeasuresLoading = ref(false);
+  const commitMeasuresError = ref(null);
+
+  const fetchCommitMeasuresData = async (projectId, month) => {
+    if (!projectId || !month) {
+      console.warn('Project ID or month is missing.');
+      commitMeasuresError.value = 'Project ID or month is missing.';
+      commitMeasuresData.value = null;
+      return;
+    }
+  
+    console.log(`Fetching /api/commit_measure/${projectId}/${month}...`);
+    commitMeasuresLoading.value = true;
+    commitMeasuresError.value = null;
+    commitMeasuresData.value = null;
+  
+    try {
+      const response = await fetch(`${baseUrl.value}/api/commit_measure/${projectId}/${month}`);
+  
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch commit measures: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg += ` ${errorData.error || ''}`;
+        } catch {}
+        commitMeasuresError.value = errorMsg;
+        console.error(`Error fetching commit measures: ${commitMeasuresError.value}`);
+        throw new Error(commitMeasuresError.value);
+      }
+  
+      const data = await response.json();
+      console.log('Fetched Commit Measures Data:', data);
+      
+      // Process data to transform array into object if necessary
+      if (data && data.data) {
+        if (Array.isArray(data.data)) {
+          const measures = {};
+          data.data.forEach(measure => {
+            if (typeof measure === 'object') {
+              Object.assign(measures, measure);
+            }
+          });
+          commitMeasuresData.value = measures;
+          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
+        } else {
+          // If data.data is already an object
+          commitMeasuresData.value = data.data;
+          console.log('Processed Commit Measures Data:', commitMeasuresData.value);
+        }
+      } else {
+        throw new Error('Invalid commit measures data format.');
+      }
+    } catch (error) {
+      console.error('Error fetching Commit Measures data:', error);
+      commitMeasuresError.value = 'Error fetching Commit Measures data.';
+      commitMeasuresData.value = null;
+    } finally {
+      commitMeasuresLoading.value = false;
+      console.log('Finished fetchCommitMeasuresData.');
+    }
+  };
+
+// -------------------- Fetch all project data State and Actions --------------------
+
   const fetchAllProjectData = async () => {
     loading.value = true;
     error.value = null;
@@ -260,8 +328,6 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-
-
   // -------------------- Technical Network State and Actions --------------------
 
   const techNetData = ref(null);
@@ -330,105 +396,77 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Social Network State and Actions --------------------
 
-/**
- * Fetches SocialNet data based on projectId and month.
- */
-const socialNetData = ref(null);
-const socialNetLoading = ref(false);
-const socialNetError = ref(null);
+  /**
+   * Fetches SocialNet data based on projectId and month.
+   */
+  const socialNetData = ref(null);
+  const socialNetLoading = ref(false);
+  const socialNetError = ref(null);
 
-/**
- * Clears the existing SocialNet data.
- */
-const clearSocialNetData = () => {
-  console.log('Clearing SocialNet data.');
-  socialNetData.value = null;
-  socialNetError.value = null;
-};
+  /**
+   * Clears the existing SocialNet data.
+   */
+  const clearSocialNetData = () => {
+    console.log('Clearing SocialNet data.');
+    socialNetData.value = null;
+    socialNetError.value = null;
+  };
 
-/**
- * Fetches SocialNet data based on projectId and month.
- */
-const fetchSocialNetData = async (projectId, month) => {
-  console.log('Starting fetchSocialNetData...');
-  console.log(`Project ID: ${projectId}, Month: ${month}`);
-  
-  // Reset state
-  socialNetLoading.value = true;
-  socialNetData.value = null;
-  socialNetError.value = null;
+  /**
+   * Fetches SocialNet data based on projectId and month.
+   */
+  const fetchSocialNetData = async (projectId, month) => {
+    console.log('Starting fetchSocialNetData...');
+    console.log(`Project ID: ${projectId}, Month: ${month}`);
+    
+    // Reset state
+    socialNetLoading.value = true;
+    socialNetData.value = null;
+    socialNetError.value = null;
 
-  try {
-    console.log(`Fetching /api/social_net/${projectId}/${month}...`);
-    const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
+    try {
+      console.log(`Fetching /api/social_net/${projectId}/${month}...`);
+      const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
 
-    if (!response.ok) {
-      let errorMsg = `Failed to fetch SocialNet data: ${response.status}`;
-      console.warn('Response not OK:', response);
-      try {
-        const errorData = await response.json();
-        errorMsg += ` - ${errorData.error}`;
-      } catch {
-        console.warn('Response error is not JSON.');
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch SocialNet data: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg += ` - ${errorData.error}`;
+        } catch {
+          // If response is not JSON
+        }
+        console.error(errorMsg);
+        socialNetError.value = errorMsg;
+        socialNetData.value = null;
+        return;
       }
-      console.error(errorMsg);
-      socialNetError.value = errorMsg;
-      return;
+
+      // Parse and log the response data
+      const data = await response.json();
+      console.log('Fetched Data from Backend:', data);
+
+      if (!Array.isArray(data.data)) {
+        console.warn('Unexpected data format:', data);
+        socialNetData.value = [];
+        return;
+      }
+
+      // Assign fetched data
+      socialNetData.value = data.data;
+      console.log('SocialNet Data:', socialNetData.value);
+    } catch (err) {
+      console.error('Error fetching SocialNet data:', err);
+      socialNetError.value = 'Error fetching SocialNet data.';
+    } finally {
+      socialNetLoading.value = false;
+      console.log('Finished fetchSocialNetData.');
     }
-
-    // Parse and log the response data
-    const data = await response.json();
-    console.log('Fetched Data from Backend:', data);
-
-    if (!Array.isArray(data.data)) {
-      console.warn('Unexpected data format:', data);
-      socialNetData.value = [];
-      return;
-    }
-
-    // Assign fetched data
-    socialNetData.value = data.data;
-    console.log('SocialNet Data:', socialNetData.value);
-  } catch (err) {
-    console.error('Error fetching SocialNet data:', err);
-    socialNetError.value = 'Error fetching SocialNet data.';
-  } finally {
-    socialNetLoading.value = false;
-    console.log('Finished fetchSocialNetData.');
-  }
-};
-
+  };
 
   // -------------------- Commit Measures State and Actions --------------------
 
-  const commitMeasuresData = ref(null);
-  const commitMeasuresLoading = ref(false);
-  const commitMeasuresError = ref(null);
-
-  const fetchCommitMeasuresData = async (projectId, month) => {
-    commitMeasuresLoading.value = true;
-    commitMeasuresError.value = null;
-    commitMeasuresData.value = null;
-
-    try {
-      console.log(`Fetching /api/commit_measure/${projectId}/${month}...`);
-      const response = await fetch(`${baseUrl.value}/api/commit_measure/${projectId}/${month}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch commit measures data.');
-      }
-
-      const data = await response.json();
-      commitMeasuresData.value = data.data;
-      console.log('Fetched Commit Measures Data:', commitMeasuresData.value);
-    } catch (err) {
-      console.error('Error fetching Commit Measures data:', err);
-      commitMeasuresError.value = err.message;
-    } finally {
-      commitMeasuresLoading.value = false;
-    }
-  };
+  // The fetchCommitMeasuresData function is already defined above
 
   // -------------------- Watchers for Selected Project and Month --------------------
 
@@ -444,9 +482,13 @@ const fetchSocialNetData = async (projectId, month) => {
       ) {
         await fetchTechNetData(selectedProject.value.project_id, newMonth);
         await fetchSocialNetData(selectedProject.value.project_id, newMonth);
+        await fetchCommitMeasuresData(selectedProject.value.project_id, newMonth);
+        await fetchGradForecast(selectedProject.value.project_id);
       } else {
         clearTechNetData();
         clearSocialNetData();
+        commitMeasuresData.value = null;
+        commitMeasuresError.value = null;
       }
     }
   );
@@ -465,14 +507,16 @@ const fetchSocialNetData = async (projectId, month) => {
       ) {
         await fetchTechNetData(newProject.project_id, selectedMonth.value);
         await fetchSocialNetData(newProject.project_id, selectedMonth.value);
-        await fetchGradForecastData(newProject.project_id);
+        await fetchCommitMeasuresData(newProject.project_id, selectedMonth.value);
+        await fetchGradForecast(newProject.project_id);
       } else {
         clearTechNetData();
         clearSocialNetData();
+        commitMeasuresData.value = null;
+        commitMeasuresError.value = null;
       }
     }
   );
-  
 
   return {
     // Configuration
@@ -528,12 +572,11 @@ const fetchSocialNetData = async (projectId, month) => {
     commitMeasuresError,
     fetchCommitMeasuresData,
 
-    //Graduation forecast
+    // Graduation Forecast
     fetchGradForecast,
     gradForecastData,
     xAxisCategories,
     gradForecastLoading,
     gradForecastError,
-    selectedProject,
   };
 });

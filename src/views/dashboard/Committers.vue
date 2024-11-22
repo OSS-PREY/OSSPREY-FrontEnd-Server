@@ -7,11 +7,14 @@
         <VCol cols="auto">
           <div>
             <h6 class="text-h6 font-weight-medium mb-2">Committers</h6>
-            <br />
           </div>
           <div class="d-flex">
             <span v-if="numCommitters !== null">{{ numCommitters }}</span>
-            <span v-else>Loading...</span>
+            <span v-else-if="commitMeasuresLoading">Loading...</span>
+            <span v-else-if="commitMeasuresError" class="text-error">
+              {{ commitMeasuresError }}
+            </span>
+            <span v-else>Data Unavailable</span>
           </div>
         </VCol>
       </VRow>
@@ -20,44 +23,23 @@
 </template>
 
 <script setup>
-import { onMounted, watch, ref } from 'vue';
+import { computed } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
-import { VCard, VCardText, VCol, VRow } from 'vuetify/components';
+import { VCard, VCardText, VRow, VCol } from 'vuetify/components';
 
 const projectStore = useProjectStore();
 
-const numCommitters = ref(null);
+const commitMeasuresData = computed(() => projectStore.commitMeasuresData);
+const commitMeasuresLoading = computed(() => projectStore.commitMeasuresLoading);
+const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
-const fetchData = () => {
-  if (projectStore.commitMeasuresData && projectStore.commitMeasuresData.num_committers !== undefined) {
-    numCommitters.value = projectStore.commitMeasuresData.num_committers;
-  } else {
-    numCommitters.value = null;
-  }
-};
-
-// Watch for changes in commit measures data
-watch(
-  () => projectStore.commitMeasuresData,
-  () => {
-    fetchData();
-  }
-);
-
-// Watch for changes in selected project and month to fetch new data
-watch(
-  () => [projectStore.selectedProject, projectStore.selectedMonth],
-  ([newProject, newMonth]) => {
-    if (newProject && newMonth !== null && newMonth !== undefined && !isNaN(newMonth)) {
-      projectStore.fetchCommitMeasuresData(newProject.project_id, newMonth);
-    } else {
-      numCommitters.value = null;
-    }
-  },
-  { immediate: true }
-);
+const numCommitters = computed(() => {
+  return commitMeasuresData.value ? commitMeasuresData.value.num_committers : null;
+});
 </script>
 
 <style scoped>
-/* Add any styles if needed */
+.text-error {
+  color: red;
+}
 </style>
