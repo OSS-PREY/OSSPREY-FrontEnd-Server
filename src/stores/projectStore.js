@@ -13,6 +13,25 @@ export const useProjectStore = defineStore('projectStore', () => {
   const selectedProject = ref(null); // Holds the currently selected project object
   const selectedMonth = ref(null);   // Holds the currently selected month number
 
+  // -------------------- Developer Selection State --------------------
+
+  const selectedDeveloper = ref(null);
+
+  const setSelectedDeveloper = (developerName) => {
+    selectedDeveloper.value = developerName;
+    console.log('Selected Developer:', selectedDeveloper.value);
+  };
+
+
+   // -------------------- Commit Links State --------------------
+  const commitLinksData = ref(null);
+  const commitLinksLoading = ref(false);
+  const commitLinksError = ref(null);
+
+  const normalizeName = (name) => {
+    return name ? name.toLowerCase().replace(/\s+/g, '') : '';
+  };
+
   // -------------------- GitHub Details State --------------------
   
   const github_url = ref('N/A');
@@ -101,6 +120,23 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
     }
   );
+
+  watch(
+    [selectedDeveloper, selectedProject, selectedMonth],
+    async ([newDeveloper, newProject, newMonth]) => {
+      console.log(`Developer changed to ${newDeveloper || 'None'}`);
+
+      if (newDeveloper && newProject && newMonth) {
+        await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
+      } else {
+        // Clear commit links data if any of the required parameters are missing
+        commitLinksData.value = null;
+        commitLinksError.value = null;
+      }
+    }
+  );
+
+
 
   // -------------------- Actions --------------------
 
@@ -606,6 +642,55 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetError.value = null;
   };
 
+
+  // --------------- Try
+
+  const fetchCommitLinksData = async (projectId, month, developerName) => {
+    commitLinksLoading.value = true;
+    commitLinksError.value = null;
+    commitLinksData.value = null;
+
+    try {
+      console.log(`Fetching /api/commit_links/${projectId}/${month}...`);
+      const response = await fetch(`${baseUrl.value}/api/commit_links/${projectId}/${month}`);
+
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch commit links: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg += ` ${errorData.error || ''}`;
+        } catch {}
+        commitLinksError.value = errorMsg;
+        console.error(`Error fetching commit links: ${commitLinksError.value}`);
+        throw new Error(commitLinksError.value);
+      }
+
+      const data = await response.json();
+      console.log('Fetched Commit Links Data:', data);
+
+      // Filter the commits by developerName
+      const normalizedDeveloperName = normalizeName(developerName);
+      const filteredCommits = data.commits.filter(commit => {
+        const commitAuthorName = normalizeName(commit.dealised_author_full_name);
+        console.log(`Comparing '${commitAuthorName}' with '${normalizedDeveloperName}'`);
+        return commitAuthorName === normalizedDeveloperName;
+      });
+
+      commitLinksData.value = filteredCommits;
+
+    } catch (error) {
+      console.error('Error fetching Commit Links data:', error);
+      commitLinksError.value = 'Error fetching Commit Links data.';
+      commitLinksData.value = null;
+    } finally {
+      commitLinksLoading.value = false;
+      console.log('Finished fetchCommitLinksData.');
+    }
+  };
+
+
+  
+
   // -------------------- Return Statement --------------------
   
   return {
@@ -657,6 +742,14 @@ export const useProjectStore = defineStore('projectStore', () => {
     techNetError,
     fetchTechNetData,
     clearTechNetData,
+
+    // ------------------- Developer --------------------------
+    selectedDeveloper,
+  setSelectedDeveloper,
+  commitLinksData,
+  commitLinksLoading,
+  commitLinksError,
+  fetchCommitLinksData,
 
     // -------------------- Social Network --------------------
     socialNetData,

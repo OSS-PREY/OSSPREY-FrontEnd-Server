@@ -10,13 +10,13 @@
       <div class="sankey-container" ref="sankeyDiv">
         <div id="sankey"></div>
       </div>
-      
+
       <!-- Loading Indicator -->
       <div v-if="projectStore.techNetLoading" class="overlay">
         <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
-      
+
       <!-- No Data Message -->
       <div
         v-if="!projectStore.techNetLoading && !projectStore.techNetError && (!projectStore.techNetData || projectStore.techNetData.length === 0) && projectStore.selectedProject && projectStore.selectedMonth"
@@ -24,7 +24,7 @@
       >
         No technical network data available for the selected month.
       </div>
-      
+
       <!-- Error Message -->
       <div
         v-if="!projectStore.techNetLoading && projectStore.techNetError"
@@ -32,7 +32,7 @@
       >
         {{ projectStore.techNetError }}
       </div>
-      
+
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
         Please select a project to view its technical network.
@@ -45,6 +45,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import Plotly from 'plotly.js-dist-min';
 import { useProjectStore } from '@/stores/projectStore';
+import { VCard, VCardTitle, VCardText, VProgressCircular } from 'vuetify/components';
 
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
@@ -88,64 +89,39 @@ const preparePlotData = () => {
     return;
   }
 
-  // Step 5: Create separate nodes for sources and targets (allow duplicates)
-  const nodes = [];
-  const links = [];
-  monthData.forEach(([source, target, value]) => {
-    const sourceIndex = nodes.push({ name: source, side: 'source' }) - 1; // Add source node
-    const targetIndex = nodes.push({ name: target, side: 'target' }) - 1; // Add target node
+  // Step 5: Create nodes and links
+  const nodeLabels = [];
+  const nodeMap = new Map();
+  let nodeIndex = 0;
 
-    links.push({
-      source: sourceIndex,
-      target: targetIndex,
+  const links = monthData.map(([source, target, value]) => {
+    if (!nodeMap.has(source)) {
+      nodeMap.set(source, nodeIndex++);
+      nodeLabels.push(source);
+    }
+    if (!nodeMap.has(target)) {
+      nodeMap.set(target, nodeIndex++);
+      nodeLabels.push(target);
+    }
+    return {
+      source: nodeMap.get(source),
+      target: nodeMap.get(target),
       value: parseInt(value, 10) || 0,
-    });
+    };
   });
 
-  console.log('Nodes before grouping:', nodes);
-  console.log('Links before grouping:', links);
-
-  // Step 6: Group duplicate nodes
-  const nodeMap = {}; // Map to hold unique nodes and their new indices
-  const updatedNodes = []; // List of new grouped nodes
-  const updatedLinks = []; // Updated links to match grouped nodes
-
-  // Group nodes and maintain a mapping for sources and targets
-  nodes.forEach((node, index) => {
-    const key = `${node.side}|${node.name}`;
-    if (!nodeMap[key]) {
-      nodeMap[key] = updatedNodes.push({ name: node.name, side: node.side }) - 1;
-    }
-  });
-
-  // Update links to use grouped node indices
-  links.forEach(link => {
-    const newSource = nodeMap[`source|${nodes[link.source].name}`];
-    const newTarget = nodeMap[`target|${nodes[link.target].name}`];
-    const existingLink = updatedLinks.find(
-      l => l.source === newSource && l.target === newTarget
-    );
-    if (existingLink) {
-      existingLink.value += link.value; // Aggregate values for merged links
+  // Step 6: Define colors
+  const sourceNodes = new Set(monthData.map(item => item[0]));
+  const nodeColors = nodeLabels.map(label => {
+    // Color source nodes (developers) differently
+    if (sourceNodes.has(label)) {
+      return '#4CAF50'; // Green for sources (developers)
     } else {
-      updatedLinks.push({
-        source: newSource,
-        target: newTarget,
-        value: link.value,
-      });
+      return '#FF9800'; // Orange for others
     }
   });
 
-  console.log('Nodes after grouping:', updatedNodes);
-  console.log('Links after grouping:', updatedLinks);
-
-  // Step 7: Define colors
-  const nodeColors = updatedNodes.map(node =>
-    node.side === 'source' ? '#4CAF50' : '#FF9800'
-  ); // Green for sources, Orange for targets
-  console.log('Node Colors:', nodeColors);
-
-  // Step 8: Prepare Sankey data
+  // Step 7: Prepare Sankey data
   const sankeyData = {
     type: 'sankey',
     orientation: 'h',
@@ -156,15 +132,15 @@ const preparePlotData = () => {
         color: '#333', // Darker border for nodes
         width: 0.5,
       },
-      label: updatedNodes.map(node => node.name),
+      label: nodeLabels,
       color: nodeColors,
       hovertemplate: '%{label}<extra></extra>',
     },
     link: {
-      source: updatedLinks.map(link => link.source),
-      target: updatedLinks.map(link => link.target),
-      value: updatedLinks.map(link => link.value),
-      color: updatedLinks.map(() => 'rgba(76, 175, 80, 0.4)'), // Light green for links
+      source: links.map(link => link.source),
+      target: links.map(link => link.target),
+      value: links.map(link => link.value),
+      color: links.map(() => 'rgba(76, 175, 80, 0.4)'), // Light green for links
       hovertemplate: 'Source: %{source.label}<br>Target: %{target.label}<br>Value: %{value}<extra></extra>',
     },
   };
@@ -185,12 +161,37 @@ const preparePlotData = () => {
     autosize: true,
   };
 
-  // Step 9: Render the Sankey diagram
+  // Step 8: Render the Sankey diagram
   if (sankeyDiv.value) {
     try {
       console.log('Rendering Sankey diagram...');
       Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
       console.log('TechNet Sankey diagram rendered successfully.');
+
+      // Add event listener for node clicks
+      sankeyDiv.value.on('plotly_click', function(data) {
+        if (data && data.points && data.points.length > 0) {
+          const point = data.points[0];
+          if (point.fullData.type === 'sankey' && point.curveNumber === 0 && point.pointNumber !== undefined) {
+            const nodeIndex = point.pointNumber;
+            const nodeName = sankeyData.node.label[nodeIndex];
+            console.log('Clicked node index:', nodeIndex, 'Node name:', nodeName);
+            // Check if the node is a developer (source node)
+            if (sourceNodes.has(nodeName)) {
+              console.log('Developer node clicked:', nodeName);
+              // Set selected developer
+              projectStore.setSelectedDeveloper(nodeName);
+            } else {
+              console.log('Clicked node is not a developer:', nodeName);
+            }
+          } else {
+            console.log('Clicked point is not a node.');
+          }
+        } else {
+          console.log('No valid point data on click.');
+        }
+      });
+
     } catch (err) {
       console.error('Error rendering TechNet Sankey diagram:', err);
     }
@@ -198,7 +199,6 @@ const preparePlotData = () => {
 
   console.log('Finished preparePlotData for TechNet.');
 };
-
 
 /**
  * Handles window resize events to make Plotly diagrams responsive.
@@ -254,7 +254,6 @@ watch(
   { immediate: true }
 );
 
-
 // Handle window resize to make Plotly responsive
 onMounted(() => {
   window.addEventListener('resize', handleResize);
@@ -265,6 +264,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 </script>
+
 
 <style scoped lang="scss">
 .tech-net-card {
