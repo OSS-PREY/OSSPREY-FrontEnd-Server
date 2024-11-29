@@ -40,9 +40,3 @@ const commitsPerCommitter = computed(() => {
   return commitMeasuresData.value ? commitMeasuresData.value.commit_per_dev : null;
 });
 </script>
-
-<style scoped>
-.text-error {
-  color: red;
-}
-</style>

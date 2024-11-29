@@ -40,9 +40,3 @@ const emailsPerSender = computed(() => {
   return emailMeasuresData.value ? emailMeasuresData.value.email_per_dev : null;
 });
 </script>
-
-<style scoped>
-.text-error {
-  color: red;
-}
-</style>

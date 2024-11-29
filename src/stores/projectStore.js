@@ -6,7 +6,7 @@ import { ref, computed, watch } from 'vue';
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
   
-  const baseUrl = ref('https://oss-backend-8stu.onrender.com'); // Update if your backend is hosted elsewhere
+  const baseUrl = ref('https://oss-decal.priyal.me'); // Update if your backend is hosted elsewhere
 
   // -------------------- Project Selection State --------------------
   
@@ -421,7 +421,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
     } catch (error) {
       console.error('Error fetching Commit Measures data:', error);
-      commitMeasuresError.value = 'Error fetching Commit Measures data.';
+      commitMeasuresError.value = 'Loading...';
       commitMeasuresData.value = null;
     } finally {
       commitMeasuresLoading.value = false;
@@ -487,7 +487,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
     } catch (error) {
       console.error('Error fetching Email Measures data:', error);
-      emailMeasuresError.value = 'Error fetching Email Measures data.';
+      emailMeasuresError.value = 'Loading...';
       emailMeasuresData.value = null;
     } finally {
       emailMeasuresLoading.value = false;

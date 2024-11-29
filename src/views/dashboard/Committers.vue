@@ -38,9 +38,3 @@ const numCommitters = computed(() => {
   return commitMeasuresData.value ? commitMeasuresData.value.num_committers : null;
 });
 </script>
-
-<style scoped>
-.text-error {
-  color: red;
-}
-</style>

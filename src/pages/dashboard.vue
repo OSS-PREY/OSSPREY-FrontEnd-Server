@@ -95,12 +95,13 @@ const toggleCollapse = () => {
 
       <VRow>
         <!-- Fifth Row: Commit and Email Links -->
-        <VCol cols="6" md="6" sm="6">
-          <CommitLinks />
-        </VCol>
 
         <VCol cols="6" md="6" sm="6">
           <EmailLinks />
+        </VCol>
+
+        <VCol cols="6" md="6" sm="6">
+          <CommitLinks />
         </VCol>
       </VRow>
 

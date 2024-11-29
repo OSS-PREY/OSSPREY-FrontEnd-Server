@@ -57,7 +57,3 @@ watch(
   { immediate: true }
 );
 </script>
-
-<style scoped>
-/* Add any styles if needed */
-</style>

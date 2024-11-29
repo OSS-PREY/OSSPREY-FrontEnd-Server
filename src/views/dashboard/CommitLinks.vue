@@ -24,7 +24,7 @@
                 @click="viewCommits"
                 :disabled="!commitMeasuresData"
               >
-                View Commits
+                Node
               </VBtn>
             </VCol>
           </VRow>
@@ -68,9 +68,3 @@ const viewCommits = () => {
   alert('View Commits feature is not implemented yet.');
 };
 </script>
-
-<style scoped>
-.text-error {
-  color: red;
-}
-</style>
