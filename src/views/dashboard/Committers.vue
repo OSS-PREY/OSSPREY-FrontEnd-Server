@@ -11,7 +11,7 @@
           </div>
           <div class="d-flex">
             <span v-if="numCommitters !== null">{{ numCommitters }}</span>
-            <span v-else-if="commitMeasuresLoading">Loading...</span>
+            <span v-else-if="commitMeasuresLoading">N/A</span>
             <span v-else-if="commitMeasuresError" class="text-error">
               {{ commitMeasuresError }}
             </span>

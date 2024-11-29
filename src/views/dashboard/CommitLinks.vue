@@ -51,9 +51,12 @@
 </template>
 
 <script setup>
+import { useTheme } from 'vuetify';
+import { VBtn } from 'vuetify/components';
+
+const { global } = useTheme();
 import { computed } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
-import { VCard, VCardText, VCardTitle, VRow, VCol, VBtn, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
 

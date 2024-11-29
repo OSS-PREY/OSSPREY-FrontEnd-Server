@@ -11,7 +11,7 @@
           </div>
           <div class="d-flex">
             <span v-if="emailsPerSender !== null">{{ emailsPerSender }}</span>
-            <span v-else-if="emailMeasuresLoading">Loading...</span>
+            <span v-else-if="emailMeasuresLoading">N/A</span>
             <span v-else-if="emailMeasuresError" class="text-error">
               {{ emailMeasuresError }}
             </span>

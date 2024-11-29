@@ -523,13 +523,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       const response = await fetch(`${baseUrl.value}/api/tech_net/${projectId}/${month}`);
 
       if (!response.ok) {
-        let errorMsg = `Failed to fetch TechNet data: ${response.status}`;
+        
         try {
           const errorData = await response.json();
-          errorMsg += ` - ${errorData.error}`;
+          
         } catch {}
         console.error(errorMsg);
-        techNetError.value = errorMsg;
+        
         techNetData.value = null;
         return; // Exit function without throwing
       }
@@ -539,7 +539,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       techNetData.value = data.data;
     } catch (err) {
       console.error('Error fetching TechNet data:', err);
-      techNetError.value = 'Error fetching TechNet data.';
+      
       techNetData.value = null;
     } finally {
       techNetLoading.value = false;
@@ -573,13 +573,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       const response = await fetch(`${baseUrl.value}/api/social_net/${projectId}/${month}`);
 
       if (!response.ok) {
-        let errorMsg = `Failed to fetch SocialNet data: ${response.status}`;
+        
         try {
           const errorData = await response.json();
-          errorMsg += ` - ${errorData.error}`;
+          
         } catch {}
         console.error(errorMsg);
-        socialNetError.value = errorMsg;
+        
         socialNetData.value = null;
         return;
       }
