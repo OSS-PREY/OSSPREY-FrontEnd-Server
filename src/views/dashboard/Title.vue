@@ -12,7 +12,7 @@ const { global } = useTheme();
         <VRow class="w-100 align-center justify-center">
              <!-- Center-aligned Title -->
             <VCol class="auto">
-                <VCardTitle class="text-primary font-weight-bold">OSS Project Navigator</VCardTitle>
+                <VCardTitle class="text-primary font-weight-bold">OSS Project Explorer</VCardTitle>
             </VCol>
 
             <!-- Right-aligned Theme Switcher button -->
