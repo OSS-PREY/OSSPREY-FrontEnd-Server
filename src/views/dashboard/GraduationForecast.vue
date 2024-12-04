@@ -5,7 +5,7 @@
     <VCardText>
       <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="income" class="highlighted-tab">
-          Project Health Indicator
+          Month-wise Forecast
         </VTab>
       </VTabs>
     </VCardText>
