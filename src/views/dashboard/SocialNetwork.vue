@@ -23,14 +23,6 @@
         No social network data available for the selected month.
       </div>
 
-      <!-- Error Message -->
-      <div
-        v-if="!projectStore.socialNetLoading && projectStore.socialNetError"
-        class="overlay error-message"
-      >
-        {{ projectStore.socialNetError }}
-      </div>
-
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
         Please select a project to view its social network.

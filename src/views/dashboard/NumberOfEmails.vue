@@ -12,9 +12,6 @@
           <div class="d-flex">
             <span v-if="numEmails !== null">{{ numEmails }}</span>
             <span v-else-if="emailMeasuresLoading">N/A</span>
-            <span v-else-if="emailMeasuresError" class="text-error">
-              {{ emailMeasuresError }}
-            </span>
             <span v-else>
               Data Unavailable
             </span>

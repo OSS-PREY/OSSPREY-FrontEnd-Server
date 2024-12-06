@@ -12,9 +12,6 @@
           <div class="d-flex">
             <span v-if="numCommits !== null">{{ numCommits }}</span>
             <span v-else-if="commitMeasuresLoading">N/A</span>
-            <span v-else-if="commitMeasuresError" class="text-error">
-              {{ commitMeasuresError }}
-            </span>
             <span v-else>
               Data Unavailable
             </span>

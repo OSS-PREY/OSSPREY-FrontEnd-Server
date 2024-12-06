@@ -23,14 +23,6 @@
         No technical network data available for the selected month.
       </div>
 
-      <!-- Error Message -->
-      <div
-        v-if="!projectStore.techNetLoading && projectStore.techNetError"
-        class="overlay error-message"
-      >
-        {{ projectStore.techNetError }}
-      </div>
-
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
         Please select a project to view its technical network.
