@@ -1,8 +1,11 @@
 <template>
   <VCard class="text-center text-sm-start tech-net-card">
-    <VCardTitle class="text-h6 text-primary">
-      Technical Network
-    </VCardTitle>
+    <VCardItem class="pb-3">
+      <VCardTitle class="text-primary">
+        Technical Network
+      </VCardTitle>
+    </VCardItem>
+    
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram -->
       <div class="sankey-container" ref="sankeyDiv">

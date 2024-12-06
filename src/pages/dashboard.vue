@@ -16,6 +16,8 @@ import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue';
 import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue';
 import Committers from '@/views/dashboard/Committers.vue';
 import Title from '@/views/dashboard/Title.vue';
+import CurrentMonth from '@/views/dashboard/CurrentMonth.vue';
+import CurrentProject from '@/views/dashboard/CurrentProject.vue';
 
 const isCollapsed = ref(true); // Manage collapse state here
 
@@ -75,9 +77,24 @@ const toggleCollapse = () => {
     </VCol>
   </VRow>
 
+  
+
   <!-- Fourth and Fifth Rows that collapse based on isCollapsed -->
   <transition name="fade">
     <div v-show="!isCollapsed">
+
+      <!-- [Temporary] Fifth Row: Commit and Email Links --> 
+      <VRow>
+        
+        <VCol cols="6" md="6" sm="6">
+          <CurrentProject />
+        </VCol>
+
+        <VCol cols="6" md="6" sm="6">
+          <CurrentMonth />
+        </VCol>
+      </VRow>
+
       <VRow>
         <!-- Fourth Row: Social and Technical Network Cards -->
         <VCol cols="12" md="6">
@@ -93,9 +110,9 @@ const toggleCollapse = () => {
         </VCol>
       </VRow>
 
-      <VRow>
-        <!-- Fifth Row: Commit and Email Links -->
-
+      <!-- Fifth Row: Commit and Email Links -->
+      <!-- <VRow>
+        
         <VCol cols="6" md="6" sm="6">
           <EmailLinks />
         </VCol>
@@ -103,7 +120,7 @@ const toggleCollapse = () => {
         <VCol cols="6" md="6" sm="6">
           <CommitLinks />
         </VCol>
-      </VRow>
+      </VRow> -->
 
       <VRow>
         <!-- Sixth Row: Static Info Boxes -->

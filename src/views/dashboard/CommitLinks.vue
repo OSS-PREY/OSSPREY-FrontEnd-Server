@@ -6,14 +6,14 @@
       <VCol cols="12" sm="12">
         <VCardItem class="pb-3">
           <VCardTitle class="text-primary">
-            Commit Summary
+            Commit Link
           </VCardTitle>
         </VCardItem>
 
         <VCardText>
           <VRow class="d-flex align-center">
             <VCol cols="auto" class="d-flex align-center">
-              <span>Total Commits:</span>
+              <span>Current Node:</span>
             </VCol>
             <VCol cols="auto" class="d-flex align-center">
               <VBtn
@@ -24,7 +24,7 @@
                 @click="viewCommits"
                 :disabled="!commitMeasuresData"
               >
-                View Commits
+                Node
               </VBtn>
             </VCol>
           </VRow>
