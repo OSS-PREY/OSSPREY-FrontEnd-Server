@@ -104,7 +104,8 @@ export const useProjectStore = defineStore('projectStore', () => {
           fetchSocialNetData(newProject.project_id, newMonth),
           fetchCommitMeasuresData(newProject.project_id, newMonth),
           fetchEmailMeasuresData(newProject.project_id, newMonth),
-          fetchGradForecast(newProject.project_id)
+          fetchGradForecast(newProject.project_id),
+          fetchPredictions(newProject.project_id, newMonth),
         ]);
       } else {
         // Clear all measures if project or month is not selected
@@ -396,6 +397,51 @@ export const useProjectStore = defineStore('projectStore', () => {
     } finally {
       gradForecastLoading.value = false;
       console.log('Finished fetchGradForecast.');
+    }
+  };
+
+  // -------------------- Predictions State --------------------
+  
+  const predictionsData = ref({});          // Holds predictions data
+  const predictionsLoading = ref(false);    // Indicates if predictions data is being fetched
+  const predictionsError = ref(null);       // Holds any error message related to fetching predictions data
+
+  /**
+   * Fetches predictions data for a specific project and month.
+   * @param {String} projectId - The ID of the project.
+   * @param {Number} month - The selected month number.
+   */
+  const fetchPredictions = async (projectId, month) => {
+    if (!projectId || !month) {
+      console.warn('Project ID or selected month is missing.');
+      predictionsError.value = 'Project ID or selected month is missing.';
+      return;
+    }
+
+    predictionsLoading.value = true;
+    predictionsData.value = {};
+    predictionsError.value = null;
+
+    try {
+      console.log(`Fetching /api/predictions/${projectId}/${month}...`);
+      const url = `${baseUrl.value}/api/predictions/${projectId}/${month}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        predictionsError.value = `Failed to fetch Predictions data: ${response.status}`;
+        throw new Error(`Failed to fetch predictions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Fetched Predictions Data:', data);
+
+      predictionsData.value = data;
+    } catch (error) {
+      console.error('Error fetching Predictions data:', error);
+      predictionsError.value = 'Error fetching Predictions data.';
+    } finally {
+      predictionsLoading.value = false;
+      console.log('Finished fetchPredictions.');
     }
   };
 
@@ -735,6 +781,12 @@ export const useProjectStore = defineStore('projectStore', () => {
     gradForecastLoading,
     gradForecastError,
     fetchGradForecast,
+
+    // -------------------- Graduation Forecast Predictions ---------------
+    predictionsData,
+    predictionsLoading,
+    predictionsError,
+    fetchPredictions,
 
     // -------------------- Technical Network --------------------
     techNetData,
