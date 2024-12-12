@@ -35,6 +35,18 @@
               </VCol>
             </VRow>
 
+            <!--Start date and end date-->
+            <VRow class="mb-3">
+              <VCol cols="12" class="d-flex align-items-center">
+                <strong>Start date:</strong>&nbsp;
+                {{ projectStore.selectedProject.start_date }}
+                <hr><hr><hr><br>
+                <strong>End date:</strong>&nbsp;
+                {{ projectStore.selectedProject.end_date }}
+              </VCol>
+            </VRow>
+
+
             <!-- Sponsor -->
             <VRow class="mb-3">
               <VCol cols="12" class="d-flex align-items-center">

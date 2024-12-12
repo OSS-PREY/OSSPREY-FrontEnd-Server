@@ -16,32 +16,65 @@
           <div v-else>
             <!-- Error Message -->
             <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
-            <!-- Dropdown for selecting a project -->
+            <!-- Dropdown for selecting a foundation -->
             <VSelect
-              v-model="selectedProject"
-              :items="projectStore.allDescriptions"
-              item-title="project_name" 
-              item-value="project_id"
-              label="Project"
+              v-model="selectedFoundation"
+              :items="foundations"
+              label="Foundation"
               class="mb-4"
               outlined
               dense
-              :loading="projectStore.loading"
-              :error="!!projectStore.error"
-              :error-messages="projectStore.error"
-              return-object
+              @change="handleFoundationChange"
             />
+
+            <!-- Dropdown for selecting a project -->
+            <div v-if="selectedFoundation === 'Apache'">
+              <VSelect
+                v-model="selectedProject"
+                :items="projectStore.allDescriptions"
+                item-title="project_name" 
+                item-value="project_id"
+                label="Project"
+                class="mb-4"
+                outlined
+                dense
+                :loading="projectStore.loading"
+                :error="!!projectStore.error"
+                :error-messages="projectStore.error"
+                return-object
+              />
+            </div>
+
+            <div v-else-if="selectedFoundation === 'Eclipse'">
+              <VSelect
+                v-model="selectedProject"
+                :items="projectStore.eclipseDescriptions"
+                item-title="project_name"
+                item-value="project_id"
+                label="Eclipse Project"
+                class="mb-4"
+                outlined
+                dense
+                :loading="projectStore.loading"
+                :error="!!projectStore.error"
+                :error-messages="projectStore.error"
+                return-object
+              />
+
+              <VSelect
+                v-model="selectedCategory"
+                :items="eclipseCategories"
+                label="Category"
+                class="mb-4"
+                outlined
+                dense
+              />
+            </div>
 
             <!-- Display project details if a project is selected -->
             <div v-if="projectStore.selectedProject">
               <div class="mt-2">
                 <strong>Project Name:</strong> {{ projectStore.selectedProject.project_name }}
-              </div>
-              <div class="mt-2">
-                <strong>Start Date:</strong> {{ formatDate(projectStore.selectedProject.start_date) }}
-              </div>
-              <div class="mt-2">
-                <strong>End Date:</strong> {{ formatDate(projectStore.selectedProject.end_date) }}
               </div>
               <div class="mt-2">
                 <strong>GitHub URL:</strong> 
@@ -133,6 +166,11 @@ const router = useRouter();
 
 // Local ref for selectedProject to handle v-model separately
 const selectedProject = ref(null);
+const selectedFoundation = ref('Apache');
+const selectedCategory = ref(null);
+
+const foundations = ['Apache', 'Eclipse'];
+const eclipseCategories = ['Tooling', 'Runtime', 'Platform'];
 
 // Function to format dates
 const formatDate = (dateStr) => {
@@ -154,6 +192,12 @@ const hasValidMonths = computed(() => {
 // Fetch all project information and GitHub stars
 const fetchData = async () => {
   await projectStore.fetchAllProjectData();
+};
+
+const handleFoundationChange = async () => {
+  if (selectedFoundation.value === 'Eclipse') {
+    await projectStore.fetchEclipseProjects();
+  }
 };
 
 // Handle single slider value change
