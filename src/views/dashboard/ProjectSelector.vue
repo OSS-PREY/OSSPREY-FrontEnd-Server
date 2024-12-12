@@ -1,5 +1,3 @@
-<!-- src/components/ProjectSelector.vue -->
-
 <template>
   <VCard class="text-center text-sm-start" style="height: 450px;">
     <VRow no-gutters>
@@ -16,7 +14,8 @@
           <div v-else>
             <!-- Error Message -->
             <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
-            <!-- Dropdown for selecting a foundation -->
+            
+            <!-- Foundation Dropdown -->
             <VSelect
               v-model="selectedFoundation"
               :items="foundations"
@@ -27,7 +26,7 @@
               @change="handleFoundationChange"
             />
 
-            <!-- Dropdown for selecting a project -->
+            <!-- If Apache is selected -->
             <div v-if="selectedFoundation === 'Apache'">
               <VSelect
                 v-model="selectedProject"
@@ -45,8 +44,9 @@
               />
             </div>
 
+            <!-- If Eclipse is selected -->
             <div v-else-if="selectedFoundation === 'Eclipse'">
-              <!-- Dropdown for selecting a category -->
+              <!-- Eclipse Category Dropdown -->
               <VSelect
                 v-model="selectedCategory"
                 :items="eclipseCategories"
@@ -56,11 +56,11 @@
                 dense
               />
 
-              <!-- Dropdown for selecting a project, displayed only after a category is selected -->
+              <!-- Eclipse Project Dropdown (only after category is selected) -->
               <div v-if="selectedCategory">
                 <VSelect
                   v-model="selectedProject"
-                  :items="projectStore.eclipseDescriptions"
+                  :items="filteredEclipseProjects"
                   item-title="project_name"
                   item-value="project_id"
                   label="Eclipse Project"
@@ -81,19 +81,19 @@
                 <strong>Project Name:</strong> {{ projectStore.selectedProject.project_name }}
               </div>
               <div class="mt-2">
-                <strong>GitHub URL:</strong> 
+                <strong>Project URL:</strong> 
                 <a :href="projectStore.github_url" target="_blank">{{ projectStore.github_url }}</a>
               </div>
             </div>
 
-            <!-- Checkbox to toggle between single value and range slider -->
+            <!-- Checkbox for Range Slider -->
             <VCheckbox
               v-model="projectStore.showRangeSlider"
               label="Enable Range Slider"
               class="mb-4"
             />
 
-            <!-- Conditional rendering based on checkbox state and availability of months -->
+            <!-- Range Slider -->
             <VSlider
               v-if="projectStore.showRangeSlider && hasValidMonths"
               v-model="projectStore.rangeValue"
@@ -107,9 +107,10 @@
               ticks="always"
               tick-size="4"
               thumb-label
-              @update:modelValue="handleSingleValueChange"
+              @update:modelValue="handleRangeChange"
             />
 
+            <!-- Single Value Slider -->
             <VSlider
               v-else-if="!projectStore.showRangeSlider && hasValidMonths"
               v-model="projectStore.singleValue"
@@ -125,14 +126,13 @@
               @update:modelValue="handleSingleValueChange"
             />
 
-
-            <!-- Display a message if no months are available -->
+            <!-- No months available message -->
             <div v-if="projectStore.selectedProject && !hasValidMonths" class="mt-4 text-error">
               No available months for the selected project.
             </div>
 
-            <!-- Styled GitHub Metrics -->
-            <VCard v-if="selectedFoundation === 'Apache'" class="metrics-container mt-4" outlined>
+            <!-- Apache GitHub Metrics -->
+            <VCard v-if="selectedFoundation === 'Apache' && projectStore.selectedProject" class="metrics-container mt-4" outlined>
               <VRow align="center" justify="space-around">
                 <VCol class="d-flex align-center" cols="auto">
                   <VIcon size="20">fa-solid fa-eye</VIcon>
@@ -148,10 +148,6 @@
                 </VCol>
               </VRow>
             </VCard>
-            <!-- Open Parallel Window button
-            <VBtn variant="tonal" class="mt-6" size="small" @click="openParallelWindow">
-              Open Parallel Window
-            </VBtn> -->
           </div>
         </VCardText>
       </VCol>
@@ -167,57 +163,68 @@ import { useRouter } from 'vue-router';
 const projectStore = useProjectStore();
 const router = useRouter();
 
-// Local ref for selectedProject to handle v-model separately
 const selectedProject = ref(null);
 const selectedFoundation = ref('Apache');
 const selectedCategory = ref(null);
 
 const foundations = ['Apache', 'Eclipse'];
-const eclipseCategories = ['Tooling', 'Runtime', 'Platform'];
 
-// Function to format dates
-const formatDate = (dateStr) => {
-  if (!dateStr || dateStr === 'N/A') return 'N/A';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr; // Return original string if invalid date
-  return date.toLocaleDateString();
-};
+// Static list of Eclipse categories as you requested
+const eclipseCategories = [
+  'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin', 
+  'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT', 
+  'SOA Platform', 'PolarSys', 'LocationTech', 'OpenHW Group', 'AsciiDoc'
+];
 
-// Compute slider min and max based on store's minMonth and maxMonth
+// Filtered Eclipse projects by category
+const filteredEclipseProjects = computed(() => {
+  if (!selectedCategory.value) return [];
+  return projectStore.eclipseDescriptions.filter(project => project.tech === selectedCategory.value);
+});
+
+// Slider boundaries
 const sliderMin = computed(() => projectStore.minMonth);
 const sliderMax = computed(() => projectStore.maxMonth);
 
-// Determine if there are valid months available
+// Whether months are available
 const hasValidMonths = computed(() => {
   return projectStore.availableMonths.length > 0;
 });
 
-// Fetch all project information and GitHub stars
 const fetchData = async () => {
+  // Load Apache by default
   await projectStore.fetchAllProjectData();
 };
 
 const handleFoundationChange = async () => {
+  projectStore.setFoundation(selectedFoundation.value);
+
   if (selectedFoundation.value === 'Eclipse') {
+    // Fetch Eclipse projects
     await projectStore.fetchEclipseProjects();
+    selectedCategory.value = null;
+    selectedProject.value = null;
+  } else {
+    // Re-fetch Apache if needed
+    await projectStore.fetchAllProjectData();
+    selectedCategory.value = null;
+    selectedProject.value = null;
   }
 };
 
-// Handle single slider value change
+// Existing handlers for sliders
 const handleSingleValueChange = () => {
   console.log(`Single slider changed. New singleValue: ${projectStore.singleValue}`);
   projectStore.selectedMonth = projectStore.singleValue;
 };
 
-// Handle range slider change
 const handleRangeChange = () => {
-  // For simplicity, set selectedMonth to the first value in the range
   const newMonth = projectStore.rangeValue[0];
   console.log(`Range slider changed. New rangeValue: ${projectStore.rangeValue}, Setting selectedMonth to ${newMonth}`);
   projectStore.selectedMonth = newMonth;
 };
 
-// Watch the local selectedProject and update the store accordingly
+// Watchers from original code
 watch(
   () => selectedProject.value,
   async (newProject) => {
@@ -231,13 +238,6 @@ watch(
   }
 );
 
-// Open Parallel Window (Implementation as needed)
-const openParallelWindow = () => {
-  // Implement the logic to open a parallel window if required
-  window.open('/some-parallel-route', '_blank');
-};
-
-// Initialize selectedProject watcher
 watch(
   () => projectStore.selectedProject,
   (newProject) => {
@@ -246,7 +246,6 @@ watch(
   }
 );
 
-// Fetch data on component mount
 onMounted(() => {
   fetchData();
 });
