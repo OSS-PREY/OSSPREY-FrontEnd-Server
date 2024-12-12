@@ -46,21 +46,7 @@
             </div>
 
             <div v-else-if="selectedFoundation === 'Eclipse'">
-              <VSelect
-                v-model="selectedProject"
-                :items="projectStore.eclipseDescriptions"
-                item-title="project_name"
-                item-value="project_id"
-                label="Eclipse Project"
-                class="mb-4"
-                outlined
-                dense
-                :loading="projectStore.loading"
-                :error="!!projectStore.error"
-                :error-messages="projectStore.error"
-                return-object
-              />
-
+              <!-- Dropdown for selecting a category -->
               <VSelect
                 v-model="selectedCategory"
                 :items="eclipseCategories"
@@ -69,6 +55,24 @@
                 outlined
                 dense
               />
+
+              <!-- Dropdown for selecting a project, displayed only after a category is selected -->
+              <div v-if="selectedCategory">
+                <VSelect
+                  v-model="selectedProject"
+                  :items="projectStore.eclipseDescriptions"
+                  item-title="project_name"
+                  item-value="project_id"
+                  label="Eclipse Project"
+                  class="mb-4"
+                  outlined
+                  dense
+                  :loading="projectStore.loading"
+                  :error="!!projectStore.error"
+                  :error-messages="projectStore.error"
+                  return-object
+                />
+              </div>
             </div>
 
             <!-- Display project details if a project is selected -->
@@ -128,7 +132,7 @@
             </div>
 
             <!-- Styled GitHub Metrics -->
-            <VCard class="metrics-container mt-4" outlined>
+            <VCard v-if="selectedFoundation === 'Apache'" class="metrics-container mt-4" outlined>
               <VRow align="center" justify="space-around">
                 <VCol class="d-flex align-center" cols="auto">
                   <VIcon size="20">fa-solid fa-eye</VIcon>
@@ -144,11 +148,10 @@
                 </VCol>
               </VRow>
             </VCard>
-
-            <!-- Open Parallel Window button -->
+            <!-- Open Parallel Window button
             <VBtn variant="tonal" class="mt-6" size="small" @click="openParallelWindow">
               Open Parallel Window
-            </VBtn>
+            </VBtn> -->
           </div>
         </VCardText>
       </VCol>
@@ -254,6 +257,7 @@ onMounted(() => {
   padding: 16px;
   border-radius: 8px;
   background-color: rgba(var(--v-theme-primary), 0.08);
+  overflow:auto;
 }
 
 .ml-1 {

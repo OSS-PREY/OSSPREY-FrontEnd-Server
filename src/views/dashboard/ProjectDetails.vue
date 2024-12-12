@@ -35,14 +35,18 @@
               </VCol>
             </VRow>
 
-            <!--Start date and end date-->
-            <VRow class="mb-3">
-              <VCol cols="12" class="d-flex align-items-center">
-                <strong>Start date:</strong>&nbsp;
-                {{ projectStore.selectedProject.start_date }}
-                <hr><hr><hr><br>
-                <strong>End date:</strong>&nbsp;
-                {{ projectStore.selectedProject.end_date }}
+            <VRow class="mb-3" gap="3">
+              <VCol cols="6">
+                <div>
+                  <strong>Start date:</strong>&nbsp;
+                  {{ projectStore.selectedProject.start_date }}
+                </div>
+              </VCol>
+              <VCol cols="6">
+                <div>
+                  <strong>End date:</strong>&nbsp;
+                  {{ projectStore.selectedProject.end_date }}
+                </div>
               </VCol>
             </VRow>
 
