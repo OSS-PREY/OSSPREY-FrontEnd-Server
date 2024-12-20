@@ -389,9 +389,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log('Fetched Graduation Forecast Data:', data);
 
       const sortedData = Object.values(data)
-        .sort((a, b) => a.date - b.date)
+        .sort((a, b) => {
+          const dateA = a.date || a.month;
+          const dateB = b.date || b.month;
+          return new Date(dateA) - new Date(dateB);
+        })
         .map((item) => ({
-          x: `Month ${item.date}`,
+          x: `Month ${item.date || item.month}`,
           y: item.close,
         }));
 

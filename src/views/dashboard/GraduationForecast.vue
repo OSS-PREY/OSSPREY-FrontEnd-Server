@@ -55,7 +55,7 @@
           :options="monthlyChartConfig"
           :series="monthlySeries"
         />
-        <!-- Optional: Add a table for Predictions -->
+        <!-- Existing Table (Assuming it's for Predictions) -->
         <VDataTable
           :headers="predictionsTableHeaders"
           :items="predictionsTableData"
@@ -65,6 +65,38 @@
             {{ item.close.toFixed(4) }}
           </template>
         </VDataTable>
+
+        <!-- Releases/Reviews Table for Eclipse Projects -->
+        <div v-if="isEclipseProject && projectReleases.length" class="mt-5">
+          <VRow class="mb-3">
+            <VCol cols="12">
+              <strong>Releases/Reviews:</strong>
+            </VCol>
+          </VRow>
+          <div class="table-container">
+            <table class="table table-bordered">
+              <thead>
+                <tr class="table-primary">
+                  <th>Release/Review</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(release, index) in projectReleases"
+                  :key="index"
+                >
+                  <td class="actionable-cell">
+                    <a :href="release.url" target="_blank" rel="noopener noreferrer">
+                      {{ release.name }}
+                    </a>
+                  </td>
+                  <td>{{ formatDate(release.date || release.month) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </VCardText>
     </VCardText>
   </VCard>
@@ -73,8 +105,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import { VDataTable, VAvatar, VCard, VCardText, VCardTitle, VRow, VCol, VTabs, VTab } from 'vuetify/components';
 import { useTheme } from 'vuetify';
-import { VDataTable } from 'vuetify/components';
 import { useProjectStore } from '@/stores/projectStore';
 
 // Initialize theme and store
@@ -286,7 +318,7 @@ const tabData = computed(() => {
   return {};
 });
 
-// Define table headers for Predictions
+// Define table headers for Predictions (Assuming existing functionality)
 const predictionsTableHeaders = [
   { text: 'Month', value: 'month' },
   { text: 'Adjusted Close', value: 'close' },
@@ -314,6 +346,24 @@ const hexToRgb = (hex) => {
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
   return `${r},${g},${b}`;
+};
+
+// Computed property to determine if the selected project is from Eclipse
+const isEclipseProject = computed(() => {
+  return projectStore.selectedFoundation === 'Eclipse';
+});
+
+// Computed property to get releases/reviews data for Eclipse projects
+const projectReleases = computed(() => {
+  return projectStore.selectedProject?.releases || [];
+});
+
+// Function to format date strings for better readability
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const dateObj = new Date(dateStr);
+  return isNaN(dateObj) ? 'Invalid Date' : dateObj.toLocaleDateString(undefined, options);
 };
 
 // Fetch Graduation Forecast Data
@@ -357,5 +407,57 @@ watch(
 
 .v-tabs {
   justify-content: flex-start;
+}
+
+.table-container {
+  max-height: 400px; /* Adjust as needed */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: auto; /* Enable horizontal scrolling for wide tables */
+  display: block;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Ensures consistent column widths */
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+  padding: 8px;
+  text-align: left;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.table-primary {
+  background-color: #696cff;
+  color: #fff;
+}
+
+a {
+  color: #1e88e5;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.mb-3 {
+  margin-bottom: 16px;
+}
+
+.mt-5 {
+  margin-top: 32px;
+}
+
+.text-danger {
+  color: red;
 }
 </style>
