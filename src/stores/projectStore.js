@@ -8,9 +8,10 @@ export const useProjectStore = defineStore('projectStore', () => {
   const baseUrl = ref('https://oss-decal.priyal.me'); // Update if your backend is hosted elsewhere
 
   // Foundation selection
-  const selectedFoundation = ref('Apache');
+  const selectedFoundation = ref('Apache'); // Correct initialization
   const setFoundation = (foundation) => {
     selectedFoundation.value = foundation;
+    console.log(`Foundation set to: ${foundation}`);
   };
 
   // -------------------- Project Selection State --------------------
@@ -90,7 +91,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   watch(
     [selectedProject, selectedMonth],
     async ([newProject, newMonth]) => {
-      console.log(`Project changed from ${newProject?.project_name || 'None'} to month ${newMonth || 'None'}`);
+      console.log(`Project changed to ${newProject?.project_name || 'None'} and month ${newMonth || 'None'}`);
 
       if (newProject && newMonth) {
         // Fetch data based on foundation
@@ -136,8 +137,6 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // Fetch Apache Project Data
   const fetchAllProjectData = async () => {
-    // Only fetch if selected is Apache
-    if (selectedFoundation.value !== 'Apache') return;
     loading.value = true;
     error.value = null;
     try {
@@ -208,8 +207,6 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // Fetch Eclipse Project Data
   const fetchEclipseProjects = async () => {
-    // Only fetch if selected is Eclipse
-    if (selectedFoundation.value !== 'Eclipse') return;
     loading.value = true;
     error.value = null;
     try {
@@ -302,7 +299,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     watch_count.value = 0;
     selectedMonth.value = null;
     monthlyRanges.value = {};
-    
+
     // Reset all measures
     commitMeasuresData.value = null;
     commitMeasuresError.value = null;
@@ -372,13 +369,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       gradForecastError.value = 'No project selected.';
       return;
     }
-  
+
     console.log('Starting fetchGradForecast...');
     gradForecastLoading.value = true;
     gradForecastData.value = [];
     xAxisCategories.value = [];
     gradForecastError.value = null;
-  
+
     try {
       console.log(`Fetching ${apiPrefix.value}/grad_forecast/${projectId}...`);
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`);
@@ -491,7 +488,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
     } catch (error) {
       console.error('Error fetching Commit Measures data:', error);
-      commitMeasuresError.value = 'Loading...';
+      commitMeasuresError.value = 'Failed to load commit measures.';
       commitMeasuresData.value = null;
     } finally {
       commitMeasuresLoading.value = false;
@@ -541,7 +538,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
     } catch (error) {
       console.error('Error fetching Email Measures data:', error);
-      emailMeasuresError.value = 'Loading...';
+      emailMeasuresError.value = 'Failed to load email measures.';
       emailMeasuresData.value = null;
     } finally {
       emailMeasuresLoading.value = false;
@@ -568,14 +565,16 @@ export const useProjectStore = defineStore('projectStore', () => {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/tech_net/${projectId}/${month}`);
 
       if (!response.ok) {
-        techNetData.value = null;
+        techNetError.value = `Failed to fetch Technical Network data: ${response.status}`;
         return;
       }
 
       const data = await response.json();
       techNetData.value = data.data;
+      console.log('Fetched Technical Network Data:', data);
     } catch (err) {
       console.error('Error fetching TechNet data:', err);
+      techNetError.value = 'Failed to fetch Technical Network data.';
       techNetData.value = null;
     } finally {
       techNetLoading.value = false;
@@ -598,15 +597,16 @@ export const useProjectStore = defineStore('projectStore', () => {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/social_net/${projectId}/${month}`);
 
       if (!response.ok) {
-        socialNetData.value = null;
+        socialNetError.value = `Failed to fetch Social Network data: ${response.status}`;
         return;
       }
 
       const data = await response.json();
       socialNetData.value = data.data;
+      console.log('Fetched Social Network Data:', data);
     } catch (err) {
       console.error('Error fetching SocialNet data:', err);
-      socialNetError.value = 'Error fetching SocialNet data.';
+      socialNetError.value = 'Failed to fetch Social Network data.';
       socialNetData.value = null;
     } finally {
       socialNetLoading.value = false;
@@ -620,6 +620,13 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Commit Links Data --------------------
   const fetchCommitLinksData = async (projectId, month, developerName) => {
+    if (!developerName) {
+      console.warn('Developer name is missing.');
+      commitLinksError.value = 'Developer name is missing.';
+      commitLinksData.value = null;
+      return;
+    }
+
     commitLinksLoading.value = true;
     commitLinksError.value = null;
     commitLinksData.value = null;
@@ -642,9 +649,10 @@ export const useProjectStore = defineStore('projectStore', () => {
       });
 
       commitLinksData.value = filteredCommits;
+      console.log('Filtered Commit Links:', filteredCommits);
     } catch (error) {
       console.error('Error fetching Commit Links data:', error);
-      commitLinksError.value = 'Error fetching Commit Links data.';
+      commitLinksError.value = 'Failed to load commit links.';
       commitLinksData.value = null;
     } finally {
       commitLinksLoading.value = false;
