@@ -1,3 +1,5 @@
+<!-- src/components/SocialNetwork.vue -->
+
 <template>
   <VCard class="text-center text-sm-start social-net-card">
     <VCardItem class="pb-3">
@@ -15,6 +17,11 @@
       <div v-if="projectStore.socialNetLoading" class="overlay">
         <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
         <span class="loading-text">Loading Sankey diagram...</span>
+      </div>
+
+      <!-- Error Message -->
+      <div v-if="projectStore.socialNetError" class="overlay error-message">
+        {{ projectStore.socialNetError }}
       </div>
 
       <!-- No Data Message -->
@@ -37,22 +44,26 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import Plotly from 'plotly.js-dist-min';
 import { useProjectStore } from '@/stores/projectStore';
+import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
 
 /**
  * Reduces the emails based on the threshold logic.
+ * Ensures that the value is a number and applies filtering based on the threshold.
  */
 function reduceTheEmails(inputArray) {
-  const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2]), 0);
+  if (!Array.isArray(inputArray)) return [];
+
+  const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
 
-  const filteredArray = inputArray.filter((item) => item[2] > threshold);
+  const filteredArray = inputArray.filter((item) => parseInt(item[2], 10) > threshold);
 
-  const numEmails = filteredArray.reduce((sum, item) => sum + parseInt(item[2]), 0);
+  const numEmails = filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const numSenders = [...new Set(filteredArray.map((item) => item[0]))].length;
-  const emailsPerDev = Math.floor(numEmails / numSenders);
+  const emailsPerDev = numSenders > 0 ? Math.floor(numEmails / numSenders) : 0;
 
   console.log("Filtered Emails Data:", filteredArray);
   console.log("Total Emails:", numEmails);
@@ -76,7 +87,7 @@ const clearSankeyDiagram = () => {
  * Prepares and renders the Sankey diagram using Plotly.
  */
 const preparePlotData = () => {
-  console.log('Starting preparePlotData...');
+  console.log('Starting preparePlotData for SocialNet...');
 
   if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
     console.warn('No social network data found to render.');
@@ -161,7 +172,7 @@ const preparePlotData = () => {
     },
   };
 
-  const containerWidth = document.querySelector('.sankey-container').offsetWidth;
+  const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 600;
   const containerHeight = containerWidth * 0.6;
 
   const layout = {
@@ -187,7 +198,7 @@ const preparePlotData = () => {
     }
   }
 
-  console.log('Finished preparePlotData.');
+  console.log('Finished preparePlotData for SocialNet.');
 };
 
 /**
@@ -216,6 +227,7 @@ const fetchAndRenderSankey = () => {
   }
 };
 
+// Watch for changes in social network data
 watch(
   () => projectStore.socialNetData,
   (newData) => {
@@ -227,6 +239,7 @@ watch(
   }
 );
 
+// Watch for changes in selected project or month
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {

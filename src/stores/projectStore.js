@@ -578,7 +578,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log('Fetched Technical Network Data:', data);
     } catch (err) {
       console.error('Error fetching TechNet data:', err);
-      techNetError.value = 'Failed to fetch Technical Network data.';
+      //techNetError.value = 'Failed to fetch Technical Network data.';
       techNetData.value = null;
     } finally {
       techNetLoading.value = false;
@@ -622,7 +622,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log('Fetched Social Network Data:', data);
     } catch (err) {
       console.error('Error fetching SocialNet data:', err);
-      socialNetError.value = 'Failed to fetch Social Network data.';
+      //socialNetError.value = 'Failed to fetch Social Network data.';
       socialNetData.value = null;
     } finally {
       socialNetLoading.value = false;
