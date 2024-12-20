@@ -1,3 +1,5 @@
+<!-- src/components/TechnicalNetwork.vue -->
+
 <template>
   <VCard class="text-center text-sm-start tech-net-card">
     <VCardItem class="pb-3">
@@ -16,6 +18,11 @@
       <div v-if="projectStore.techNetLoading" class="overlay">
         <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
         <span class="loading-text">Loading Sankey diagram...</span>
+      </div>
+
+      <!-- Error Message -->
+      <div v-if="projectStore.techNetError" class="overlay error-message">
+        {{ projectStore.techNetError }}
       </div>
 
       <!-- No Data Message -->
@@ -38,23 +45,26 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import Plotly from 'plotly.js-dist-min';
 import { useProjectStore } from '@/stores/projectStore';
-import { VCard, VCardTitle, VCardText, VProgressCircular } from 'vuetify/components';
+import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
 
 /**
  * Reduces the commits based on the threshold logic.
+ * Ensures that the value is a number and applies filtering based on the threshold.
  */
 function reduceTheCommits(inputArray) {
-  const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2]), 0);
+  if (!Array.isArray(inputArray)) return [];
+
+  const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
 
-  const filteredArray = inputArray.filter((item) => item[2] > threshold);
+  const filteredArray = inputArray.filter((item) => parseInt(item[2], 10) > threshold);
 
-  const numCommits = filteredArray.reduce((sum, item) => sum + parseInt(item[2]), 0);
+  const numCommits = filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const numCommitters = [...new Set(filteredArray.map((item) => item[0]))].length;
-  const commitsPerDev = Math.floor(numCommits / numCommitters);
+  const commitsPerDev = numCommitters > 0 ? Math.floor(numCommits / numCommitters) : 0;
 
   console.log("Filtered Commits Data:", filteredArray);
   console.log("Total Commits:", numCommits);
@@ -94,34 +104,60 @@ const preparePlotData = () => {
 
   const reducedData = reduceTheCommits(monthData); // Apply reduce_the_commits function
 
-  const nodeLabels = [];
-  const nodeMap = new Map();
-  let nodeIndex = 0;
+  const nodes = [];
+  const links = [];
 
-  const links = reducedData.map(([source, target, value]) => {
-    if (!nodeMap.has(source)) {
-      nodeMap.set(source, nodeIndex++);
-      nodeLabels.push(source);
-    }
-    if (!nodeMap.has(target)) {
-      nodeMap.set(target, nodeIndex++);
-      nodeLabels.push(target);
-    }
-    return {
-      source: nodeMap.get(source),
-      target: nodeMap.get(target),
-      value: parseInt(value, 10) || 0,
-    };
-  });
+  reducedData.forEach(([source, target, value]) => {
+    const sourceIndex = nodes.findIndex(node => node.name === source && node.side === 'source');
+    const targetIndex = nodes.findIndex(node => node.name === target && node.side === 'target');
 
-  const sourceNodes = new Set(reducedData.map(item => item[0]));
-  const nodeColors = nodeLabels.map(label => {
-    if (sourceNodes.has(label)) {
-      return '#4CAF50';
+    // Add source node if it doesn't exist
+    let srcIdx;
+    if (sourceIndex === -1) {
+      srcIdx = nodes.length;
+      nodes.push({ name: source, side: 'source' });
     } else {
-      return '#FF9800';
+      srcIdx = sourceIndex;
+    }
+
+    // Add target node if it doesn't exist
+    let tgtIdx;
+    if (targetIndex === -1) {
+      tgtIdx = nodes.length;
+      nodes.push({ name: target, side: 'target' });
+    } else {
+      tgtIdx = targetIndex;
+    }
+
+    links.push({
+      source: srcIdx,
+      target: tgtIdx,
+      value: parseInt(value, 10) || 0,
+    });
+  });
+
+  // Remove duplicate nodes and reindex
+  const uniqueNodes = [];
+  const nodeMap = new Map();
+  nodes.forEach(node => {
+    const key = `${node.side}|${node.name}`;
+    if (!nodeMap.has(key)) {
+      nodeMap.set(key, uniqueNodes.length);
+      uniqueNodes.push(node);
     }
   });
+
+  // Update link indices based on unique nodes
+  const updatedLinks = links.map(link => ({
+    source: nodeMap.get(`${nodes[link.source].side}|${nodes[link.source].name}`),
+    target: nodeMap.get(`${nodes[link.target].side}|${nodes[link.target].name}`),
+    value: link.value,
+  }));
+
+  // Define node colors based on their side
+  const nodeColors = uniqueNodes.map(node =>
+    node.side === 'source' ? '#4CAF50' : '#FF9800'
+  );
 
   const sankeyData = {
     type: 'sankey',
@@ -133,20 +169,20 @@ const preparePlotData = () => {
         color: '#333',
         width: 0.5,
       },
-      label: nodeLabels,
+      label: uniqueNodes.map(node => node.name),
       color: nodeColors,
       hovertemplate: '%{label}<extra></extra>',
     },
     link: {
-      source: links.map(link => link.source),
-      target: links.map(link => link.target),
-      value: links.map(link => link.value),
-      color: links.map(() => 'rgba(76, 175, 80, 0.4)'),
+      source: updatedLinks.map(link => link.source),
+      target: updatedLinks.map(link => link.target),
+      value: updatedLinks.map(link => link.value),
+      color: updatedLinks.map(() => 'rgba(76, 175, 80, 0.4)'),
       hovertemplate: 'Source: %{source.label}<br>Target: %{target.label}<br>Value: %{value}<extra></extra>',
     },
   };
 
-  const containerWidth = document.querySelector('.sankey-container').offsetWidth;
+  const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 600;
   const containerHeight = containerWidth * 0.6;
 
   const layout = {
@@ -174,9 +210,7 @@ const preparePlotData = () => {
             const nodeIndex = point.pointNumber;
             const nodeName = sankeyData.node.label[nodeIndex];
             console.log('Clicked node index:', nodeIndex, 'Node name:', nodeName);
-            if (sourceNodes.has(nodeName)) {
-              projectStore.setSelectedDeveloper(nodeName);
-            }
+            projectStore.setSelectedDeveloper(nodeName);
           }
         }
       });
@@ -212,6 +246,7 @@ const fetchAndRenderSankey = () => {
   }
 };
 
+// Watch for changes in technical network data
 watch(
   () => projectStore.techNetData,
   (newData) => {
@@ -223,6 +258,7 @@ watch(
   }
 );
 
+// Watch for changes in selected project or month
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
