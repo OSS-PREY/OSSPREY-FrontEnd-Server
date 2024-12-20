@@ -606,6 +606,18 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
 
       const data = await response.json();
+      // Extract data for the specified month
+      const monthData = data.months && data.months[month] ? data.months[month] : [];
+
+      // Normalize the value field to ensure it's a number
+      const normalizedData = monthData.map(item => [
+        item[0],
+        item[1],
+        Number(item[2]) || 0, // Convert to number, default to 0 if NaN
+      ]);
+
+      
+      socialNetData.value = normalizedData;
       socialNetData.value = data.data;
       console.log('Fetched Social Network Data:', data);
     } catch (err) {

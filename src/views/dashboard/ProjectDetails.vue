@@ -55,11 +55,6 @@
                 </VCol>
               </VRow>
 
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>Category:</strong>&nbsp; {{ projectCategory }}
-                </VCol>
-              </VRow>
             </div>
 
             <!-- Eclipse Fields -->
