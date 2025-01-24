@@ -1,5 +1,5 @@
 <template>
-  <VCard class="project-selector-card">
+  <VCard class="text-center text-sm-start" style="height: 450px;">
     <VRow no-gutters>
       <VCol cols="12" sm="12">
         <!-- Header -->
@@ -13,6 +13,9 @@
         <VCardText class="content-area">
           <!-- Loading Indicator -->
           <div v-if="projectStore.loading" class="loading">Loading projects...</div>
+          <div v-else>
+            <!-- Error Message -->
+            <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
             <!-- Foundation Dropdown -->
             <VSelect
               v-model="projectStore.selectedFoundation"
@@ -131,6 +134,7 @@
                 </VCol>
               </VRow>
             </VCard>
+            </div>
         </VCardText>
       </VCol>
     </VRow>
@@ -291,44 +295,20 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.project-selector-card {
-  max-height: 80vh; /* Adjust based on viewport */
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.content-area {
-  padding: 16px;
-  flex: 1 1 auto;
-  /* Removed overflow-y to prevent scrolling */
-  display: flex;
-  flex-direction: column;
-}
-
-.loading {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.project-details {
-  margin-top: 12px;
-}
-
 .metrics-container {
-  padding: 12px;
+  padding: 16px;
   border-radius: 8px;
   background-color: rgba(var(--v-theme-primary), 0.08);
   /* Changed overflow to hidden to prevent overflow */
-  overflow: hidden;
+  overflow: auto;
 }
 
 .ml-1 {
   margin-left: 4px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 
 .text-error {
