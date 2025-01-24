@@ -51,9 +51,17 @@
 
               <VRow class="mb-3">
                 <VCol cols="12" class="d-flex align-items-center">
+                  <strong>Project URL:</strong>
+                  <a :href="projectStore.selectedProject.github_url" target="_blank">{{ projectStore.selectedProject.github_url || 'N/A'}}</a>
+                </VCol>
+              </VRow>
+
+              <VRow class="mb-3">
+                <VCol cols="12" class="d-flex align-items-center">
                   <strong>Sponsor:</strong>&nbsp; {{ projectStore.selectedProject.sponsor || 'N/A' }}
                 </VCol>
               </VRow>
+              
 
             </div>
 
@@ -151,6 +159,7 @@ const formatDate = (dateStr) => {
 <style scoped lang="scss">
 .project-details-card {
   height: 400px;
+  overflow: auto;
 }
 
 .status-badge {

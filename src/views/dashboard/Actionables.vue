@@ -123,7 +123,7 @@ const sortedActionablesData = computed(() => {
 
 
 <template>
-  <VCard>
+  <VCard class="text-center text-sm-start project-actionables-card">
     <VCardText>
       <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="income" class="highlighted-tab">
@@ -194,6 +194,11 @@ const sortedActionablesData = computed(() => {
 
 
 <style scoped>
+.project-actionables-card {
+  height: 400px;
+  overflow: auto;
+}
+
 .highlighted-tab {
   display: flex;
   justify-content: flex-start;
@@ -215,8 +220,6 @@ const sortedActionablesData = computed(() => {
 
 .table-container {
   max-height: 400px; /* Adjust as needed */
-  overflow-y: auto; /* Enable vertical scrolling */
-  overflow-x: auto; /* Enable horizontal scrolling for wide tables */
   display: block;
 }
 
