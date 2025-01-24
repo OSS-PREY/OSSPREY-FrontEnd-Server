@@ -13,17 +13,17 @@
         <VRow class="mb">
           <VCol cols="12" class="d-flex justify-center">
             <VBtn
-              :variant="selectedDataSource === 'foundation' ? 'contained' : 'outlined'"
               color="primary"
-              class="mr-2"
+              :variant="selectedDataSource === 'foundation' ? 'contained' : 'outlined'"
+              class="ms-2"
               @click="selectedDataSource = 'foundation'"
             >
               Foundation
             </VBtn>
             <VBtn
+            color="primary"
               :variant="selectedDataSource === 'local' ? 'contained' : 'outlined'"
-              color="primary"
-              class="mr-2"
+              class="ms-2"
               @click="selectedDataSource = 'local'"
             >
               Local
@@ -156,19 +156,46 @@
                  LOCAL PROJECTS BLOCK
                  ========================================= -->
             <div v-else-if="selectedDataSource === 'local'">
-              <!-- Add your local project selection UI here. For example: -->
-              <VSelect
-                v-model="selectedLocalProject"
-                :items="projectStore.localProjects"
-                item-title="project_name"
-                item-value="project_id"
-                label="Local Project"
-                class="mb-3"
+              <!-- Browse Local Folder Option -->
+              <VBtn
+                color="primary"
+                class="mb-2"
+                @click="triggerFileInput"
+                block
+              >
+                Browse Local Folder
+              </VBtn>
+              <input
+                type="file"
+                ref="fileInput"
+                @change="handleFileSelect"
+                webkitdirectory
+                style="display: none;"
+              />
+
+              <!-- OR Separator -->
+              <div class="text-center mb-2">OR</div>
+
+              <!-- Upload GitHub Repository Link Option -->
+              <VTextField
+                v-model="githubRepoLink"
+                label="GitHub Repository URL"
                 outlined
                 dense
+                class="mb-3"
+                placeholder="https://github.com/username/repository"
               />
-              <!-- You can display local project details or any additional UI here -->
-              <div v-if="selectedLocalProject">
+              <VBtn
+              color="primary"
+                class="mb-2"
+                @click="uploadRepoLink"
+                block
+              >
+                Upload Repository Link
+              </VBtn>
+
+              <!-- Display Selected Local Project Details -->
+              <div v-if="selectedLocalProject" class="mt-4">
                 <div>
                   <strong>Local Project Name:</strong> {{ selectedLocalProject.project_name }}
                 </div>
@@ -179,6 +206,9 @@
                   </a>
                 </div>
               </div>
+
+              <!-- Coming Soon Note -->
+              <div class="coming-soon">Coming Soon</div>
             </div>
           </div>
         </VCardText>
@@ -196,7 +226,7 @@ import { useRouter } from 'vue-router';
 const projectStore = useProjectStore();
 const router = useRouter();
 
-// NEW: Data source choice ("foundation" or "local")
+// Data source choice ("foundation" or "local")
 const selectedDataSource = ref('foundation');
 
 // Reactive variables
@@ -205,6 +235,12 @@ const selectedCategory = ref(null);
 
 // For local projects
 const selectedLocalProject = ref(null);
+
+// GitHub Repository Link
+const githubRepoLink = ref('');
+
+// Reference to the hidden file input
+const fileInput = ref(null);
 
 // Static list of foundations
 const foundations = ['Apache', 'Eclipse'];
@@ -323,6 +359,51 @@ const handleRangeChange = () => {
   projectStore.selectedMonth = newMonth;
 };
 
+// Handle Browse Local Folder - Triggers the hidden file input
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+};
+
+// Handle File Selection
+const handleFileSelect = (event) => {
+  const files = event.target.files;
+  if (files.length === 0) {
+    console.log('No files selected.');
+    return;
+  }
+
+  // Process the selected files
+  console.log('Selected files:', files);
+
+  // Example: Create a list of selected files/folders
+  const fileList = Array.from(files).map(file => ({
+    name: file.name,
+    path: file.webkitRelativePath || file.name
+  }));
+
+  // For demonstration, we'll just log them
+  console.log('Selected File List:', fileList);
+
+  // You can implement further logic to handle the uploaded files
+  // For example, upload them to a server or process them locally
+
+  // Reset the file input
+  event.target.value = '';
+};
+
+// Handle Upload Repository Link
+const uploadRepoLink = () => {
+  if (githubRepoLink.value.trim() === '') {
+    alert('Please enter a GitHub repository URL.');
+    return;
+  }
+  console.log('Upload repo link clicked:', githubRepoLink.value);
+  // Implement the logic to handle the GitHub repo link
+  // For example, validate the URL and fetch repository data
+};
+
 // Watchers
 watch(
   () => selectedProject.value,
@@ -361,7 +442,6 @@ onMounted(() => {
   padding: 16px;
   border-radius: 8px;
   background-color: rgba(var(--v-theme-primary), 0.08);
-  /* Changed overflow to hidden to prevent overflow */
   overflow: auto;
 }
 
@@ -380,13 +460,45 @@ onMounted(() => {
 }
 
 .v-input {
-  /* Ensure Autocomplete fields do not take excessive vertical space */
   min-height: 36px;
 }
 
 .v-autocomplete {
-  /* Prevent the autocomplete from expanding the container */
   position: relative;
   z-index: 1;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 16px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.normal-btn {
+  background-color: white;
+  color: inherit;
+  border: 1px solid #ccc;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.normal-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.coming-soon {
+  margin-top: 20px;
+  font-style: italic;
+  color: grey;
 }
 </style>

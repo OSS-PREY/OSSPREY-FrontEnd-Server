@@ -4,7 +4,7 @@
   <VCard>
     <!-- Tabs Section -->
     <VCardText>
-      <VTabs v-model="currentTab" class="v-tabs-pill">
+      <VTabs v-model="currentTab" class="v-tabs-pill" >
         <VTab value="yearly" class="highlighted-tab">
           All Months Forecast
         </VTab>
