@@ -1,88 +1,68 @@
 <template>
-  <VCard class="text-center text-sm-start" style="height: 450px;">
+  <VCard class="project-selector-card">
     <VRow no-gutters>
       <VCol cols="12" sm="12">
+        <!-- Header -->
         <VCardItem class="pb-3">
           <VCardTitle class="text-primary">
             Project Selector
           </VCardTitle>
         </VCardItem>
 
-        <VCardText>
+        <!-- Content Area -->
+        <VCardText class="content-area">
           <!-- Loading Indicator -->
-          <div v-if="projectStore.loading">Loading projects...</div>
-          <div v-else>
-            <!-- Error Message -->
-            <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
-            
+          <div v-if="projectStore.loading" class="loading">Loading projects...</div>
             <!-- Foundation Dropdown -->
             <VSelect
               v-model="projectStore.selectedFoundation"
               :items="foundations"
               label="Foundation"
-              class="mb-4"
+              class="mb-3"
               outlined
               dense
               @change="handleFoundationChange"
             />
 
-            <!-- If Apache is selected -->
-            <div v-if="projectStore.selectedFoundation === 'Apache'">
-              <VSelect
-                v-model="selectedProject"
-                :items="projectStore.allDescriptions"
-                item-title="project_name" 
-                item-value="project_id"
-                label="Project"
-                class="mb-4"
-                outlined
-                dense
-                :loading="projectStore.loading"
-                :error="!!projectStore.error"
-                :error-messages="projectStore.error"
-                return-object
-              />
-            </div>
+            <!-- Eclipse Category Dropdown (only if Foundation is Eclipse) -->
+            <VSelect
+              v-if="projectStore.selectedFoundation === 'Eclipse'"
+              v-model="selectedCategory"
+              :items="eclipseCategories"
+              label="Category"
+              class="mb-3"
+              outlined
+              dense
+              @change="handleCategoryChange"
+            />
 
-            <!-- If Eclipse is selected -->
-            <div v-else-if="projectStore.selectedFoundation === 'Eclipse'">
-              <!-- Eclipse Category Dropdown -->
-              <VSelect
-                v-model="selectedCategory"
-                :items="eclipseCategories"
-                label="Category"
-                class="mb-4"
-                outlined
-                dense
-                @change="handleCategoryChange"
-              />
-
-              <!-- Eclipse Project Dropdown (only after category is selected) -->
-              <div v-if="selectedCategory">
-                <VSelect
-                  v-model="selectedProject"
-                  :items="filteredEclipseProjects"
-                  item-title="project_name"
-                  item-value="project_id"
-                  label="Eclipse Project"
-                  class="mb-4"
-                  outlined
-                  dense
-                  :loading="projectStore.loading"
-                  :error="!!projectStore.error"
-                  :error-messages="projectStore.error"
-                  return-object
-                />
-              </div>
-            </div>
+            <!-- Project Autocomplete -->
+            <VAutocomplete
+              v-if="shouldShowProjectAutocomplete"
+              v-model="selectedProject"
+              :items="projectItems"
+              item-title="project_name"
+              item-value="project_id"
+              :label="projectLabel"
+              class="mb-3"
+              outlined
+              dense
+              :loading="projectStore.loading"
+              :error="!!projectStore.error"
+              :error-messages="projectStore.error"
+              return-object
+              hide-no-data
+              hide-details
+              clearable
+            />
 
             <!-- Display project details if a project is selected -->
-            <div v-if="projectStore.selectedProject">
-              <div class="mt-2">
+            <div v-if="projectStore.selectedProject" class="project-details">
+              <div>
                 <strong>Project Name:</strong> {{ projectStore.selectedProject.project_name }}
               </div>
-              <div class="mt-2">
-                <strong>Project URL:</strong> 
+              <div>
+                <strong>Project URL:</strong>
                 <a :href="projectStore.github_url" target="_blank">{{ projectStore.github_url }}</a>
               </div>
             </div>
@@ -91,7 +71,7 @@
             <VCheckbox
               v-model="projectStore.showRangeSlider"
               label="Enable Range Slider"
-              class="mb-4"
+              class="mb-3"
             />
 
             <!-- Range Slider -->
@@ -102,8 +82,7 @@
               :min="sliderMin"
               :max="sliderMax"
               :step="1"
-              class="mt-4"
-              style="width: calc(100% - 10px); margin-right: 10px;"
+              class="mb-3"
               label="Select Range"
               ticks="always"
               tick-size="4"
@@ -118,8 +97,7 @@
               :min="sliderMin"
               :max="sliderMax"
               :step="1"
-              class="mt-4"
-              style="width: calc(100% - 10px); margin-right: 10px;"
+              class="mb-3"
               label="Select Month"
               ticks="always"
               tick-size="4"
@@ -128,12 +106,16 @@
             />
 
             <!-- No months available message -->
-            <div v-if="projectStore.selectedProject && !hasValidMonths" class="mt-4 text-error">
+            <div v-if="projectStore.selectedProject && !hasValidMonths" class="text-error">
               No available months for the selected project.
             </div>
 
             <!-- Apache GitHub Metrics -->
-            <VCard v-if="projectStore.selectedFoundation === 'Apache' && projectStore.selectedProject" class="metrics-container mt-4" outlined>
+            <VCard
+              v-if="projectStore.selectedFoundation === 'Apache' && projectStore.selectedProject"
+              class="metrics-container mt-3"
+              outlined
+            >
               <VRow align="center" justify="space-around">
                 <VCol class="d-flex align-center" cols="auto">
                   <VIcon size="20">fa-solid fa-eye</VIcon>
@@ -149,7 +131,6 @@
                 </VCol>
               </VRow>
             </VCard>
-          </div>
         </VCardText>
       </VCol>
     </VRow>
@@ -161,9 +142,11 @@ import { onMounted, watch, computed, ref } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { useRouter } from 'vue-router';
 
+// Initialize store and router
 const projectStore = useProjectStore();
 const router = useRouter();
 
+// Reactive variables
 const selectedProject = ref(null);
 const selectedCategory = ref(null);
 
@@ -172,18 +155,44 @@ const foundations = ['Apache', 'Eclipse'];
 
 // Static list of Eclipse categories
 const eclipseCategories = [
-  'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin', 
-  'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT', 
+  'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin',
+  'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT',
   'SOA Platform', 'PolarSys', 'LocationTech', 'OpenHW Group', 'AsciiDoc'
 ];
 
-// Filtered Eclipse projects by category
-const filteredEclipseProjects = computed(() => {
-  if (!selectedCategory.value) return [];
-  // Ensure case-insensitive comparison if necessary
-  return projectStore.eclipseDescriptions.filter(project => 
-    project.tech.toLowerCase() === selectedCategory.value.toLowerCase()
-  );
+// Computed property to determine if Project Autocomplete should be shown
+const shouldShowProjectAutocomplete = computed(() => {
+  if (projectStore.selectedFoundation === 'Apache') {
+    return true;
+  }
+  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
+    return true;
+  }
+  return false;
+});
+
+// Computed property to set the items for Project Autocomplete
+const projectItems = computed(() => {
+  if (projectStore.selectedFoundation === 'Apache') {
+    return projectStore.allDescriptions;
+  }
+  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
+    return projectStore.eclipseDescriptions.filter(project =>
+      project.tech.toLowerCase() === selectedCategory.value.toLowerCase()
+    );
+  }
+  return [];
+});
+
+// Computed property to set the label for Project Autocomplete
+const projectLabel = computed(() => {
+  if (projectStore.selectedFoundation === 'Apache') {
+    return 'Project';
+  }
+  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
+    return 'Eclipse Project';
+  }
+  return 'Project';
 });
 
 // Slider boundaries
@@ -282,21 +291,60 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.metrics-container {
+.project-selector-card {
+  max-height: 80vh; /* Adjust based on viewport */
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
   padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.content-area {
+  padding: 16px;
+  flex: 1 1 auto;
+  /* Removed overflow-y to prevent scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+.loading {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.project-details {
+  margin-top: 12px;
+}
+
+.metrics-container {
+  padding: 12px;
   border-radius: 8px;
   background-color: rgba(var(--v-theme-primary), 0.08);
-  overflow: auto;
+  /* Changed overflow to hidden to prevent overflow */
+  overflow: hidden;
 }
 
 .ml-1 {
   margin-left: 4px;
 }
-.mt-4 {
-  margin-top: 16px;
-}
+
 .text-error {
   color: red;
   margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.v-input {
+  /* Ensure Autocomplete fields do not take excessive vertical space */
+  min-height: 36px;
+}
+
+.v-autocomplete {
+  /* Prevent the autocomplete from expanding the container */
+  position: relative;
+  z-index: 1;
 }
 </style>
