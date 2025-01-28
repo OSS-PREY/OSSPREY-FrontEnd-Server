@@ -8,9 +8,9 @@
         <VTab value="yearly" class="highlighted-tab">
           All Months Forecast
         </VTab>
-        <VTab value="monthly" class="highlighted-tab">
+        <!-- <VTab value="monthly" class="highlighted-tab">
           Month-wise Forecast
-        </VTab>
+        </VTab> -->
       </VTabs>
     </VCardText>
 

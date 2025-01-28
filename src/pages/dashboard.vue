@@ -47,7 +47,7 @@ const toggleCollapse = () => {
 
     <VCol cols="12" md="6">
       <VCard style="height: 400px;">
-        <ProjectDetails />
+        <GraduationForecast />
       </VCard>
     </VCol>
     
@@ -56,8 +56,9 @@ const toggleCollapse = () => {
   <VRow>
 
     <VCol cols="12" md="6">
+      
       <VCard style="height: 400px;">
-        <GraduationForecast />
+        <ProjectDetails />
       </VCard>
     </VCol>
     <!-- Second Row -->

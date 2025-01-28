@@ -4,7 +4,8 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
 </script>
 
 <template>
-  <VerticalNavLayout>
+  <div class="layout-container">
+    <VerticalNavLayout>
     <!-- 👉 navbar -->
     <!-- <template #navbar="{ toggleVerticalOverlayNavActive }"> -->
       <!-- <div class="d-flex h-100 w-100 align-center position-relative"> -->
@@ -38,43 +39,45 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
         </div>
         -->
 
-        <!-- Right-aligned section with Theme Switcher -->
-        <!-- <div class="d-flex align-center ms-auto">
-          <NavbarThemeSwitcher class="me-1" />
-        </div> -->
-      <!-- </div> -->
-    <!-- </template> -->
+          <!-- Right-aligned section with Theme Switcher -->
+          <!-- <div class="d-flex align-center ms-auto">
+            <NavbarThemeSwitcher class="me-1" />
+          </div> -->
+        <!-- </div> -->
+      <!-- </template> -->
 
-    <!-- 👉 Pages -->
-    <slot />
+      <!-- 👉 Pages -->
+      <slot />
 
-    <!-- 👉 Footer -->
-    <template #footer>
-      <Footer />
-    </template>
-  </VerticalNavLayout>
+      <!-- 👉 Footer -->
+      <template #footer>
+        <Footer />
+      </template>
+    </VerticalNavLayout>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.meta-key {
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 6px;
-  block-size: 1.5625rem;
-  line-height: 1.3125rem;
-  padding-block: 0.125rem;
-  padding-inline: 0.25rem;
+/* Container to hold the background */
+.layout-container {
+  position: relative;
+  min-height: 100vh; /* Ensure it covers the viewport height */
+  overflow: hidden; /* Hide any overflow from the pseudo-element */
 }
 
-.app-logo {
-  display: flex;
-  align-items: center;
-  column-gap: 0.75rem;
-}
-
-.app-logo-title {
-  font-size: 1.45rem;
-  font-weight: 700;
-  line-height: 1.75rem;
-  text-transform: uppercase;
+/* Pseudo-element for background */
+.layout-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('@/assets/images/component.svg'); /* Ensure this path is correct */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.05; /* Adjust opacity as needed */
+  z-index: -1; /* Place it behind the content */
 }
 </style>
