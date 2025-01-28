@@ -12,10 +12,11 @@ export default defineComponent({
     syncRef(isOverlayNavActive, isLayoutOverlayVisible)
 
     return () => {
-      
 
       // 👉 Main Content
-      const main = h('main', { class: 'layout-page-content' }, h('div', { class: 'page-content-container' }, slots.default?.()))
+      const main = h('main', { class: 'layout-page-content' }, 
+        h('div', { class: 'page-content-container' }, slots.default?.())
+      )
 
       // 👉 Footer
       const footer = h('footer', { class: 'layout-footer' }, [
@@ -35,6 +36,12 @@ export default defineComponent({
           route.meta.layoutWrapperClasses,
         ],
       }, [
+        // Background Image Layer
+        h('div', {
+          class: 'layout-background',
+        }),
+
+        // Content Layer
         h('div', { class: 'layout-content-wrapper' }, [
           main,
           footer,
@@ -55,12 +62,28 @@ export default defineComponent({
   inline-size: 100vw;
   block-size: 100%;
 
+  // Background Image Layer
+  .layout-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('@/assets/images/component.svg');
+    background-size: cover;
+    background-position: center;
+    //z-index: -1; // Ensures it is behind the content
+    opacity: 0.3; // Adjust opacity as needed
+  }
+
   .layout-content-wrapper {
     display: flex;
+    z-index: 10;
     flex-direction: column;
     flex-grow: 1;
     min-block-size: 100dvh;
     inline-size: 100vw;
+    position: relative; // Ensure content is above the background
   }
 
   .layout-navbar {

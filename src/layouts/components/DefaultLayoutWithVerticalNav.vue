@@ -5,6 +5,7 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
 
 <template>
   <div class="layout-container">
+    <div class="layout-background"></div> 
     <VerticalNavLayout>
     <!-- 👉 navbar -->
     <!-- <template #navbar="{ toggleVerticalOverlayNavActive }"> -->
@@ -56,28 +57,3 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue';
     </VerticalNavLayout>
   </div>
 </template>
-
-<style lang="scss" scoped>
-/* Container to hold the background */
-.layout-container {
-  position: relative;
-  min-height: 100vh; /* Ensure it covers the viewport height */
-  overflow: hidden; /* Hide any overflow from the pseudo-element */
-}
-
-/* Pseudo-element for background */
-.layout-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('@/assets/images/component.svg'); /* Ensure this path is correct */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.05; /* Adjust opacity as needed */
-  z-index: -1; /* Place it behind the content */
-}
-</style>
