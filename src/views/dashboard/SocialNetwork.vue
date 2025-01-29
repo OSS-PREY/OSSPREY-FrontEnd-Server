@@ -101,7 +101,7 @@ const preparePlotData = () => {
 
   const monthData = projectStore.socialNetData;
 
-  // Apply reduce_the_emails function
+  // Apply reduceTheEmails function
   const reducedData = reduceTheEmails(monthData);
 
   const nodes = [];
@@ -191,7 +191,17 @@ const preparePlotData = () => {
   if (sankeyDiv.value) {
     try {
       console.log('Rendering Sankey diagram...');
-      Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true });
+      Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true }).then(() => {
+        // Add click event listener to the Sankey diagram
+        sankeyDiv.value.on('plotly_click', (data) => {
+          const point = data.points[0];
+          if (point) {
+            const nodeName = updatedNodes[point.pointNumber].name;
+            console.log(`Node clicked: ${nodeName}`);
+            projectStore.setSelectedDeveloper(nodeName); // Update the store with the selected developer
+          }
+        });
+      });
       console.log('SocialNet Sankey diagram rendered successfully.');
     } catch (err) {
       console.error('Error rendering SocialNet Sankey diagram:', err);

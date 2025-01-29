@@ -30,10 +30,6 @@ export const useProjectStore = defineStore('projectStore', () => {
   const commitLinksLoading = ref(false);
   const commitLinksError = ref(null);
 
-  const normalizeName = (name) => {
-    return name ? name.toLowerCase().replace(/\s+/g, '') : '';
-  };
-
   // -------------------- GitHub Details State --------------------
   const github_url = ref('N/A');
   const fork_count = ref(0);
@@ -100,6 +96,8 @@ export const useProjectStore = defineStore('projectStore', () => {
           fetchSocialNetData(newProject.project_id, newMonth),
           fetchCommitMeasuresData(newProject.project_id, newMonth),
           fetchEmailMeasuresData(newProject.project_id, newMonth),
+          // Fetch email links if a developer is already selected
+          selectedDeveloper.value ? fetchEmailLinksData(newProject.project_id, newMonth, selectedDeveloper.value) : Promise.resolve(),
           fetchGradForecast(newProject.project_id),
           fetchPredictions(newProject.project_id, newMonth),
         ]);
@@ -125,15 +123,27 @@ export const useProjectStore = defineStore('projectStore', () => {
 
       if (newDeveloper && newProject && newMonth) {
         await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
+        await fetchEmailLinksData(newProject.project_id, newMonth, newDeveloper);
       } else {
-        // Clear commit links data if parameters are missing
+        // Clear commit links and email links data if parameters are missing
         commitLinksData.value = null;
         commitLinksError.value = null;
+        emailMeasuresData.value = null;
+        emailMeasuresError.value = null;
       }
     }
   );
 
   // -------------------- Actions --------------------
+
+  // Normalize developer name as per user's requirement
+  const normalizeName = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+  };
 
   // Fetch Apache Project Data
   const fetchAllProjectData = async () => {
@@ -499,50 +509,52 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  // -------------------- Fetch Email Measures --------------------
-  const fetchEmailMeasuresData = async (projectId, month) => {
-    if (!projectId || !month) {
-      console.warn('Project ID or month is missing.');
-      emailMeasuresError.value = 'Project ID or month is missing.';
+  // -------------------- Fetch Email Links Data --------------------
+  const fetchEmailLinksData = async (projectId, month, developerName) => {
+    if (!projectId || !month || !developerName) {
+      console.warn('Project ID, month, or developer name is missing.');
+      emailMeasuresError.value = 'Project ID, month, or developer name is missing.';
       emailMeasuresData.value = null;
       return;
     }
-
-    console.log(`Fetching ${apiPrefix.value}/email_measure/${projectId}/${month}...`);
+  
+    console.log(`Fetching ${apiPrefix.value}/email_links/${projectId}/${month} for developer: ${developerName}...`);
     emailMeasuresLoading.value = true;
     emailMeasuresError.value = null;
     emailMeasuresData.value = null;
-
+  
     try {
-      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
-
+      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
+  
       if (!response.ok) {
-        let errorMsg = `Failed to fetch email measures: ${response.status}`;
+        let errorMsg = `Failed to fetch email links: ${response.status}`;
         emailMeasuresError.value = errorMsg;
         return;
       }
-
+  
       const data = await response.json();
       console.log('Fetched Email Measures Data:', data);
-      
-      if (data && data.data) {
-        if (Array.isArray(data.data)) {
-          const measures = {};
-          data.data.forEach(measure => {
-            if (typeof measure === 'object') {
-              Object.assign(measures, measure);
-            }
-          });
-          emailMeasuresData.value = measures;
-        } else {
-          emailMeasuresData.value = data.data;
-        }
+  
+      // Ensure the response has the expected structure
+      if (data && data.commits && Array.isArray(data.commits)) {
+        const normalizedDeveloperName = normalizeName(developerName);
+        const filteredEmails = data.commits
+          .filter(email => {
+            const emailAuthorName = normalizeName(email.dealised_author_full_name);
+            return emailAuthorName === normalizedDeveloperName;
+          })
+          .map(email => ({
+            link: email.link,
+            date: email.human_date_time,
+          }));
+  
+        emailMeasuresData.value = filteredEmails;
       } else {
-        throw new Error('Invalid email measures data format.');
+        throw new Error('Invalid email measures data format: Expected "commits" array in the response.');
       }
     } catch (error) {
-      console.error('Error fetching Email Measures data:', error);
-      emailMeasuresError.value = 'Failed to load email measures.';
+      console.error('Error fetching Email Links data:', error);
+      emailMeasuresError.value = 'Failed to load email links.';
       emailMeasuresData.value = null;
     } finally {
       emailMeasuresLoading.value = false;
@@ -578,7 +590,6 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log('Fetched Technical Network Data:', data);
     } catch (err) {
       console.error('Error fetching TechNet data:', err);
-      //techNetError.value = 'Failed to fetch Technical Network data.';
       techNetData.value = null;
     } finally {
       techNetLoading.value = false;
@@ -606,23 +617,11 @@ export const useProjectStore = defineStore('projectStore', () => {
       }
 
       const data = await response.json();
-      // Extract data for the specified month
-      const monthData = data.months && data.months[month] ? data.months[month] : [];
-
-      // Normalize the value field to ensure it's a number
-      const normalizedData = monthData.map(item => [
-        item[0],
-        item[1],
-        Number(item[2]) || 0, // Convert to number, default to 0 if NaN
-      ]);
-
-      
-      socialNetData.value = normalizedData;
+      // Assuming data.data contains the social network data
       socialNetData.value = data.data;
       console.log('Fetched Social Network Data:', data);
     } catch (err) {
       console.error('Error fetching SocialNet data:', err);
-      //socialNetError.value = 'Failed to fetch Social Network data.';
       socialNetData.value = null;
     } finally {
       socialNetLoading.value = false;
@@ -676,64 +675,64 @@ export const useProjectStore = defineStore('projectStore', () => {
   };
 
   return {
-    // Foundation
+    // -------------------- Foundation --------------------
     selectedFoundation,
     setFoundation,
 
-    // Project Selection
+    // -------------------- Project Selection --------------------
     selectedProject,
     selectedMonth,
 
-    // GitHub Details
+    // -------------------- GitHub Details --------------------
     github_url,
     fork_count,
     stargazer_count,
     watch_count,
 
-    // Project Descriptions
+    // -------------------- Project Descriptions --------------------
     allDescriptions,
     eclipseDescriptions,
 
-    // Monthly Ranges
+    // -------------------- Monthly Ranges --------------------
     monthlyRanges,
 
-    // Loading & Error
+    // -------------------- Loading & Error --------------------
     loading,
     error,
 
-    // Commit Measures
+    // -------------------- Commit Measures --------------------
     commitMeasuresData,
     commitMeasuresLoading,
     commitMeasuresError,
     fetchCommitMeasuresData,
 
-    // Email Measures
+    // -------------------- Email Measures --------------------
     emailMeasuresData,
     emailMeasuresLoading,
     emailMeasuresError,
-    fetchEmailMeasuresData,
+    fetchEmailLinksData,
 
-    // Graduation Forecast
+    // -------------------- Graduation Forecast --------------------
     gradForecastData,
     xAxisCategories,
     gradForecastLoading,
     gradForecastError,
     fetchGradForecast,
 
-    // Predictions
+    // -------------------- Predictions --------------------
     predictionsData,
     predictionsLoading,
     predictionsError,
     fetchPredictions,
 
-    // Technical Network
+    // -------------------- Technical Network --------------------
     techNetData,
     techNetLoading,
     techNetError,
     fetchTechNetData,
     clearTechNetData,
 
-    // Developer
+    // -------------------- Developer --------------------
     selectedDeveloper,
     setSelectedDeveloper,
     commitLinksData,
@@ -741,31 +740,31 @@ export const useProjectStore = defineStore('projectStore', () => {
     commitLinksError,
     fetchCommitLinksData,
 
-    // Social Network
+    // -------------------- Social Network --------------------
     socialNetData,
     socialNetLoading,
     socialNetError,
     fetchSocialNetData,
     clearSocialNetData,
 
-    // Range Slider
+    // -------------------- Range Slider --------------------
     showRangeSlider,
     rangeValue,
     singleValue,
 
-    // Computed
+    // -------------------- Computed --------------------
     availableMonths,
     minMonth,
     maxMonth,
 
-    // Actions
+    // -------------------- Actions --------------------
     fetchAllProjectData,
     fetchEclipseProjects,
     setCurrentProjectDetails,
     resetProjectDetails,
     fetchMonthlyRanges,
 
-    // API prefix
+    // -------------------- API prefix --------------------
     apiPrefix,
   };
 });

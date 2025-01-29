@@ -4,6 +4,8 @@ import Actionables from '@/views/dashboard/Actionables.vue';
 import CommitLinks from '@/views/dashboard/CommitLinks.vue';
 import EmailLinks from '@/views/dashboard/EmailLinks.vue';
 import GraduationForecast from '@/views/dashboard/GraduationForecast.vue';
+import SocialNetworkNode from '@/views/dashboard/SocialNetworkNode.vue';
+import TechnicalNetworkNode from '@/views/dashboard/TechnicalNetworkNode.vue';
 import NumberOfEmails from '@/views/dashboard/NumberOfEmails.vue';
 import ProjectDetails from '@/views/dashboard/ProjectDetails.vue';
 import ProjectSelector from '@/views/dashboard/ProjectSelector.vue';
@@ -108,6 +110,17 @@ const toggleCollapse = () => {
           <VCard style="height: 400px;">
             <TechnicalNetwork />
           </VCard>
+        </VCol>
+      </VRow>
+
+      <VRow>
+        
+        <VCol cols="6" md="6" sm="6">
+          <SocialNetworkNode />
+        </VCol>
+
+        <VCol cols="6" md="6" sm="6">
+          <TechnicalNetworkNode />
         </VCol>
       </VRow>
 
