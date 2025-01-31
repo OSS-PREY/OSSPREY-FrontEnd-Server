@@ -509,6 +509,56 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
+  // -------------------- Fetch Email Measures --------------------
+  const fetchEmailMeasuresData = async (projectId, month) => {
+    if (!projectId || !month) {
+      console.warn('Project ID or month is missing.');
+      emailMeasuresError.value = 'Project ID or month is missing.';
+      emailMeasuresData.value = null;
+      return;
+    }
+
+    console.log(`Fetching ${apiPrefix.value}/email_measure/${projectId}/${month}...`);
+    emailMeasuresLoading.value = true;
+    emailMeasuresError.value = null;
+    emailMeasuresData.value = null;
+
+    try {
+      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
+
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch email measures: ${response.status}`;
+        emailMeasuresError.value = errorMsg;
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Fetched Email Measures Data:', data);
+      
+      if (data && data.data) {
+        if (Array.isArray(data.data)) {
+          const measures = {};
+          data.data.forEach(measure => {
+            if (typeof measure === 'object') {
+              Object.assign(measures, measure);
+            }
+          });
+          emailMeasuresData.value = measures;
+        } else {
+          emailMeasuresData.value = data.data;
+        }
+      } else {
+        throw new Error('Invalid commit measures data format.');
+      }
+    } catch (error) {
+      console.error('Error fetching Commit Measures data:', error);
+      emailMeasuresError.value = 'Failed to load commit measures.';
+      emailMeasuresData.value = null;
+    } finally {
+      emailMeasuresLoading.value = false;
+    }
+  };
+
   // -------------------- Fetch Email Links Data --------------------
   const fetchEmailLinksData = async (projectId, month, developerName) => {
     if (!projectId || !month || !developerName) {
@@ -721,6 +771,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     emailMeasuresData,
     emailMeasuresLoading,
     emailMeasuresError,
+    fetchEmailMeasuresData,
     fetchEmailLinksData,
 
     // -------------------- Commit Measures --------------------

@@ -127,7 +127,7 @@ const sortedActionablesData = computed(() => {
     <VCardText>
       <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="income" class="highlighted-tab">
-          Researched Actionables (ReACTs)
+          Recommendations
         </VTab>
       </VTabs>
     </VCardText>
