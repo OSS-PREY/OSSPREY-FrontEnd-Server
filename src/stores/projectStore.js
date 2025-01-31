@@ -635,42 +635,53 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Commit Links Data --------------------
   const fetchCommitLinksData = async (projectId, month, developerName) => {
-    if (!developerName) {
-      console.warn('Developer name is missing.');
-      commitLinksError.value = 'Developer name is missing.';
-      commitLinksData.value = null;
+    if (!projectId || !month || !developerName) {
+      console.warn('Project ID, month, or developer name is missing.');
+      commitMeasuresError.value = 'Project ID, month, or developer name is missing.';
+      commitMeasuresData.value = null;
       return;
     }
-
-    commitLinksLoading.value = true;
-    commitLinksError.value = null;
-    commitLinksData.value = null;
-
+  
+    console.log(`Fetching ${apiPrefix.value}/commit_links/${projectId}/${month} for developer: ${developerName}...`);
+    commitMeasuresLoading.value = true;
+    commitMeasuresError.value = null;
+    commitMeasuresData.value = null;
+  
     try {
-      console.log(`Fetching ${apiPrefix.value}/commit_links/${projectId}/${month}...`);
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
-
+  
       if (!response.ok) {
         let errorMsg = `Failed to fetch commit links: ${response.status}`;
-        commitLinksError.value = errorMsg;
+        commitMeasuresError.value = errorMsg;
         return;
       }
-
+  
       const data = await response.json();
-      const normalizedDeveloperName = normalizeName(developerName);
-      const filteredCommits = data.commits.filter(commit => {
-        const commitAuthorName = normalizeName(commit.dealised_author_full_name);
-        return commitAuthorName === normalizedDeveloperName;
-      });
-
-      commitLinksData.value = filteredCommits;
-      console.log('Filtered Commit Links:', filteredCommits);
+      console.log('Fetched Commit links Data:', data);
+  
+      // Ensure the response has the expected structure
+      if (data && data.commits && Array.isArray(data.commits)) {
+        const normalizedDeveloperName = normalizeName(developerName);
+        const filteredCommits = data.commits
+          .filter(commit => {
+            const commitAuthorName = normalizeName(commit.dealised_author_full_name);
+            return commitAuthorName === normalizedDeveloperName;
+          })
+          .map(commit => ({
+            link: commit.link,
+            date: commit.human_date_time,
+          }));
+  
+        commitMeasuresData.value = filteredCommits;
+      } else {
+        throw new Error('Invalid email measures data format: Expected "commits" array in the response.');
+      }
     } catch (error) {
-      console.error('Error fetching Commit Links data:', error);
-      commitLinksError.value = 'Failed to load commit links.';
-      commitLinksData.value = null;
+      console.error('Error fetching Email Links data:', error);
+      commitMeasuresError.value = 'Failed to load email links.';
+      commitMeasuresData.value = null;
     } finally {
-      commitLinksLoading.value = false;
+      commitMeasuresLoading.value = false;
     }
   };
 
@@ -711,6 +722,12 @@ export const useProjectStore = defineStore('projectStore', () => {
     emailMeasuresLoading,
     emailMeasuresError,
     fetchEmailLinksData,
+
+    // -------------------- Commit Measures --------------------
+    commitMeasuresData,
+    commitMeasuresLoading,
+    commitMeasuresError,
+    fetchCommitLinksData,
 
     // -------------------- Graduation Forecast --------------------
     gradForecastData,

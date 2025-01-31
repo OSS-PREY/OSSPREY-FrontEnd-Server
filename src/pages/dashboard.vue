@@ -87,7 +87,7 @@ const toggleCollapse = () => {
     <div v-show="!isCollapsed">
 
       <!-- [Temporary] Fifth Row: Commit and Email Links --> 
-      <VRow>
+      <!-- <VRow>
         
         <VCol cols="6" md="6" sm="6">
           <CurrentProject />
@@ -96,7 +96,7 @@ const toggleCollapse = () => {
         <VCol cols="6" md="6" sm="6">
           <CurrentMonth />
         </VCol>
-      </VRow>
+      </VRow> -->
 
       <VRow>
         <!-- Fourth Row: Social and Technical Network Cards -->
