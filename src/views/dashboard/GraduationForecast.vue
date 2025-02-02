@@ -1,10 +1,9 @@
 <!-- src/components/Graduationforecast.vue -->
-
 <template>
   <VCard>
     <!-- Tabs Section -->
     <VCardText>
-      <VTabs v-model="currentTab" class="v-tabs-pill" >
+      <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="yearly" class="highlighted-tab">
           All Months Forecast
         </VTab>
@@ -116,6 +115,9 @@ const projectStore = useProjectStore();
 // Current Tab State
 const currentTab = ref('yearly'); // Default to 'yearly'
 
+// Reactive selected month (1-indexed, provided via your Project Selector)
+const selectedMonth = computed(() => projectStore.selectedMonth || 1);
+
 // Computed properties for loading and error states
 const gradForecastLoading = computed(() => projectStore.gradForecastLoading);
 const gradForecastError = computed(() => projectStore.gradForecastError);
@@ -125,15 +127,31 @@ const predictionsError = computed(() => projectStore.predictionsError);
 const predictionsData = computed(() => projectStore.predictionsData);
 
 // -------------------- All Months Forecast (Yearly) --------------------
-
-// Define the series for Yearly Forecasts ApexCharts
+// We create two series that together show the full forecast.
+// • Series A (actual): for indices 0 to (selectedMonth - 1) (i.e. months 1 through selectedMonth)
+// • Series B (projection): for indices (selectedMonth - 1) to end (i.e. starting at the selected month)
+// In both series the underlying y values come directly from the API.
+// (The overlapping point at index (selectedMonth - 1) makes the two segments join seamlessly.)
 const yearlySeries = computed(() => {
-  const dataPoints = gradForecastData.value;
+  const allData = gradForecastData.value || [];
+  const xCategories = projectStore.xAxisCategories || [];
+  const selected = selectedMonth.value; // e.g. 5 means month 5 is selected; its index is 4
+
+  // Build Series A: show valid values for indices 0 .. selected-1, and null for later indices.
+  const seriesAData = allData.map((val, index) => ({
+    x: xCategories[index] || `Month ${index + 1}`,
+    y: index < selected ? val : null
+  }));
+
+  // Build Series B: show nulls for indices before (selected - 1), then valid values from index (selected - 1) onward.
+  const seriesBData = allData.map((val, index) => ({
+    x: xCategories[index] || `Month ${index + 1}`,
+    y: index >= selected - 1 ? val : null
+  }));
+
   return [
-    {
-      name: 'Graduation Forecast',
-      data: dataPoints
-    },
+    { name: 'Graduation Forecast', data: seriesAData },
+    { name: '', data: seriesBData }
   ];
 });
 
@@ -141,109 +159,121 @@ const yearlySeries = computed(() => {
 const yearlyChartConfig = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors;
   const variableTheme = vuetifyTheme.current.value.variables;
-  const disabledTextColor = `rgba(${hexToRgb(
-    String(currentTheme['on-surface'])
-  )},${variableTheme['disabled-opacity']})`;
-  const borderColor = `rgba(${hexToRgb(
-    String(variableTheme['border-color'])
-  )},${variableTheme['border-opacity']})`;
+  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
+  const selected = selectedMonth.value;
+  const selectedIndex = selected - 1; // 0-indexed
 
   return {
     chart: {
       parentHeightOffset: 0,
-      toolbar: { show: false },
+      toolbar: { show: false }
     },
     dataLabels: { enabled: false },
     stroke: {
       width: 3,
       curve: 'smooth',
+      // The first series is solid; the second is dashed.
+      dashArray: [0, 5]
     },
     grid: {
       strokeDashArray: 4.5,
-      borderColor,
+      borderColor: `rgba(${hexToRgb(String(variableTheme['border-color']))},${variableTheme['border-opacity']})`,
       padding: {
         left: 0,
         top: -20,
         right: 11,
-        bottom: 7,
-      },
+        bottom: 7
+      }
     },
-    colors: [currentTheme.primary],
+    // Series colors: primary for actual; grey for projected.
+    colors: [currentTheme.primary, '#9e9e9e'],
     markers: {
       size: 5,
       hover: { size: 7 },
+      discrete: [
+        {
+          // For Series A, at the selected month index, show a marker with a thick green border.
+          seriesIndex: 0,
+          dataPointIndex: selectedIndex,
+          fillColor: currentTheme.primary,
+          strokeColor: "#4CAF50", // Green border
+          strokeWidth: 4,
+          size: 5
+        },
+        {
+          // For Series B, hide the marker for the overlapping point.
+          seriesIndex: 1,
+          dataPointIndex: selectedIndex,
+          size: 0
+        }
+      ]
     },
     xaxis: {
+      type: 'category',
       categories: projectStore.xAxisCategories,
       axisTicks: { show: false },
       axisBorder: { show: false },
       labels: {
         style: {
           fontSize: '14px',
-          colors: disabledTextColor,
-        },
-      },
+          colors: disabledTextColor
+        }
+      }
     },
     yaxis: {
       min: 0,
-      max: 1, // Ensure y-axis is between 0 and 1
+      max: 1, // Adjust if your data range changes
       tickAmount: 4,
       labels: {
         formatter: function (val) {
           return val.toFixed(2);
-        },
-      },
+        }
+      }
     },
     legend: {
-      show: true,
-      position: 'top',
-      horizontalAlign: 'right',
-      labels: {
-        colors: currentTheme['on-surface'],
-      },
+      show: false // Hide legend so the two segments are not labeled separately.
     },
     tooltip: {
       shared: true,
       intersect: false,
-    },
+      y: {
+        title: {
+          formatter: () => 'Graduation Forecast'
+        }
+      }
+    }
   };
 });
 
 // -------------------- Month-wise Forecast (Monthly) --------------------
-
-// Define the series for Monthly Forecasts ApexCharts (Predictions)
+// (Retained from your original implementation.)
 const monthlySeries = computed(() => {
   const adjustedForecast = predictionsData.value.adjusted_forecast || {};
   const dataPoints = Object.values(adjustedForecast).map(item => item.close);
   return [
     {
       name: 'Month-wise Forecast',
-      data: dataPoints,
-    },
+      data: dataPoints
+    }
   ];
 });
 
-// Define the chart configuration for Monthly Forecasts (Predictions)
 const monthlyChartConfig = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors;
   const variableTheme = vuetifyTheme.current.value.variables;
-  const disabledTextColor = `rgba(${hexToRgb(
-    String(currentTheme['on-surface'])
-  )},${variableTheme['disabled-opacity']})`;
-  const borderColor = `rgba(${hexToRgb(
-    String(variableTheme['border-color'])
-  )},${variableTheme['border-opacity']})`;
+  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
+  const borderColor = `rgba(${hexToRgb(String(variableTheme['border-color']))},${variableTheme['border-opacity']})`;
 
   return {
     chart: {
       parentHeightOffset: 0,
-      toolbar: { show: false },
+      toolbar: { show: false }
     },
     dataLabels: { enabled: false },
     stroke: {
       width: 3,
       curve: 'smooth',
-      dashArray: 5, // Dotted line for predictions
+      dashArray: 5
     },
     grid: {
       strokeDashArray: 4.5,
@@ -252,13 +282,13 @@ const monthlyChartConfig = computed(() => {
         left: 0,
         top: -20,
         right: 11,
-        bottom: 7,
-      },
+        bottom: 7
+      }
     },
-    colors: [currentTheme.secondary], // Different color for predictions
+    colors: [currentTheme.secondary],
     markers: {
       size: 5,
-      hover: { size: 7 },
+      hover: { size: 7 }
     },
     xaxis: {
       categories: Object.values(predictionsData.value.adjusted_forecast).map(item => `Month ${item.date}`),
@@ -267,32 +297,32 @@ const monthlyChartConfig = computed(() => {
       labels: {
         style: {
           fontSize: '14px',
-          colors: disabledTextColor,
-        },
-      },
+          colors: disabledTextColor
+        }
+      }
     },
     yaxis: {
       min: 0,
-      max: 1, // Adjust based on your data range
+      max: 1,
       tickAmount: 4,
       labels: {
         formatter: function (val) {
           return val.toFixed(2);
-        },
-      },
+        }
+      }
     },
     legend: {
       show: true,
       position: 'top',
       horizontalAlign: 'right',
       labels: {
-        colors: currentTheme['on-surface'],
-      },
+        colors: currentTheme['on-surface']
+      }
     },
     tooltip: {
       shared: true,
-      intersect: false,
-    },
+      intersect: false
+    }
   };
 });
 
@@ -300,28 +330,28 @@ const monthlyChartConfig = computed(() => {
 const tabData = computed(() => {
   if (currentTab.value === 'yearly') {
     return {
-      avatar: null, // No avatar as per user instruction
+      avatar: null,
       title: `Current Project: ${projectStore.selectedProject?.project_id || 'None'}`,
       stats: gradForecastLoading.value
         ? 'Loading forecast data...'
-        : `Forecast Data: ${gradForecastData.value.length} months available`,
+        : `Forecast Data: ${gradForecastData.value.length} months available`
     };
   } else if (currentTab.value === 'monthly') {
     return {
-      avatar: null, // No avatar as per user instruction
+      avatar: null,
       title: `Month-wise Forecast for ${projectStore.selectedProject?.project_id || 'None'}`,
       stats: predictionsLoading.value
         ? 'Loading predictions...'
-        : `Adjusted Forecast for next 3 months`,
+        : `Adjusted Forecast for next 3 months`
     };
   }
   return {};
 });
 
-// Define table headers for Predictions (Assuming existing functionality)
+// Define table headers for Predictions
 const predictionsTableHeaders = [
   { text: 'Month', value: 'month' },
-  { text: 'Adjusted Close', value: 'close' },
+  { text: 'Adjusted Close', value: 'close' }
 ];
 
 // Prepare table data for Predictions
@@ -330,7 +360,7 @@ const predictionsTableData = computed(() => {
   if (!adjustedForecast) return [];
   return Object.values(adjustedForecast).map(item => ({
     month: `Month ${item.date}`,
-    close: item.close,
+    close: item.close
   }));
 });
 
@@ -373,7 +403,6 @@ const fetchGradForecastData = async () => {
     console.warn('No project selected.');
     return;
   }
-
   await projectStore.fetchGradForecast(projectId);
 };
 
@@ -411,15 +440,15 @@ watch(
 
 .table-container {
   max-height: 400px; /* Adjust as needed */
-  overflow-y: auto; /* Enable vertical scrolling */
-  overflow-x: auto; /* Enable horizontal scrolling for wide tables */
+  overflow-y: auto;
+  overflow-x: auto;
   display: block;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures consistent column widths */
+  table-layout: fixed;
 }
 
 .table-bordered {
