@@ -75,11 +75,9 @@ const clearSankeyDiagram = () => {
 
 /**
  * Prepares and renders the Sankey diagram using D3-Sankey.
- * This version mirrors the Social Network rendering and uses the
- * same colorful theme (d3.schemeCategory10) for nodes and edges.
- * Node text is positioned conditionally:
- *   - For "source" nodes (left side): text is placed to the right.
- *   - For "target" nodes (right side): text is placed inside (to the left).
+ * This version mirrors the Social Network rendering and applies the same
+ * colorful theme (d3.schemeCategory10) for nodes and edges.
+ * The diagram’s height is set to 40% of the container width so that it appears smaller.
  */
 const preparePlotData = () => {
   if (!projectStore.techNetData || projectStore.techNetData.length === 0) {
@@ -93,11 +91,10 @@ const preparePlotData = () => {
   const reducedData = reduceTheCommits(monthData);
 
   // Process data into nodes and links.
-  // (Adjust the logic if your technical network data structure differs.)
   let nodes = [];
   let links = [];
   reducedData.forEach(([source, target, value]) => {
-    // For technical network, assume "source" nodes are committers and "target" nodes are repositories
+    // For technical network, assume "source" nodes are committers and "target" nodes are repositories.
     const sourceIndex = nodes.push({ name: source, side: 'source' }) - 1;
     const targetIndex = nodes.push({ name: target, side: 'target' }) - 1;
     links.push({
@@ -123,12 +120,12 @@ const preparePlotData = () => {
   }));
 
   // Use the same colorful theme as Social Network.
-  // This uses the d3.schemeCategory10 color palette.
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
   // Compute container dimensions.
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
-  const containerHeight = containerWidth * 0.6; // Maintain a 0.6 aspect ratio.
+  // Set diagram height to 40% of container width.
+  const containerHeight = containerWidth * 0.4;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
   // Clear any existing diagram and create a new SVG.
@@ -162,7 +159,6 @@ const preparePlotData = () => {
     .append("path")
     .attr("d", sankeyLinkHorizontal())
     .attr("stroke", d => {
-      // Use the source node's color with reduced opacity.
       const col = d3.color(colorScale(d.source.name));
       col.opacity = 0.4;
       return col.toString();
@@ -229,7 +225,7 @@ const handleResize = () => {
 };
 
 /**
- * Fetches and renders the Sankey diagram whenever the selected project or month changes.
+ * When project or month changes, fetch the technical network data.
  */
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
@@ -279,22 +275,24 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .tech-net-card {
   height: 100%;
-  overflow: auto;
+  overflow: hidden;  /* Remove scrollability for the overall component */
   display: flex;
   flex-direction: column;
 }
 
+/* Sankey wrapper styling */
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
-  min-height: 480px; /* Ensure a reasonable minimum height */
+  /* No fixed min-height so that the diagram uses only the allocated space */
+  min-height: 0;
 }
 
 .sankey-container {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;  /* Hide any overflow */
   display: flex;
   justify-content: center;
   align-items: center;

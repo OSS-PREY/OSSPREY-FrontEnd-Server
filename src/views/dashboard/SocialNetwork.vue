@@ -8,9 +8,7 @@
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
-      <div class="sankey-container" ref="sankeyDiv">
-        
-      </div>
+      <div class="sankey-container" ref="sankeyDiv"></div>
 
       <!-- Loading Indicator -->
       <div v-if="projectStore.socialNetLoading" class="overlay">
@@ -25,7 +23,9 @@
 
       <!-- No Data Message -->
       <div
-        v-if="!projectStore.socialNetLoading && !projectStore.socialNetError && (!projectStore.socialNetData || projectStore.socialNetData.length === 0) && projectStore.selectedProject && projectStore.selectedMonth"
+        v-if="!projectStore.socialNetLoading && !projectStore.socialNetError &&
+           (!projectStore.socialNetData || projectStore.socialNetData.length === 0) &&
+           projectStore.selectedProject && projectStore.selectedMonth"
         class="overlay"
       >
         No social network data available for the selected month.
@@ -42,7 +42,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import * as d3 from 'd3';
-// Import sankeyCenter (instead of sankeyJustify) along with sankey and sankeyLinkHorizontal.
+// Import sankeyCenter along with sankey and sankeyLinkHorizontal.
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
@@ -77,6 +77,7 @@ const clearSankeyDiagram = () => {
 /**
  * Prepares and renders the Sankey diagram using d3-sankey.
  * The diagram’s dimensions are computed dynamically from the container.
+ * Diagram height is set to 40% of container width to make it smaller.
  */
 const preparePlotData = () => {
   if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
@@ -129,7 +130,8 @@ const preparePlotData = () => {
 
   // Compute container dimensions.
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
-  const containerHeight = containerWidth * 0.6; // Use a 0.6 aspect ratio.
+  // Set height to 40% of the container's width
+  const containerHeight = containerWidth * 0.45;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
   // Clear any existing diagram and create a new SVG.
@@ -147,7 +149,7 @@ const preparePlotData = () => {
   const sankeyGenerator = sankey()
     .nodeWidth(12)
     .nodePadding(8)
-    .nodeAlign(sankeyCenter)   // Use center alignment instead of justify.
+    .nodeAlign(sankeyCenter)
     .extent([[margin.left, margin.top], [containerWidth - margin.right, containerHeight - margin.bottom]]);
 
   const graph = {
@@ -283,23 +285,24 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .social-net-card {
   height: 100%;
-  overflow: auto;
+  overflow: hidden;  /* Remove scrollability for the overall component */
   display: flex;
   flex-direction: column;
 }
 
-/* Mimic the Technical Network container styling */
+/* Sankey wrapper styling */
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
-  min-height: 480px; /* Ensure a reasonable minimum height */
+  /* Remove the min-height if you want the diagram to use only as much space as needed */
+  min-height: 0;
 }
 
 .sankey-container {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;  /* Hide overflow to avoid scroll bars */
   display: flex;
   justify-content: center;
   align-items: center;
