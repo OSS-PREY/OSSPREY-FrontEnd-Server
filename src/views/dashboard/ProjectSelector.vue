@@ -87,11 +87,11 @@
               />
 
               <!-- Checkbox for Range Slider -->
-              <VCheckbox
+              <!-- <VCheckbox
                 v-model="projectStore.showRangeSlider"
                 label="Enable Range Slider"
                 class="mb-3"
-              />
+              /> -->
 
               <!-- Range Slider -->
               <VSlider

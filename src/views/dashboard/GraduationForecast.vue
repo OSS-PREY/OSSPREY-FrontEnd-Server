@@ -5,7 +5,7 @@
     <VCardText>
       <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="yearly" class="highlighted-tab">
-          All Months Forecast
+          Probability of Sustainability
         </VTab>
         <!-- <VTab value="monthly" class="highlighted-tab">
           Month-wise Forecast

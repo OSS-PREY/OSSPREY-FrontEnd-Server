@@ -1,5 +1,4 @@
 <!-- src/components/SocialNetwork.vue -->
-
 <template>
   <VCard class="text-center text-sm-start social-net-card">
     <VCardItem class="pb-3">
@@ -8,14 +7,14 @@
       </VCardTitle>
     </VCardItem>
     <VCardText class="sankey-wrapper">
-      <!-- Sankey Diagram -->
+      <!-- Sankey Diagram Container -->
       <div class="sankey-container" ref="sankeyDiv">
-        <div id="sankey"></div>
+        
       </div>
 
       <!-- Loading Indicator -->
       <div v-if="projectStore.socialNetLoading" class="overlay">
-        <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
+        <VProgressCircular indeterminate color="primary" size="50" />
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
 
@@ -42,7 +41,9 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import Plotly from 'plotly.js-dist-min';
+import * as d3 from 'd3';
+// Import sankeyCenter (instead of sankeyJustify) along with sankey and sankeyLinkHorizontal.
+import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
@@ -50,186 +51,193 @@ const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
 
 /**
- * Reduces the emails based on the threshold logic.
- * Ensures that the value is a number and applies filtering based on the threshold.
+ * Reduces the emails based on threshold logic.
  */
 function reduceTheEmails(inputArray) {
   if (!Array.isArray(inputArray)) return [];
-
   const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
-
   const filteredArray = inputArray.filter((item) => parseInt(item[2], 10) > threshold);
-
-  const numEmails = filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
-  const numSenders = [...new Set(filteredArray.map((item) => item[0]))].length;
-  const emailsPerDev = numSenders > 0 ? Math.floor(numEmails / numSenders) : 0;
-
   console.log("Filtered Emails Data:", filteredArray);
-  console.log("Total Emails:", numEmails);
-  console.log("Number of Senders:", numSenders);
-  console.log("Emails Per Developer:", emailsPerDev);
-
+  console.log("Total Emails:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
+  console.log("Number of Senders:", [...new Set(filteredArray.map(item => item[0]))].length);
   return filteredArray;
 }
 
 /**
- * Clears the existing Sankey diagram.
+ * Removes any previously rendered SVG.
  */
 const clearSankeyDiagram = () => {
   if (sankeyDiv.value) {
-    Plotly.purge(sankeyDiv.value);
+    d3.select(sankeyDiv.value).select("svg").remove();
     console.log('SocialNet Sankey diagram cleared.');
   }
 };
 
 /**
- * Prepares and renders the Sankey diagram using Plotly.
+ * Prepares and renders the Sankey diagram using d3-sankey.
+ * The diagram’s dimensions are computed dynamically from the container.
  */
 const preparePlotData = () => {
-  console.log('Starting preparePlotData for SocialNet...');
-
   if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
     console.warn('No social network data found to render.');
     clearSankeyDiagram();
     return;
   }
 
-  const projectName = projectStore.selectedProject.project_id;
-  console.log(`Project Name: ${projectName}`);
-  console.log('SocialNet Data:', projectStore.socialNetData);
-
+  // Apply threshold reduction.
   const monthData = projectStore.socialNetData;
-
-  // Apply reduceTheEmails function
   const reducedData = reduceTheEmails(monthData);
 
-  const nodes = [];
-  const links = [];
+  // Process data into nodes and links.
+  let nodes = [];
+  let links = [];
   reducedData.forEach(([source, target, value]) => {
     const sourceIndex = nodes.push({ name: source, side: 'source' }) - 1;
     const targetIndex = nodes.push({ name: target, side: 'target' }) - 1;
-
     links.push({
       source: sourceIndex,
       target: targetIndex,
-      value: parseInt(value, 10) || 0,
+      value: parseInt(value, 10) || 0
     });
   });
 
+  // Aggregate unique nodes and reindex links.
   const nodeMap = {};
   const updatedNodes = [];
   const updatedLinks = [];
-
-  nodes.forEach((node, index) => {
+  nodes.forEach((node) => {
     const key = `${node.side}|${node.name}`;
-    if (!nodeMap[key]) {
+    if (nodeMap[key] === undefined) {
       nodeMap[key] = updatedNodes.push({ name: node.name, side: node.side }) - 1;
     }
   });
-
   links.forEach(link => {
     const newSource = nodeMap[`source|${nodes[link.source].name}`];
     const newTarget = nodeMap[`target|${nodes[link.target].name}`];
-    const existingLink = updatedLinks.find(
-      l => l.source === newSource && l.target === newTarget
-    );
+    const existingLink = updatedLinks.find(l => l.source === newSource && l.target === newTarget);
     if (existingLink) {
       existingLink.value += link.value;
     } else {
       updatedLinks.push({
         source: newSource,
         target: newTarget,
-        value: link.value,
+        value: link.value
       });
     }
   });
 
-  const nodeColors = updatedNodes.map(node =>
-    node.side === 'source' ? '#1E90FF' : '#FF4500'
-  );
+  // Compute container dimensions.
+  const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
+  const containerHeight = containerWidth * 0.6; // Use a 0.6 aspect ratio.
+  const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
-  const sankeyData = {
-    type: 'sankey',
-    orientation: 'h',
-    node: {
-      pad: 20,
-      thickness: 20,
-      line: {
-        color: '#333',
-        width: 0.5,
-      },
-      label: updatedNodes.map(node => node.name),
-      color: nodeColors,
-      hovertemplate: '%{label}<extra></extra>',
-    },
-    link: {
-      source: updatedLinks.map(link => link.source),
-      target: updatedLinks.map(link => link.target),
-      value: updatedLinks.map(link => link.value),
-      color: updatedLinks.map(() => 'rgba(30, 136, 229, 0.4)'),
-      hovertemplate: 'Source: %{source.label}<br>Target: %{target.label}<br>Value: %{value}<extra></extra>',
-    },
+  // Clear any existing diagram and create a new SVG.
+  clearSankeyDiagram();
+  const svg = d3.select(sankeyDiv.value)
+    .append("svg")
+    .attr("width", containerWidth)
+    .attr("height", containerHeight)
+    .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
+
+  // Create a color scale for nodes.
+  const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+  // Set up the sankey generator with center alignment.
+  const sankeyGenerator = sankey()
+    .nodeWidth(12)
+    .nodePadding(8)
+    .nodeAlign(sankeyCenter)   // Use center alignment instead of justify.
+    .extent([[margin.left, margin.top], [containerWidth - margin.right, containerHeight - margin.bottom]]);
+
+  const graph = {
+    nodes: updatedNodes.map(d => ({ ...d })),
+    links: updatedLinks.map(d => ({ ...d }))
   };
 
-  const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 600;
-  const containerHeight = containerWidth * 0.6;
+  sankeyGenerator(graph);
 
-  const layout = {
-    font: {
-      size: 12,
-      color: '#424242',
-    },
-    paper_bgcolor: 'transparent',
-    plot_bgcolor: 'transparent',
-    height: containerHeight,
-    width: containerWidth,
-    margin: { t: 20, l: 20, r: 20, b: 20 },
-    autosize: true,
-  };
+  // Draw links.
+  const link = svg.append("g")
+    .attr("class", "links")
+    .selectAll("path")
+    .data(graph.links)
+    .enter()
+    .append("path")
+    .attr("d", sankeyLinkHorizontal())
+    .attr("stroke", d => {
+      const col = d3.color(colorScale(d.source.name));
+      col.opacity = 0.4;
+      return col.toString();
+    })
+    .attr("stroke-width", d => Math.max(1, d.width))
+    .attr("fill", "none")
+    .attr("stroke-opacity", 0.5)
+    .on("mouseover", function(event, d) {
+      d3.select(this).attr("stroke-opacity", 0.7);
+    })
+    .on("mouseout", function(event, d) {
+      d3.select(this).attr("stroke-opacity", 0.5);
+    });
 
-  if (sankeyDiv.value) {
-    try {
-      console.log('Rendering Sankey diagram...');
-      Plotly.react(sankeyDiv.value, [sankeyData], layout, { responsive: true }).then(() => {
-        // Add click event listener to the Sankey diagram
-        sankeyDiv.value.on('plotly_click', (data) => {
-          const point = data.points[0];
-          if (point) {
-            const nodeName = updatedNodes[point.pointNumber].name;
-            console.log(`Node clicked: ${nodeName}`);
-            projectStore.setSelectedDeveloper(nodeName); // Update the store with the selected developer
-          }
-        });
-      });
-      console.log('SocialNet Sankey diagram rendered successfully.');
-    } catch (err) {
-      console.error('Error rendering SocialNet Sankey diagram:', err);
-    }
-  }
+  link.append("title")
+    .text(d => `Source: ${d.source.name}\nTarget: ${d.target.name}\nValue: ${d.value}`);
 
-  console.log('Finished preparePlotData for SocialNet.');
+  // Draw nodes.
+  const node = svg.append("g")
+    .attr("class", "nodes")
+    .selectAll("g")
+    .data(graph.nodes)
+    .enter()
+    .append("g")
+    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+  node.append("rect")
+    .attr("height", d => d.y1 - d.y0)
+    .attr("width", d => d.x1 - d.x0)
+    .attr("fill", d => colorScale(d.name))
+    .attr("stroke", "#333")
+    .attr("stroke-width", 0.5)
+    .style("cursor", "pointer")
+    .on("click", (event, d) => {
+      console.log(`Node clicked: ${d.name}`);
+      projectStore.setSelectedDeveloper(d.name);
+    })
+    .append("title")
+    .text(d => d.name);
+
+  // Modify text placement:
+  // For left-side nodes (side === "source"), place text to the right.
+  // For right-side nodes (side === "target"), place text inside to the left.
+  node.append("text")
+    .attr("x", d => d.side === "target" ? -6 : (d.x1 - d.x0) + 6)
+    .attr("y", d => (d.y1 - d.y0) / 2)
+    .attr("dy", "0.35em")
+    .text(d => d.name)
+    .style("font-size", "12px")
+    .style("fill", "#424242")
+    .style("text-anchor", d => d.side === "target" ? "end" : "start");
+
+  console.log('SocialNet Sankey diagram rendered successfully.');
 };
 
 /**
- * Handles window resize events to make Plotly diagrams responsive.
+ * On window resize, re-render the diagram.
  */
 const handleResize = () => {
   if (sankeyDiv.value) {
-    Plotly.Plots.resize(sankeyDiv.value);
+    preparePlotData();
     console.log('SocialNet Sankey diagram resized.');
   }
 };
 
 /**
- * Fetches and renders the Sankey diagram whenever the selected project or month changes.
+ * When project or month changes, fetch the social network data.
  */
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
   const month = projectStore.selectedMonth;
-
   console.log(`Attempting to fetch SocialNet data for project_id: ${projectId}, month: ${month}`);
-
   if (projectId && month !== null && month !== undefined && !isNaN(month)) {
     projectStore.fetchSocialNetData(projectId, month);
   } else {
@@ -237,7 +245,7 @@ const fetchAndRenderSankey = () => {
   }
 };
 
-// Watch for changes in social network data
+// Watch for changes in social network data.
 watch(
   () => projectStore.socialNetData,
   (newData) => {
@@ -249,7 +257,7 @@ watch(
   }
 );
 
-// Watch for changes in selected project or month
+// Watch for changes in selected project or month.
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
@@ -280,10 +288,12 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
+/* Mimic the Technical Network container styling */
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
+  min-height: 480px; /* Ensure a reasonable minimum height */
 }
 
 .sankey-container {
@@ -331,7 +341,6 @@ onUnmounted(() => {
     padding: 10px;
     max-width: 95%;
   }
-
   .loading-text {
     font-size: 0.9rem;
   }
