@@ -25,7 +25,9 @@
 
       <!-- No Data Message -->
       <div
-        v-if="!projectStore.techNetLoading && !projectStore.techNetError && (!projectStore.techNetData || projectStore.techNetData.length === 0) && projectStore.selectedProject && projectStore.selectedMonth"
+        v-if="!projectStore.techNetLoading && !projectStore.techNetError &&
+             (!projectStore.techNetData || projectStore.techNetData.length === 0) &&
+             projectStore.selectedProject && projectStore.selectedMonth"
         class="overlay"
       >
         No technical network data available for the selected month.
@@ -75,9 +77,7 @@ const clearSankeyDiagram = () => {
 
 /**
  * Prepares and renders the Sankey diagram using D3-Sankey.
- * This version mirrors the Social Network rendering and applies the same
- * colorful theme (d3.schemeCategory10) for nodes and edges.
- * The diagram’s height is set to 40% of the container width so that it appears smaller.
+ * This version mirrors the Social Network rendering.
  */
 const preparePlotData = () => {
   if (!projectStore.techNetData || projectStore.techNetData.length === 0) {
@@ -119,7 +119,6 @@ const preparePlotData = () => {
     value: link.value,
   }));
 
-  // Use the same colorful theme as Social Network.
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
   // Compute container dimensions.
@@ -128,7 +127,6 @@ const preparePlotData = () => {
   const containerHeight = containerWidth * 0.4;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
-  // Clear any existing diagram and create a new SVG.
   clearSankeyDiagram();
   const svg = d3.select(sankeyDiv.value)
     .append("svg")
@@ -136,7 +134,7 @@ const preparePlotData = () => {
     .attr("height", containerHeight)
     .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
 
-  // Set up the sankey generator with center alignment.
+  // Set up the sankey generator.
   const sankeyGenerator = sankey()
     .nodeWidth(12)
     .nodePadding(8)
@@ -193,15 +191,13 @@ const preparePlotData = () => {
     .attr("stroke-width", 0.5)
     .style("cursor", "pointer")
     .on("click", (event, d) => {
-      console.log(`Node clicked: ${d.name}`);
-      projectStore.setSelectedDeveloper(d.name);
+      console.log(`Technical network node clicked: ${d.name}`);
+      // Use the dedicated technical setter.
+      projectStore.setSelectedTechnicalDeveloper(d.name);
     })
     .append("title")
     .text(d => d.name);
 
-  // Modify text placement:
-  // For left-side nodes (side === "source"), place text to the right.
-  // For right-side nodes (side === "target"), place text inside to the left.
   node.append("text")
     .attr("x", d => d.side === "target" ? -6 : (d.x1 - d.x0) + 6)
     .attr("y", d => (d.y1 - d.y0) / 2)
@@ -214,9 +210,6 @@ const preparePlotData = () => {
   console.log('TechNet Sankey diagram rendered successfully.');
 };
 
-/**
- * On window resize, re-render the diagram.
- */
 const handleResize = () => {
   if (sankeyDiv.value) {
     preparePlotData();
@@ -224,9 +217,6 @@ const handleResize = () => {
   }
 };
 
-/**
- * When project or month changes, fetch the technical network data.
- */
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
   const month = projectStore.selectedMonth;
@@ -237,7 +227,6 @@ const fetchAndRenderSankey = () => {
   }
 };
 
-// Watch for changes in technical network data.
 watch(
   () => projectStore.techNetData,
   (newData) => {
@@ -249,7 +238,6 @@ watch(
   }
 );
 
-// Watch for changes in selected project or month.
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
@@ -275,24 +263,22 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .tech-net-card {
   height: 100%;
-  overflow: hidden;  /* Remove scrollability for the overall component */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Sankey wrapper styling */
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
-  /* No fixed min-height so that the diagram uses only the allocated space */
   min-height: 0;
 }
 
 .sankey-container {
   width: 100%;
   height: 100%;
-  overflow: hidden;  /* Hide any overflow */
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;

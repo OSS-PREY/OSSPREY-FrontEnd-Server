@@ -1,5 +1,4 @@
 // src/stores/projectStore.js
-
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 
@@ -23,6 +22,19 @@ export const useProjectStore = defineStore('projectStore', () => {
   const setSelectedDeveloper = (developerName) => {
     selectedDeveloper.value = developerName;
     console.log('Selected Developer:', selectedDeveloper.value);
+  };
+
+  // << NEW >> Social and Technical node selections:
+  const selectedSocialDeveloper = ref(null);
+  const setSelectedSocialDeveloper = (developerName) => {
+    selectedSocialDeveloper.value = developerName;
+    console.log('Selected Social Developer:', selectedSocialDeveloper.value);
+  };
+
+  const selectedTechnicalDeveloper = ref(null);
+  const setSelectedTechnicalDeveloper = (developerName) => {
+    selectedTechnicalDeveloper.value = developerName;
+    console.log('Selected Technical Developer:', selectedTechnicalDeveloper.value);
   };
 
   // -------------------- Commit Links State --------------------
@@ -814,6 +826,12 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetError,
     fetchSocialNetData,
     clearSocialNetData,
+
+    // << NEW >> Social & Technical Node Selections:
+    selectedSocialDeveloper,
+    setSelectedSocialDeveloper,
+    selectedTechnicalDeveloper,
+    setSelectedTechnicalDeveloper,
 
     // -------------------- Range Slider --------------------
     showRangeSlider,

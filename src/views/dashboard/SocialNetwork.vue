@@ -42,7 +42,6 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import * as d3 from 'd3';
-// Import sankeyCenter along with sankey and sankeyLinkHorizontal.
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
@@ -76,8 +75,6 @@ const clearSankeyDiagram = () => {
 
 /**
  * Prepares and renders the Sankey diagram using d3-sankey.
- * The diagram’s dimensions are computed dynamically from the container.
- * Diagram height is set to 40% of container width to make it smaller.
  */
 const preparePlotData = () => {
   if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
@@ -130,7 +127,6 @@ const preparePlotData = () => {
 
   // Compute container dimensions.
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
-  // Set height to 40% of the container's width
   const containerHeight = containerWidth * 0.45;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
@@ -142,10 +138,8 @@ const preparePlotData = () => {
     .attr("height", containerHeight)
     .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
 
-  // Create a color scale for nodes.
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-  // Set up the sankey generator with center alignment.
   const sankeyGenerator = sankey()
     .nodeWidth(12)
     .nodePadding(8)
@@ -202,15 +196,13 @@ const preparePlotData = () => {
     .attr("stroke-width", 0.5)
     .style("cursor", "pointer")
     .on("click", (event, d) => {
-      console.log(`Node clicked: ${d.name}`);
-      projectStore.setSelectedDeveloper(d.name);
+      console.log(`Social network node clicked: ${d.name}`);
+      // Call the new setter so that only the social node details update.
+      projectStore.setSelectedSocialDeveloper(d.name);
     })
     .append("title")
     .text(d => d.name);
 
-  // Modify text placement:
-  // For left-side nodes (side === "source"), place text to the right.
-  // For right-side nodes (side === "target"), place text inside to the left.
   node.append("text")
     .attr("x", d => d.side === "target" ? -6 : (d.x1 - d.x0) + 6)
     .attr("y", d => (d.y1 - d.y0) / 2)
@@ -223,9 +215,6 @@ const preparePlotData = () => {
   console.log('SocialNet Sankey diagram rendered successfully.');
 };
 
-/**
- * On window resize, re-render the diagram.
- */
 const handleResize = () => {
   if (sankeyDiv.value) {
     preparePlotData();
@@ -233,9 +222,6 @@ const handleResize = () => {
   }
 };
 
-/**
- * When project or month changes, fetch the social network data.
- */
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
   const month = projectStore.selectedMonth;
@@ -247,7 +233,6 @@ const fetchAndRenderSankey = () => {
   }
 };
 
-// Watch for changes in social network data.
 watch(
   () => projectStore.socialNetData,
   (newData) => {
@@ -259,7 +244,6 @@ watch(
   }
 );
 
-// Watch for changes in selected project or month.
 watch(
   () => [projectStore.selectedProject, projectStore.selectedMonth],
   ([newProject, newMonth]) => {
@@ -285,24 +269,22 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .social-net-card {
   height: 100%;
-  overflow: hidden;  /* Remove scrollability for the overall component */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Sankey wrapper styling */
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
-  /* Remove the min-height if you want the diagram to use only as much space as needed */
   min-height: 0;
 }
 
 .sankey-container {
   width: 100%;
   height: 100%;
-  overflow: hidden;  /* Hide overflow to avoid scroll bars */
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
