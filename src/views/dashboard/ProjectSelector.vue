@@ -21,7 +21,7 @@
               Foundation
             </VBtn>
             <VBtn
-            color="primary"
+              color="primary"
               :variant="selectedDataSource === 'local' ? 'contained' : 'outlined'"
               class="ms-2"
               @click="selectedDataSource = 'local'"
@@ -36,7 +36,6 @@
           <!-- Loading Indicator -->
           <div v-if="projectStore.loading" class="loading">Loading projects...</div>
           <div v-else>
-
             <!-- =========================================
                  FOUNDATION / ECLIPSE BLOCK
                  ========================================= -->
@@ -85,13 +84,6 @@
                 hide-details
                 clearable
               />
-
-              <!-- Checkbox for Range Slider -->
-              <!-- <VCheckbox
-                v-model="projectStore.showRangeSlider"
-                label="Enable Range Slider"
-                class="mb-3"
-              /> -->
 
               <!-- Range Slider -->
               <VSlider
@@ -176,17 +168,17 @@
               <!-- OR Separator -->
               <div class="text-center mb-2">OR</div>
 
-              <!-- Upload GitHub Repository Link Option -->
+              <!-- Upload Git Repository Link Option -->
               <VTextField
                 v-model="githubRepoLink"
-                label="GitHub Repository URL"
+                label="Git Repository URL (.git link)"
                 outlined
                 dense
                 class="mb-3"
-                placeholder="https://github.com/username/repository"
+                placeholder="https://github.com/username/repository.git"
               />
               <VBtn
-              color="primary"
+                color="primary"
                 class="mb-2"
                 @click="uploadRepoLink"
                 block
@@ -236,7 +228,7 @@ const selectedCategory = ref(null);
 // For local projects
 const selectedLocalProject = ref(null);
 
-// GitHub Repository Link
+// Git Repository Link (should be a .git link)
 const githubRepoLink = ref('');
 
 // Reference to the hidden file input
@@ -393,15 +385,33 @@ const handleFileSelect = (event) => {
   event.target.value = '';
 };
 
-// Handle Upload Repository Link
-const uploadRepoLink = () => {
-  if (githubRepoLink.value.trim() === '') {
-    alert('Please enter a GitHub repository URL.');
+// New: Handle Upload Repository Link via the projectStore action
+const uploadRepoLink = async () => {
+  const repoLink = githubRepoLink.value.trim();
+  if (repoLink === '') {
+    alert('Please enter a Git Repository URL.');
     return;
   }
-  console.log('Upload repo link clicked:', githubRepoLink.value);
-  // Implement the logic to handle the GitHub repo link
-  // For example, validate the URL and fetch repository data
+  // Validate that the link ends with .git
+  if (!repoLink.toLowerCase().endsWith('.git')) {
+    alert("Please enter a valid .git repository URL (it should end with '.git').");
+    return;
+  }
+  try {
+    // Call the new action in the store to upload the link
+    const response = await projectStore.uploadGitRepositoryLink(repoLink);
+    if (response.error) {
+      alert("Error: " + response.error);
+    } else {
+      alert("Repository link uploaded successfully!");
+      console.log("Server response:", response);
+      // Optionally, clear the input field
+      githubRepoLink.value = '';
+    }
+  } catch (error) {
+    console.error("Error uploading repository link:", error);
+    alert("Failed to upload repository link.");
+  }
 };
 
 // Watchers

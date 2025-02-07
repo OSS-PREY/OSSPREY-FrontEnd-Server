@@ -6,6 +6,21 @@ export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
   const baseUrl = ref('https://oss-decal.priyal.me'); // Update if your backend is hosted elsewhere
 
+  const uploadGitRepositoryLink = async (git_link) => {
+    try {
+      const response = await fetch(`${baseUrl.value}/api/upload_git_link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ git_link })
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error uploading git repository link:", error);
+      throw error;
+    }
+  };
+
   // Foundation selection
   const selectedFoundation = ref('Apache'); // Correct initialization
   const setFoundation = (foundation) => {
@@ -852,5 +867,8 @@ export const useProjectStore = defineStore('projectStore', () => {
 
     // -------------------- API prefix --------------------
     apiPrefix,
+
+    //-----
+    uploadGitRepositoryLink,
   };
 });
