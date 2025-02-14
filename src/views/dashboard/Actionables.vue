@@ -1,127 +1,4 @@
-<script setup>
-import { ref, computed } from 'vue';
-import statsVerticalWallet from '@images/cards/wallet-primary.png';
-import { useTheme } from 'vuetify';
-
-const vuetifyTheme = useTheme();
-
-const currentTab = ref('income');
-
-const tabData = computed(() => {
-  const data = {
-    income: {
-      avatar: statsVerticalWallet,
-      title: '',
-      stats: 'How do you stay on track? With these steps below:',
-    },
-  };
-
-  return data[currentTab.value];
-});
-
-// Priority order mapping
-const priorityOrder = {
-  critical: 1,
-  high: 2,
-  medium: 3,
-  low: 4,
-};
-
-// Actionables data
-const actionablesData = [
-  {
-    featureName: 't_num_dev_nodes',
-    actionables: [
-      {
-        action:
-          'Encourage contributor participation by acknowledging efforts and providing timely responses [REF]',
-        priority: 'critical',
-      },
-      {
-        action: 'Consider implementing anonymous code review processes [REF]',
-        priority: 'high',
-      },
-      {
-        action:
-          'Develop a clear code of conduct that outlines expectations for behavior within the community [REF]',
-        priority: 'medium',
-      },
-    ],
-  },
-  {
-    featureName: 't_num_dev_per_file',
-    actionables: [
-      {
-        action: 'Pair individuals with comparable experience and capabilities [REF]',
-        priority: 'critical',
-      },
-      {
-        action:
-          'Control access to documents being edited at the repository. Implement mechanisms to request and obtain shared resources [REF]',
-        priority: 'medium',
-      },
-      {
-        action:
-          'Utilize a distributed pair programming tool that supports defined roles between the pairs [REF]',
-        priority: 'low',
-      },
-    ],
-  },
-  {
-    featureName: 't_graph_density',
-    actionables: [
-      {
-        action: 'Use a domain-specific language (DSL) to define collaboration models [REF]',
-        priority: 'high',
-      },
-      {
-        action:
-          "Document collaboration models as part of the project's governance documentation [REF]",
-        priority: 'medium',
-      },
-      {
-        action:
-          'Integrate collaboration models into existing tools like Gerrit or Apache to enforce governance rules [REF]',
-        priority: 'low',
-      },
-    ],
-  },
-  {
-    featureName: 'st_num_dev',
-    actionables: [
-      {
-        action:
-          'Create a live FAQ section to help developers find answers to recurrent questions. The FAQ must be live and grow according to recurrent issues. The community can build the FAQ cooperatively in a wiki-like page, enabling anyone to contribute entries [REF]',
-        priority: 'critical',
-      },
-      {
-        action: 'Consider implementing anonymous code review processes [REF]',
-        priority: 'high',
-      },
-      {
-        action:
-          'Develop a clear code of conduct that outlines expectations for behavior within the community [REF]',
-        priority: 'medium',
-      },
-    ],
-  },
-];
-
-// Sorted actionables data
-const sortedActionablesData = computed(() => {
-  return actionablesData.map((feature) => {
-    const sortedActionables = [...feature.actionables].sort((a, b) => {
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
-    return {
-      ...feature,
-      actionables: sortedActionables,
-    };
-  });
-});
-</script>
-
-
+<!-- src/components/Actionables.vue -->
 <template>
   <VCard class="text-center text-sm-start project-actionables-card">
     <VCardText>
@@ -141,46 +18,30 @@ const sortedActionablesData = computed(() => {
       </div>
     </VCardText>
 
-    <!-- Priority Legend -->
-    <VCardText>
-      <div class="priority-legend">
-        <span class="legend-item">
-          <span class="priority-indicator critical"></span> Critical
-        </span>
-        <span class="legend-item">
-          <span class="priority-indicator high"></span> High
-        </span>
-        <span class="legend-item">
-          <span class="priority-indicator medium"></span> Medium
-        </span>
-        <span class="legend-item">
-          <span class="priority-indicator low"></span> Low
-        </span>
-      </div>
-    </VCardText>
-
+    <!-- Single Column Table for Actionables -->
     <VCardText>
       <div class="table-container">
         <table class="table table-bordered">
           <thead>
             <tr class="table-primary">
+              <th>Actionable Recommendation</th>
             </tr>
           </thead>
           <tbody>
-            <template
-              v-for="feature in sortedActionablesData"
-              :key="feature.featureName"
-            >
-              <tr
-                v-for="(actionable, index) in feature.actionables"
-                :key="index"
-              >
-                <td class="actionable-cell">
-                  <div class="priority">
+            <template v-for="(actionable, index) in sortedActionables" :key="index">
+              <tr>
+                <td>
+                  <div class="actionable-cell">
                     <span
-                      :class="['priority-indicator', actionable.priority]"
+                      class="bullet"
+                      :style="{ backgroundColor: getBulletColor(actionable.importance) }"
                     ></span>
-                    {{ actionable.action }}
+                    <span class="action-text">{{ actionable.title }}</span>
+                    <span class="refs">
+                      <template v-for="(refItem, rIndex) in actionable.refs" :key="rIndex">
+                        <a :href="refItem.link" target="_blank" class="ref-link">[REF]</a>
+                      </template>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -192,11 +53,48 @@ const sortedActionablesData = computed(() => {
   </VCard>
 </template>
 
+<script setup>
+import { ref, computed } from 'vue';
+import { useTheme } from 'vuetify';
+import { useProjectStore } from '@/stores/projectStore';
+import statsVerticalWallet from '@images/cards/wallet-primary.png';
+
+const currentTab = ref('income');
+
+const vuetifyTheme = useTheme();
+const projectStore = useProjectStore();
+
+const tabData = computed(() => {
+  const data = {
+    income: {
+      avatar: statsVerticalWallet,
+      title: '',
+      stats: 'How do you stay on track? With these steps below:',
+    },
+  };
+  return data[currentTab.value];
+});
+
+// Helper: Return bullet color based on importance
+const getBulletColor = (importance) => {
+  // For priority 5 & 6 (and above) => red; for 3-4 => yellow; for 1-2 => green.
+  if (importance >= 5) return 'red';
+  else if (importance >= 3) return 'yellow';
+  else return 'green';
+};
+
+// Ensure that we always work with an array and sort descending by importance
+const sortedActionables = computed(() => {
+  // Use projectStore.reactData if it's an array; otherwise, return empty array.
+  const dataArray = Array.isArray(projectStore.reactData) ? projectStore.reactData : [];
+  return dataArray.slice().sort((a, b) => b.importance - a.importance);
+});
+</script>
 
 <style scoped>
 .project-actionables-card {
   height: 400px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .highlighted-tab {
@@ -219,14 +117,15 @@ const sortedActionablesData = computed(() => {
 }
 
 .table-container {
-  max-height: 400px; /* Adjust as needed */
+  max-height: 300px; /* Adjust as needed */
+  overflow-y: auto;
   display: block;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures consistent column widths */
+  table-layout: fixed;
 }
 
 .table-bordered {
@@ -247,59 +146,35 @@ const sortedActionablesData = computed(() => {
   color: #fff;
 }
 
-.center {
-  text-align: center;
-}
-
-.priority {
+.actionable-cell {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
-.priority-indicator {
+.bullet {
+  display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-right: 8px;
 }
 
-.priority-indicator.critical {
-  background-color: maroon;
+.action-text {
+  font-weight: 500;
 }
 
-.priority-indicator.high {
-  background-color: red;
+.refs {
+  margin-left: 8px;
 }
 
-.priority-indicator.medium {
-  background-color: yellow;
+.ref-link {
+  text-decoration: none;
+  color: #1e88e5;
+  font-weight: bold;
+  margin-right: 4px;
 }
 
-.priority-indicator.low {
-  background-color: green;
-}
-
-/* Legend styling */
-.priority-legend {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin-right: 16px;
-}
-
-/* Adjusting cell widths */
-.feature-name-header,
-.feature-name-cell {
-  width: 25%; /* Adjust as needed */
-}
-
-.actionable-header,
-.actionable-cell {
-  width: 75%; /* Adjust as needed */
+.ref-link:hover {
+  text-decoration: underline;
 }
 </style>

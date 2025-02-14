@@ -4,7 +4,14 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('https://oss-decal.priyal.me'); // Update if your backend is hosted elsewhere
+  const baseUrl = ref('http://127.0.0.1:5000'); // Update if your backend is hosted elsewhere
+
+  // Graduation Forecast State
+  const gradForecastData = ref([]);
+  const xAxisCategories = ref([]);
+
+  // << NEW >> React Data State (for actionables)
+  const reactData = ref([]);
 
   const uploadGitRepositoryLink = async (git_link) => {
     try {
@@ -14,6 +21,21 @@ export const useProjectStore = defineStore('projectStore', () => {
         body: JSON.stringify({ git_link })
       });
       const data = await response.json();
+
+      // Update Graduation Forecast if available
+      if (data.forecast_json) {
+        const keys = Object.keys(data.forecast_json).sort((a, b) => Number(a) - Number(b));
+        gradForecastData.value = keys.map(k => data.forecast_json[k]);
+        xAxisCategories.value = keys.map(k => `Month ${k}`);
+      }
+
+      // << NEW >> Update React data if available (ensure it is an array)
+      if (data.react && Array.isArray(data.react)) {
+        reactData.value = data.react;
+      } else {
+        reactData.value = [];
+      }
+
       return data;
     } catch (error) {
       console.error("Error uploading git repository link:", error);
@@ -85,8 +107,6 @@ export const useProjectStore = defineStore('projectStore', () => {
   const emailMeasuresError = ref(null);
 
   // -------------------- Graduation Forecast State --------------------
-  const gradForecastData = ref([]);
-  const xAxisCategories = ref([]);
   const gradForecastLoading = ref(false);
   const gradForecastError = ref(null);
 
@@ -801,10 +821,10 @@ export const useProjectStore = defineStore('projectStore', () => {
     fetchEmailMeasuresData,
     fetchEmailLinksData,
 
-    // -------------------- Commit Measures --------------------
-    commitMeasuresData,
-    commitMeasuresLoading,
-    commitMeasuresError,
+    // -------------------- Commit Links --------------------
+    commitLinksData,
+    commitLinksLoading,
+    commitLinksError,
     fetchCommitLinksData,
 
     // -------------------- Graduation Forecast --------------------
@@ -870,5 +890,8 @@ export const useProjectStore = defineStore('projectStore', () => {
 
     //-----
     uploadGitRepositoryLink,
+
+    // << NEW >> Export reactData for actionables
+    reactData,
   };
 });
