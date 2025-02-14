@@ -4,9 +4,7 @@
       <VCol cols="12" sm="12">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <VCardTitle class="text-primary">
-            Project Selector
-          </VCardTitle>
+          <VCardTitle class="text-primary">Project Selector</VCardTitle>
         </VCardItem>
 
         <!-- Data Source Buttons -->
@@ -16,7 +14,7 @@
               color="primary"
               :variant="selectedDataSource === 'foundation' ? 'contained' : 'outlined'"
               class="ms-2"
-              @click="selectedDataSource = 'foundation'"
+              @click="switchDataSource('foundation')"
             >
               Foundation
             </VBtn>
@@ -24,7 +22,7 @@
               color="primary"
               :variant="selectedDataSource === 'local' ? 'contained' : 'outlined'"
               class="ms-2"
-              @click="selectedDataSource = 'local'"
+              @click="switchDataSource('local')"
             >
               Local
             </VBtn>
@@ -33,16 +31,11 @@
 
         <!-- Content Area -->
         <VCardText class="content-area">
-          <!-- Loading Indicator -->
           <div v-if="projectStore.loading" class="loading">Loading projects...</div>
           <div v-else>
-            <!-- =========================================
-                 FOUNDATION / ECLIPSE BLOCK
-                 ========================================= -->
+            <!-- FOUNDATION / ECLIPSE BLOCK -->
             <div v-if="selectedDataSource === 'foundation'">
-              <!-- Error Message -->
               <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
-              <!-- Foundation Dropdown -->
               <VSelect
                 v-model="projectStore.selectedFoundation"
                 :items="foundations"
@@ -52,8 +45,6 @@
                 dense
                 @change="handleFoundationChange"
               />
-
-              <!-- Eclipse Category Dropdown (only if Foundation is Eclipse) -->
               <VSelect
                 v-if="projectStore.selectedFoundation === 'Eclipse'"
                 v-model="selectedCategory"
@@ -64,8 +55,6 @@
                 dense
                 @change="handleCategoryChange"
               />
-
-              <!-- Project Autocomplete -->
               <VAutocomplete
                 v-if="shouldShowProjectAutocomplete"
                 v-model="selectedProject"
@@ -84,26 +73,9 @@
                 hide-details
                 clearable
               />
-
-              <!-- Range Slider -->
+              <!-- Foundation Mode Slider -->
               <VSlider
-                v-if="projectStore.showRangeSlider && hasValidMonths"
-                v-model="projectStore.rangeValue"
-                range
-                :min="sliderMin"
-                :max="sliderMax"
-                :step="1"
-                class="mb-3"
-                label="Select Range"
-                ticks="always"
-                tick-size="4"
-                thumb-label
-                @update:modelValue="handleRangeChange"
-              />
-
-              <!-- Single Value Slider -->
-              <VSlider
-                v-else-if="!projectStore.showRangeSlider && hasValidMonths"
+                v-if="hasValidMonths"
                 v-model="projectStore.singleValue"
                 :min="sliderMin"
                 :max="sliderMax"
@@ -115,13 +87,9 @@
                 thumb-label
                 @update:modelValue="handleSingleValueChange"
               />
-
-              <!-- No months available message -->
               <div v-if="projectStore.selectedProject && !hasValidMonths" class="text-error">
                 No available months for the selected project.
               </div>
-
-              <!-- Apache GitHub Metrics -->
               <VCard
                 v-if="projectStore.selectedFoundation === 'Apache' && projectStore.selectedProject"
                 class="metrics-container mt-3"
@@ -144,31 +112,13 @@
               </VCard>
             </div>
 
-            <!-- =========================================
-                 LOCAL PROJECTS BLOCK
-                 ========================================= -->
+            <!-- LOCAL PROJECTS BLOCK -->
             <div v-else-if="selectedDataSource === 'local'">
-              <!-- Browse Local Folder Option -->
-              <VBtn
-                color="primary"
-                class="mb-2"
-                @click="triggerFileInput"
-                block
-              >
+              <VBtn color="primary" class="mb-2" @click="triggerFileInput" block>
                 Browse Local Folder
               </VBtn>
-              <input
-                type="file"
-                ref="fileInput"
-                @change="handleFileSelect"
-                webkitdirectory
-                style="display: none;"
-              />
-
-              <!-- OR Separator -->
+              <input type="file" ref="fileInput" @change="handleFileSelect" webkitdirectory style="display: none;" />
               <div class="text-center mb-2">OR</div>
-
-              <!-- Upload Git Repository Link Option -->
               <VTextField
                 v-model="githubRepoLink"
                 label="Git Repository URL (.git link)"
@@ -177,16 +127,23 @@
                 class="mb-3"
                 placeholder="https://github.com/username/repository.git"
               />
-              <VBtn
-                color="primary"
-                class="mb-2"
-                @click="uploadRepoLink"
-                block
-              >
+              <VBtn color="primary" class="mb-2" @click="uploadRepoLink" block>
                 Upload Repository Link
               </VBtn>
-
-              <!-- Display Selected Local Project Details -->
+              <!-- LOCAL Mode Slider (derived from forecast_json via xAxisCategories) -->
+              <VSlider
+                v-if="localHasValidMonths"
+                v-model="localMonth"
+                :min="localSliderMin"
+                :max="localSliderMax"
+                :step="1"
+                class="mb-3"
+                label="Select Month"
+                ticks="always"
+                tick-size="4"
+                thumb-label
+                @update:modelValue="handleLocalMonthChange"
+              />
               <div v-if="selectedLocalProject" class="mt-4">
                 <div>
                   <strong>Local Project Name:</strong> {{ selectedLocalProject.project_name }}
@@ -198,8 +155,6 @@
                   </a>
                 </div>
               </div>
-
-              <!-- Coming Soon Note -->
               <div class="coming-soon">Coming Soon</div>
             </div>
           </div>
@@ -214,52 +169,36 @@ import { onMounted, watch, computed, ref } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { useRouter } from 'vue-router';
 
-// Initialize store and router
 const projectStore = useProjectStore();
 const router = useRouter();
 
-// Data source choice ("foundation" or "local")
+// Data source: foundation or local
 const selectedDataSource = ref('foundation');
 
-// Reactive variables
+// FOUNDATION reactive variables
 const selectedProject = ref(null);
 const selectedCategory = ref(null);
 
-// For local projects
+// LOCAL reactive variables
 const selectedLocalProject = ref(null);
-
-// Git Repository Link (should be a .git link)
 const githubRepoLink = ref('');
-
-// Reference to the hidden file input
 const fileInput = ref(null);
 
-// Static list of foundations
+// STATIC LISTS
 const foundations = ['Apache', 'Eclipse'];
-
-// Static list of Eclipse categories
 const eclipseCategories = [
   'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin',
   'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT',
   'SOA Platform', 'PolarSys', 'LocationTech', 'OpenHW Group', 'AsciiDoc'
 ];
 
-// Computed property to determine if Project Autocomplete should be shown
+// FOUNDATION computed properties
 const shouldShowProjectAutocomplete = computed(() => {
-  if (projectStore.selectedFoundation === 'Apache') {
-    return true;
-  }
-  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
-    return true;
-  }
-  return false;
+  return (projectStore.selectedFoundation === 'Apache') ||
+         (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value);
 });
-
-// Computed property to set the items for Project Autocomplete
 const projectItems = computed(() => {
-  if (projectStore.selectedFoundation === 'Apache') {
-    return projectStore.allDescriptions;
-  }
+  if (projectStore.selectedFoundation === 'Apache') return projectStore.allDescriptions;
   if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
     return projectStore.eclipseDescriptions.filter(project =>
       project.tech.toLowerCase() === selectedCategory.value.toLowerCase()
@@ -267,146 +206,153 @@ const projectItems = computed(() => {
   }
   return [];
 });
-
-// Computed property to set the label for Project Autocomplete
 const projectLabel = computed(() => {
-  if (projectStore.selectedFoundation === 'Apache') {
-    return 'Project';
-  }
-  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
-    return 'Eclipse Project';
-  }
-  return 'Project';
+  return projectStore.selectedFoundation === 'Apache' ? 'Project'
+       : projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value ? 'Eclipse Project'
+       : 'Project';
 });
-
-// Slider boundaries
 const sliderMin = computed(() => projectStore.minMonth);
 const sliderMax = computed(() => projectStore.maxMonth);
+const hasValidMonths = computed(() => projectStore.availableMonths.length > 0);
 
-// Whether months are available
-const hasValidMonths = computed(() => {
-  return projectStore.availableMonths.length > 0;
+// LOCAL slider computed properties using forecast_json (stored in xAxisCategories)
+const localMonths = computed(() => {
+  const categories = projectStore.xAxisCategories;
+  if (selectedDataSource.value === 'local' && categories && categories.length > 0) {
+    return categories.map(label => {
+      const parts = label.split(" ");
+      return Number(parts[1]);
+    }).sort((a, b) => a - b);
+  }
+  return [];
 });
+const localHasValidMonths = computed(() => localMonths.value.length > 0);
+const localSliderMin = computed(() => (localHasValidMonths.value ? localMonths.value[0] : 1));
+const localSliderMax = computed(() => (localHasValidMonths.value ? localMonths.value[localMonths.value.length - 1] : 12));
 
-// Fetch local projects (placeholder)
-const fetchLocalProjects = async () => {
-  console.log('Fetching local projects...');
-  // You could call a store action if you have it:
-  // await projectStore.fetchLocalProjects();
+// When localMonths change, update localMonth and set projectStore.selectedMonth
+const localMonth = ref(null);
+watch(localMonths, (newVal) => {
+  console.log("Local available months:", newVal);
+  if (newVal.length > 0 && (localMonth.value === null || !newVal.includes(localMonth.value))) {
+    localMonth.value = newVal[0];
+    projectStore.selectedMonth = localMonth.value;
+  }
+});
+const handleLocalMonthChange = (newVal) => {
+  console.log("Local slider changed to:", newVal);
+  localMonth.value = newVal;
+  projectStore.selectedMonth = newVal;
 };
 
-// Fetch initial data on mount
+const fetchLocalProjects = async () => {
+  console.log('Fetching local projects...');
+  // Implement if needed.
+};
+
 const fetchData = async () => {
   console.log('Fetching initial project data for both Apache and Eclipse...');
-  // Fetch both foundations' data
   await Promise.all([
     projectStore.fetchAllProjectData(),
     projectStore.fetchEclipseProjects(),
-    fetchLocalProjects() // new line to also fetch local projects
+    fetchLocalProjects()
   ]);
   console.log('Initial project data fetched.');
 };
 
-// Handle foundation change
+// When switching data sources, call resetLocalProjectDetails for local mode.
+const switchDataSource = (source) => {
+  selectedDataSource.value = source;
+  console.log("Switched to:", source);
+  if (source === 'local') {
+    projectStore.resetLocalProjectDetails();
+  } else {
+    projectStore.resetProjectDetails();
+  }
+};
+
 const handleFoundationChange = async () => {
   console.log(`Foundation changed to: ${projectStore.selectedFoundation}`);
   if (projectStore.selectedFoundation === 'Eclipse') {
-    // Fetch Eclipse projects if not already fetched
     if (projectStore.eclipseDescriptions.length === 0) {
       await projectStore.fetchEclipseProjects();
     }
-    // Reset category and project selections
     selectedCategory.value = null;
     selectedProject.value = null;
     await projectStore.resetProjectDetails();
   } else if (projectStore.selectedFoundation === 'Apache') {
-    // Fetch Apache projects if not already fetched
     if (projectStore.allDescriptions.length === 0) {
       await projectStore.fetchAllProjectData();
     }
-    // Reset project selections
     selectedProject.value = null;
     await projectStore.resetProjectDetails();
   }
 };
 
-// Handle category change
 const handleCategoryChange = () => {
   console.log(`Category changed to: ${selectedCategory.value}`);
   selectedProject.value = null;
   projectStore.selectedProject = null;
 };
 
-// Existing handlers for sliders
 const handleSingleValueChange = () => {
-  console.log(`Single slider changed. New singleValue: ${projectStore.singleValue}`);
+  console.log(`Foundation slider changed. New singleValue: ${projectStore.singleValue}`);
   projectStore.selectedMonth = projectStore.singleValue;
 };
 
 const handleRangeChange = () => {
   const newMonth = projectStore.rangeValue[0];
-  console.log(
-    `Range slider changed. New rangeValue: ${projectStore.rangeValue}, Setting selectedMonth to ${newMonth}`
-  );
+  console.log(`Foundation range slider changed. New rangeValue: ${projectStore.rangeValue}, Setting selectedMonth to ${newMonth}`);
   projectStore.selectedMonth = newMonth;
 };
 
-// Handle Browse Local Folder - Triggers the hidden file input
 const triggerFileInput = () => {
-  if (fileInput.value) {
-    fileInput.value.click();
-  }
+  if (fileInput.value) fileInput.value.click();
 };
 
-// Handle File Selection
 const handleFileSelect = (event) => {
   const files = event.target.files;
   if (files.length === 0) {
     console.log('No files selected.');
     return;
   }
-
-  // Process the selected files
   console.log('Selected files:', files);
-
-  // Example: Create a list of selected files/folders
   const fileList = Array.from(files).map(file => ({
     name: file.name,
     path: file.webkitRelativePath || file.name
   }));
-
-  // For demonstration, we'll just log them
   console.log('Selected File List:', fileList);
-
-  // You can implement further logic to handle the uploaded files
-  // For example, upload them to a server or process them locally
-
-  // Reset the file input
   event.target.value = '';
 };
 
-// New: Handle Upload Repository Link via the projectStore action
 const uploadRepoLink = async () => {
   const repoLink = githubRepoLink.value.trim();
+  console.log("Repo link entered:", repoLink);
   if (repoLink === '') {
     alert('Please enter a Git Repository URL.');
     return;
   }
-  // Validate that the link ends with .git
   if (!repoLink.toLowerCase().endsWith('.git')) {
     alert("Please enter a valid .git repository URL (it should end with '.git').");
     return;
   }
   try {
-    // Call the new action in the store to upload the link
     const response = await projectStore.uploadGitRepositoryLink(repoLink);
+    console.log("POST response:", response);
     if (response.error) {
       alert("Error: " + response.error);
     } else {
       alert("Repository link uploaded successfully!");
-      console.log("Server response:", response);
-      // Optionally, clear the input field
-      githubRepoLink.value = '';
+      // Do not clear githubRepoLink here, so the link remains visible.
+      console.log("Forecast JSON:", response.forecast_json);
+      console.log("Social Network Data:", response.social_net);
+      // Set selectedLocalProject with details derived from the repoLink
+      const repoNameMatch = repoLink.match(/\/([^\/]+)\.git$/);
+      const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
+      selectedLocalProject.value = {
+        project_name: repoName,
+        github_url: repoLink
+      };
     }
   } catch (error) {
     console.error("Error uploading repository link:", error);
@@ -414,11 +360,9 @@ const uploadRepoLink = async () => {
   }
 };
 
-// Watchers
 watch(
   () => selectedProject.value,
   async (newProject) => {
-    // Avoid infinite loop: only set details if different from store's selectedProject
     if (newProject !== projectStore.selectedProject) {
       if (newProject) {
         console.log(`Project selected: ${newProject.project_name}`);
@@ -434,7 +378,6 @@ watch(
 watch(
   () => projectStore.selectedProject,
   (newProject) => {
-    // Avoid infinite loop: only update if different
     if (selectedProject.value !== newProject) {
       selectedProject.value = newProject;
       console.log(`Store selectedProject updated to: ${newProject?.project_name}`);
@@ -454,46 +397,36 @@ onMounted(() => {
   background-color: rgba(var(--v-theme-primary), 0.08);
   overflow: auto;
 }
-
 .ml-1 {
   margin-left: 4px;
 }
-
 .mt-4 {
   margin-top: 16px;
 }
-
 .text-error {
   color: red;
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
-
 .v-input {
   min-height: 36px;
 }
-
 .v-autocomplete {
   position: relative;
   z-index: 1;
 }
-
 .text-center {
   text-align: center;
 }
-
 .mb-2 {
   margin-bottom: 8px;
 }
-
 .mb-3 {
   margin-bottom: 16px;
 }
-
 .mt-4 {
   margin-top: 16px;
 }
-
 .normal-btn {
   background-color: white;
   color: inherit;
@@ -501,11 +434,9 @@ onMounted(() => {
   font-weight: normal;
   text-transform: none;
 }
-
 .normal-btn:hover {
   background-color: #f5f5f5;
 }
-
 .coming-soon {
   margin-top: 20px;
   font-style: italic;

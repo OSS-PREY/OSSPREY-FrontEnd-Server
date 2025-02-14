@@ -18,15 +18,25 @@
       </div>
     </VCardText>
 
-    <!-- Single Column Table for Actionables -->
+    <!-- Priority Labels -->
+    <VCardText>
+      <div class="priority-labels">
+        <div class="priority-item">
+          <span class="bullet" style="background-color: red;"></span> <span>Critical</span>
+        </div>
+        <div class="priority-item">
+          <span class="bullet" style="background-color: yellow;"></span> <span>Medium</span>
+        </div>
+        <div class="priority-item">
+          <span class="bullet" style="background-color: green;"></span> <span>Low</span>
+        </div>
+      </div>
+    </VCardText>
+
+    <!-- Table for Actionables -->
     <VCardText>
       <div class="table-container">
         <table class="table table-bordered">
-          <thead>
-            <tr class="table-primary">
-              <th>Actionable Recommendation</th>
-            </tr>
-          </thead>
           <tbody>
             <template v-for="(actionable, index) in sortedActionables" :key="index">
               <tr>
@@ -65,27 +75,24 @@ const vuetifyTheme = useTheme();
 const projectStore = useProjectStore();
 
 const tabData = computed(() => {
-  const data = {
+  return {
     income: {
       avatar: statsVerticalWallet,
       title: '',
       stats: 'How do you stay on track? With these steps below:',
     },
-  };
-  return data[currentTab.value];
+  }[currentTab.value];
 });
 
 // Helper: Return bullet color based on importance
 const getBulletColor = (importance) => {
-  // For priority 5 & 6 (and above) => red; for 3-4 => yellow; for 1-2 => green.
-  if (importance >= 5) return 'red';
-  else if (importance >= 3) return 'yellow';
-  else return 'green';
+  if (importance >= 5) return 'red'; // Critical
+  else if (importance >= 3) return 'yellow'; // Medium
+  else return 'green'; // Low
 };
 
-// Ensure that we always work with an array and sort descending by importance
+// Ensure sorting is consistent
 const sortedActionables = computed(() => {
-  // Use projectStore.reactData if it's an array; otherwise, return empty array.
   const dataArray = Array.isArray(projectStore.reactData) ? projectStore.reactData : [];
   return dataArray.slice().sort((a, b) => b.importance - a.importance);
 });
@@ -93,10 +100,11 @@ const sortedActionables = computed(() => {
 
 <style scoped>
 .project-actionables-card {
-  height: 400px;
+  height: 450px;
   overflow: hidden;
 }
 
+/* Tabs */
 .highlighted-tab {
   display: flex;
   justify-content: flex-start;
@@ -116,6 +124,21 @@ const sortedActionables = computed(() => {
   justify-content: flex-start;
 }
 
+/* Priority Labels */
+.priority-labels {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+/* Table */
 .table-container {
   max-height: 300px; /* Adjust as needed */
   overflow-y: auto;
@@ -132,37 +155,37 @@ const sortedActionables = computed(() => {
   border: 1px solid #dee2e6;
 }
 
-.table-bordered th,
 .table-bordered td {
   border: 1px solid #dee2e6;
-  padding: 8px;
+  padding: 10px;
   text-align: left;
   word-wrap: break-word;
   white-space: normal;
 }
 
-.table-primary {
-  background-color: #696cff;
-  color: #fff;
-}
-
+/* Fix for bullets getting squashed */
 .actionable-cell {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  word-break: break-word;
 }
 
 .bullet {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .action-text {
   font-weight: 500;
+  flex: 1;
 }
 
+/* Reference Links */
 .refs {
   margin-left: 8px;
 }
@@ -176,5 +199,11 @@ const sortedActionables = computed(() => {
 
 .ref-link:hover {
   text-decoration: underline;
+}
+
+/* Ensuring table doesn't get cut */
+.table-container {
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
 </style>

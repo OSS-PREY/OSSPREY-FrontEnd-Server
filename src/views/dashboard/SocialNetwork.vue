@@ -1,36 +1,29 @@
-<!-- src/components/SocialNetwork.vue -->
 <template>
   <VCard class="text-center text-sm-start social-net-card">
     <VCardItem class="pb-3">
-      <VCardTitle class="text-primary">
-        Social Network
-      </VCardTitle>
+      <VCardTitle class="text-primary">Social Network</VCardTitle>
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
       <div class="sankey-container" ref="sankeyDiv"></div>
-
       <!-- Loading Indicator -->
       <div v-if="projectStore.socialNetLoading" class="overlay">
         <VProgressCircular indeterminate color="primary" size="50" />
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
-
       <!-- Error Message -->
       <div v-if="projectStore.socialNetError" class="overlay error-message">
         {{ projectStore.socialNetError }}
       </div>
-
       <!-- No Data Message -->
       <div
         v-if="!projectStore.socialNetLoading && !projectStore.socialNetError &&
-           (!projectStore.socialNetData || projectStore.socialNetData.length === 0) &&
-           projectStore.selectedProject && projectStore.selectedMonth"
+             currentSocialData.length === 0 &&
+             projectStore.selectedProject && projectStore.selectedMonth"
         class="overlay"
       >
         No social network data available for the selected month.
       </div>
-
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
         Please select a project to view its social network.
@@ -40,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import * as d3 from 'd3';
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import { useProjectStore } from '@/stores/projectStore';
@@ -49,23 +42,31 @@ import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuet
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
 
-/**
- * Reduces the emails based on threshold logic.
- */
+// currentSocialData: foundation mode uses an array; local mode expects socialNetData as an object keyed by month.
+const currentSocialData = computed(() => {
+  if (projectStore.socialNetData) {
+    if (Array.isArray(projectStore.socialNetData)) {
+      console.log("Social network data (foundation mode):", projectStore.socialNetData);
+      return projectStore.socialNetData;
+    } else if (typeof projectStore.socialNetData === 'object') {
+      const key = projectStore.selectedMonth ? projectStore.selectedMonth.toString() : "";
+      const dataForMonth = projectStore.socialNetData[key] || [];
+      console.log(`Social network data for month ${key}:`, dataForMonth);
+      return dataForMonth;
+    }
+  }
+  return [];
+});
+
 function reduceTheEmails(inputArray) {
   if (!Array.isArray(inputArray)) return [];
   const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
   const filteredArray = inputArray.filter((item) => parseInt(item[2], 10) > threshold);
   console.log("Filtered Emails Data:", filteredArray);
-  console.log("Total Emails:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
-  console.log("Number of Senders:", [...new Set(filteredArray.map(item => item[0]))].length);
   return filteredArray;
 }
 
-/**
- * Removes any previously rendered SVG.
- */
 const clearSankeyDiagram = () => {
   if (sankeyDiv.value) {
     d3.select(sankeyDiv.value).select("svg").remove();
@@ -73,21 +74,19 @@ const clearSankeyDiagram = () => {
   }
 };
 
-/**
- * Prepares and renders the Sankey diagram using d3-sankey.
- */
 const preparePlotData = () => {
-  if (!projectStore.socialNetData || projectStore.socialNetData.length === 0) {
+  const socialData = currentSocialData.value;
+  if (!socialData || socialData.length === 0) {
     console.warn('No social network data found to render.');
     clearSankeyDiagram();
     return;
   }
-
-  // Apply threshold reduction.
-  const monthData = projectStore.socialNetData;
-  const reducedData = reduceTheEmails(monthData);
-
-  // Process data into nodes and links.
+  const reducedData = reduceTheEmails(socialData);
+  if (reducedData.length === 0) {
+    console.warn('After reduction, no data remains.');
+    clearSankeyDiagram();
+    return;
+  }
   let nodes = [];
   let links = [];
   reducedData.forEach(([source, target, value]) => {
@@ -99,8 +98,6 @@ const preparePlotData = () => {
       value: parseInt(value, 10) || 0
     });
   });
-
-  // Aggregate unique nodes and reindex links.
   const nodeMap = {};
   const updatedNodes = [];
   const updatedLinks = [];
@@ -124,36 +121,26 @@ const preparePlotData = () => {
       });
     }
   });
-
-  // Compute container dimensions.
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
   const containerHeight = containerWidth * 0.45;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
-
-  // Clear any existing diagram and create a new SVG.
   clearSankeyDiagram();
   const svg = d3.select(sankeyDiv.value)
     .append("svg")
     .attr("width", containerWidth)
     .attr("height", containerHeight)
     .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
-
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
   const sankeyGenerator = sankey()
     .nodeWidth(12)
     .nodePadding(8)
     .nodeAlign(sankeyCenter)
     .extent([[margin.left, margin.top], [containerWidth - margin.right, containerHeight - margin.bottom]]);
-
   const graph = {
     nodes: updatedNodes.map(d => ({ ...d })),
     links: updatedLinks.map(d => ({ ...d }))
   };
-
   sankeyGenerator(graph);
-
-  // Draw links.
   const link = svg.append("g")
     .attr("class", "links")
     .selectAll("path")
@@ -175,11 +162,8 @@ const preparePlotData = () => {
     .on("mouseout", function(event, d) {
       d3.select(this).attr("stroke-opacity", 0.5);
     });
-
   link.append("title")
     .text(d => `Source: ${d.source.name}\nTarget: ${d.target.name}\nValue: ${d.value}`);
-
-  // Draw nodes.
   const node = svg.append("g")
     .attr("class", "nodes")
     .selectAll("g")
@@ -187,7 +171,6 @@ const preparePlotData = () => {
     .enter()
     .append("g")
     .attr("transform", d => `translate(${d.x0},${d.y0})`);
-
   node.append("rect")
     .attr("height", d => d.y1 - d.y0)
     .attr("width", d => d.x1 - d.x0)
@@ -197,12 +180,10 @@ const preparePlotData = () => {
     .style("cursor", "pointer")
     .on("click", (event, d) => {
       console.log(`Social network node clicked: ${d.name}`);
-      // Call the new setter so that only the social node details update.
       projectStore.setSelectedSocialDeveloper(d.name);
     })
     .append("title")
     .text(d => d.name);
-
   node.append("text")
     .attr("x", d => d.side === "target" ? -6 : (d.x1 - d.x0) + 6)
     .attr("y", d => (d.y1 - d.y0) / 2)
@@ -211,7 +192,6 @@ const preparePlotData = () => {
     .style("font-size", "12px")
     .style("fill", "#424242")
     .style("text-anchor", d => d.side === "target" ? "end" : "start");
-
   console.log('SocialNet Sankey diagram rendered successfully.');
 };
 
@@ -225,17 +205,18 @@ const handleResize = () => {
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
   const month = projectStore.selectedMonth;
-  console.log(`Attempting to fetch SocialNet data for project_id: ${projectId}, month: ${month}`);
+  console.log(`Attempting to render SocialNet for project_id: ${projectId}, month: ${month}`);
   if (projectId && month !== null && month !== undefined && !isNaN(month)) {
-    projectStore.fetchSocialNetData(projectId, month);
+    preparePlotData();
   } else {
     clearSankeyDiagram();
   }
 };
 
 watch(
-  () => projectStore.socialNetData,
+  () => currentSocialData.value,
   (newData) => {
+    console.log('Current social network data changed:', newData);
     if (newData && newData.length > 0) {
       preparePlotData();
     } else {
@@ -273,14 +254,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
 }
-
 .sankey-wrapper {
   position: relative;
   flex: 1;
   width: 100%;
   min-height: 0;
 }
-
 .sankey-container {
   width: 100%;
   height: 100%;
@@ -289,12 +268,10 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
 }
-
 #sankey {
   width: 100%;
   height: 100%;
 }
-
 .overlay {
   position: absolute;
   top: 50%;
@@ -311,16 +288,13 @@ onUnmounted(() => {
   max-width: 90%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
 .loading-text {
   margin-top: 10px;
   font-size: 1rem;
 }
-
 .error-message {
   color: red;
 }
-
 @media (max-width: 768px) {
   .overlay {
     padding: 10px;

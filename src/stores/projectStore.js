@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('http://127.0.0.1:5000'); // Update if your backend is hosted elsewhere
+  const baseUrl = ref('https://oss-decal.priyal.me'); // Update if your backend is hosted elsewhere
 
   // Graduation Forecast State
   const gradForecastData = ref([]);
@@ -13,27 +13,42 @@ export const useProjectStore = defineStore('projectStore', () => {
   // << NEW >> React Data State (for actionables)
   const reactData = ref([]);
 
+  // << NEW >> Social Network Data (for local projects)
+  // In "foundation" mode, we fetch social net separately (as an array)
+  // In local mode, the POST response returns a social_net object keyed by month.
+  const socialNetData = ref(null);
+
   const uploadGitRepositoryLink = async (git_link) => {
     try {
       const response = await fetch(`${baseUrl.value}/api/upload_git_link`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'  // Added to bypass caching issues
+        },
         body: JSON.stringify({ git_link })
       });
       const data = await response.json();
 
       // Update Graduation Forecast if available
       if (data.forecast_json) {
-        const keys = Object.keys(data.forecast_json).sort((a, b) => Number(a) - Number(b));
+        const keys = Object.keys(data.forecast_json)
+          .map(Number)
+          .sort((a, b) => a - b);
         gradForecastData.value = keys.map(k => data.forecast_json[k]);
         xAxisCategories.value = keys.map(k => `Month ${k}`);
       }
 
-      // << NEW >> Update React data if available (ensure it is an array)
+      // Update React data if available (ensure it is an array)
       if (data.react && Array.isArray(data.react)) {
         reactData.value = data.react;
       } else {
         reactData.value = [];
+      }
+
+      // << NEW >> For local projects: if POST data contains social_net, store it
+      if (data.social_net) {
+        socialNetData.value = data.social_net;
       }
 
       return data;
@@ -116,7 +131,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   const techNetError = ref(null);
 
   // -------------------- Social Network State --------------------
-  const socialNetData = ref(null);
+  // See socialNetData above.
   const socialNetLoading = ref(false);
   const socialNetError = ref(null);
 
@@ -137,19 +152,21 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log(`Project changed to ${newProject?.project_name || 'None'} and month ${newMonth || 'None'}`);
 
       if (newProject && newMonth) {
-        // Fetch data based on foundation
         await Promise.all([
           fetchTechNetData(newProject.project_id, newMonth),
-          fetchSocialNetData(newProject.project_id, newMonth),
+          // For foundation mode, fetch social network data
+          selectedFoundation.value === 'Apache'
+            ? fetchSocialNetData(newProject.project_id, newMonth)
+            : Promise.resolve(),
           fetchCommitMeasuresData(newProject.project_id, newMonth),
           fetchEmailMeasuresData(newProject.project_id, newMonth),
-          // Fetch email links if a developer is already selected
-          selectedDeveloper.value ? fetchEmailLinksData(newProject.project_id, newMonth, selectedDeveloper.value) : Promise.resolve(),
+          selectedDeveloper.value
+            ? fetchEmailLinksData(newProject.project_id, newMonth, selectedDeveloper.value)
+            : Promise.resolve(),
           fetchGradForecast(newProject.project_id),
           fetchPredictions(newProject.project_id, newMonth),
         ]);
       } else {
-        // Clear all measures if project or month is not selected
         clearTechNetData();
         clearSocialNetData();
         commitMeasuresData.value = null;
@@ -167,12 +184,10 @@ export const useProjectStore = defineStore('projectStore', () => {
     [selectedDeveloper, selectedProject, selectedMonth],
     async ([newDeveloper, newProject, newMonth]) => {
       console.log(`Developer changed to ${newDeveloper || 'None'}`);
-
       if (newDeveloper && newProject && newMonth) {
         await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
         await fetchEmailLinksData(newProject.project_id, newMonth, newDeveloper);
       } else {
-        // Clear commit links and email links data if parameters are missing
         commitLinksData.value = null;
         commitLinksError.value = null;
         emailMeasuresData.value = null;
@@ -183,13 +198,9 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Actions --------------------
 
-  // Normalize developer name as per user's requirement
+  // Normalize developer name
   const normalizeName = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, ' ')
-      .trim()
-      .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+    return name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
   };
 
   // Fetch Apache Project Data
@@ -207,7 +218,6 @@ export const useProjectStore = defineStore('projectStore', () => {
         const errorText = await projectsRes.text();
         throw new Error(`Failed to fetch Apache projects: ${projectsRes.status} ${errorText}`);
       }
-
       if (!projectInfoRes.ok) {
         const errorText = await projectInfoRes.text();
         throw new Error(`Failed to fetch Apache project_info: ${projectInfoRes.status} ${errorText}`);
@@ -215,7 +225,6 @@ export const useProjectStore = defineStore('projectStore', () => {
 
       const projectsData = await projectsRes.json();
       const projectInfoData = await projectInfoRes.json();
-
       const projects = projectsData.projects;
       const projectInfos = projectInfoData.projects;
 
@@ -234,23 +243,20 @@ export const useProjectStore = defineStore('projectStore', () => {
             description: info.description || 'N/A',
             sponsor: info.sponsor || 'N/A',
             champion: info.champion || 'N/A',
-            mentors:
-              typeof info.mentor === 'string'
-                ? info.mentor.split(',').map((m) => m.trim())
-                : [],
+            mentors: typeof info.mentor === 'string'
+              ? info.mentor.split(',').map((m) => m.trim())
+              : [],
             start_date: info.start_date || 'N/A',
             end_date: info.end_date || 'N/A',
             status: info.status || 'N/A',
             github_url: project.url || 'N/A',
             fork_count: typeof project.fork_count === 'number' ? project.fork_count : 0,
-            stargazer_count:
-              typeof project.stargazer_count === 'number' ? project.stargazer_count : 0,
+            stargazer_count: typeof project.stargazer_count === 'number' ? project.stargazer_count : 0,
             watch_count: typeof project.watch_count === 'number' ? project.watch_count : 0,
           };
         });
 
       console.log('Mapped Apache Projects:', allDescriptions.value);
-
       if (allDescriptions.value.length === 0) {
         throw new Error('No Apache project data available.');
       }
@@ -269,12 +275,10 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       console.log('Fetching all Eclipse project data...');
       const projectInfoRes = await fetch(`${baseUrl.value}/eclipse/project_info`);
-
       if (!projectInfoRes.ok) {
         const errorText = await projectInfoRes.text();
         throw new Error(`Failed to fetch Eclipse project_info: ${projectInfoRes.status} ${errorText}`);
       }
-
       const projectInfoData = await projectInfoRes.json();
       const projectInfos = projectInfoData.projects;
 
@@ -293,7 +297,6 @@ export const useProjectStore = defineStore('projectStore', () => {
         }));
 
       console.log('Mapped Eclipse Projects:', eclipseDescriptions.value);
-
       if (eclipseDescriptions.value.length === 0) {
         throw new Error('No Eclipse project data available.');
       }
@@ -310,7 +313,6 @@ export const useProjectStore = defineStore('projectStore', () => {
       resetProjectDetails();
       return;
     }
-
     selectedProject.value = project;
     github_url.value = project.github_url || 'N/A';
     fork_count.value = project.fork_count || 0;
@@ -321,10 +323,8 @@ export const useProjectStore = defineStore('projectStore', () => {
 
     try {
       if (selectedFoundation.value === 'Eclipse') {
-        // Eclipse projects: use month_intervals from project data
         monthlyRanges.value = project.month_intervals || {};
       } else {
-        // Apache: fetch monthly ranges from API
         await fetchMonthlyRanges(project.project_id);
       }
 
@@ -356,8 +356,6 @@ export const useProjectStore = defineStore('projectStore', () => {
     watch_count.value = 0;
     selectedMonth.value = null;
     monthlyRanges.value = {};
-
-    // Reset all measures
     commitMeasuresData.value = null;
     commitMeasuresError.value = null;
     emailMeasuresData.value = null;
@@ -367,6 +365,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetData.value = null;
     socialNetError.value = null;
     gradForecastData.value = [];
+    // For foundation mode, we clear xAxisCategories.
+    // For local mode, you may wish to preserve forecast data.
     xAxisCategories.value = [];
     gradForecastError.value = null;
     showRangeSlider.value = false;
@@ -374,8 +374,30 @@ export const useProjectStore = defineStore('projectStore', () => {
     singleValue.value = 1;
   };
 
+  // NEW: For local projects, reset project details but DO NOT clear forecast and social network data.
+  const resetLocalProjectDetails = () => {
+    console.log('Resetting local project details (preserving forecast and social network data).');
+    selectedProject.value = null;
+    github_url.value = 'N/A';
+    fork_count.value = 0;
+    stargazer_count.value = 0;
+    watch_count.value = 0;
+    selectedMonth.value = null;
+    monthlyRanges.value = {};
+    commitMeasuresData.value = null;
+    commitMeasuresError.value = null;
+    emailMeasuresData.value = null;
+    emailMeasuresError.value = null;
+    techNetData.value = null;
+    techNetError.value = null;
+    socialNetError.value = null;
+    // Do NOT clear gradForecastData and xAxisCategories for local mode.
+    showRangeSlider.value = false;
+    rangeValue.value = [1, 12];
+    singleValue.value = 1;
+  };
+
   const fetchMonthlyRanges = async (project_id) => {
-    // Only for Apache
     if (selectedFoundation.value !== 'Apache') return;
     try {
       console.log(`Fetching monthly ranges for Apache project ID: ${project_id}`);
@@ -385,14 +407,12 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
       }
       const data = await response.json();
-
       const projectRange = data.project_ranges.find(
         (range) => range.project_id.toLowerCase() === project_id.toLowerCase()
       );
       if (!projectRange) {
         throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
       }
-
       monthlyRanges.value = projectRange.monthly_ranges;
       console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
     } catch (err) {
@@ -410,14 +430,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
     return [];
   });
-
-  const minMonth = computed(() => {
-    return availableMonths.value.length > 0 ? availableMonths.value[0] : 1;
-  });
-
-  const maxMonth = computed(() => {
-    return availableMonths.value.length > 0 ? availableMonths.value[availableMonths.value.length - 1] : 12;
-  });
+  const minMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[0] : 1);
+  const maxMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[availableMonths.value.length - 1] : 12);
 
   // -------------------- Fetch Graduation Forecast --------------------
   const fetchGradForecast = async (projectId) => {
@@ -426,36 +440,33 @@ export const useProjectStore = defineStore('projectStore', () => {
       gradForecastError.value = 'No project selected.';
       return;
     }
-
     console.log('Starting fetchGradForecast...');
     gradForecastLoading.value = true;
     gradForecastData.value = [];
-    xAxisCategories.value = [];
+    // Clear xAxisCategories only for foundation mode.
+    if (selectedFoundation.value === 'Apache') {
+      xAxisCategories.value = [];
+    }
     gradForecastError.value = null;
-
     try {
       console.log(`Fetching ${apiPrefix.value}/grad_forecast/${projectId}...`);
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`);
-
       if (!response.ok) {
         gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
         return;
       }
-
       const data = await response.json();
       console.log('Fetched Graduation Forecast Data:', data);
-
       const sortedData = Object.values(data)
         .sort((a, b) => {
           const dateA = a.date || a.month;
           const dateB = b.date || b.month;
           return new Date(dateA) - new Date(dateB);
         })
-        .map((item) => ({
+        .map(item => ({
           x: `Month ${item.date || item.month}`,
           y: item.close,
         }));
-
       gradForecastData.value = sortedData.map(item => item.y);
       xAxisCategories.value = sortedData.map(item => item.x);
     } catch (error) {
@@ -471,31 +482,25 @@ export const useProjectStore = defineStore('projectStore', () => {
   const predictionsData = ref({});
   const predictionsLoading = ref(false);
   const predictionsError = ref(null);
-
   const fetchPredictions = async (projectId, month) => {
     if (!projectId || !month) {
       console.warn('Project ID or selected month is missing.');
       predictionsError.value = 'Project ID or selected month is missing.';
       return;
     }
-
     predictionsLoading.value = true;
     predictionsData.value = {};
     predictionsError.value = null;
-
     try {
       console.log(`Fetching ${apiPrefix.value}/predictions/${projectId}/${month}...`);
       const url = `${baseUrl.value}${apiPrefix.value}/predictions/${projectId}/${month}`;
       const response = await fetch(url);
-
       if (!response.ok) {
         predictionsError.value = `Failed to fetch Predictions data: ${response.status}`;
         return;
       }
-
       const data = await response.json();
       console.log('Fetched Predictions Data:', data);
-
       predictionsData.value = data;
     } catch (error) {
       console.error('Error fetching Predictions data:', error);
@@ -514,24 +519,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       commitMeasuresData.value = null;
       return;
     }
-
     console.log(`Fetching ${apiPrefix.value}/commit_measure/${projectId}/${month}...`);
     commitMeasuresLoading.value = true;
     commitMeasuresError.value = null;
     commitMeasuresData.value = null;
-
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}`);
-
       if (!response.ok) {
         let errorMsg = `Failed to fetch commit measures: ${response.status}`;
         commitMeasuresError.value = errorMsg;
         return;
       }
-
       const data = await response.json();
       console.log('Fetched Commit Measures Data:', data);
-      
       if (data && data.data) {
         if (Array.isArray(data.data)) {
           const measures = {};
@@ -564,24 +564,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       emailMeasuresData.value = null;
       return;
     }
-
     console.log(`Fetching ${apiPrefix.value}/email_measure/${projectId}/${month}...`);
     emailMeasuresLoading.value = true;
     emailMeasuresError.value = null;
     emailMeasuresData.value = null;
-
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
-
       if (!response.ok) {
         let errorMsg = `Failed to fetch email measures: ${response.status}`;
         emailMeasuresError.value = errorMsg;
         return;
       }
-
       const data = await response.json();
       console.log('Fetched Email Measures Data:', data);
-      
       if (data && data.data) {
         if (Array.isArray(data.data)) {
           const measures = {};
@@ -598,7 +593,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error('Invalid commit measures data format.');
       }
     } catch (error) {
-      console.error('Error fetching Commit Measures data:', error);
+      console.error('Error fetching Email Measures data:', error);
       emailMeasuresError.value = 'Failed to load commit measures.';
       emailMeasuresData.value = null;
     } finally {
@@ -614,25 +609,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       emailMeasuresData.value = null;
       return;
     }
-  
     console.log(`Fetching ${apiPrefix.value}/email_links/${projectId}/${month} for developer: ${developerName}...`);
     emailMeasuresLoading.value = true;
     emailMeasuresError.value = null;
     emailMeasuresData.value = null;
-  
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
-  
       if (!response.ok) {
         let errorMsg = `Failed to fetch email links: ${response.status}`;
         emailMeasuresError.value = errorMsg;
         return;
       }
-  
       const data = await response.json();
-      console.log('Fetched Email Measures Data:', data);
-  
-      // Ensure the response has the expected structure
+      console.log('Fetched Email Links Data:', data);
       if (data && data.commits && Array.isArray(data.commits)) {
         const normalizedDeveloperName = normalizeName(developerName);
         const filteredEmails = data.commits
@@ -644,7 +633,6 @@ export const useProjectStore = defineStore('projectStore', () => {
             link: email.link,
             date: email.human_date_time,
           }));
-  
         emailMeasuresData.value = filteredEmails;
       } else {
         throw new Error('Invalid email measures data format: Expected "commits" array in the response.');
@@ -663,25 +651,19 @@ export const useProjectStore = defineStore('projectStore', () => {
     techNetLoading.value = true;
     techNetData.value = null;
     techNetError.value = null;
-
     const monthStr = month.toString();
-
-    // For Apache, ensure month is available
     if (selectedFoundation.value === 'Apache' && !monthlyRanges.value.hasOwnProperty(monthStr)) {
       console.warn(`Month ${month} is not available for project ${projectId}. Skipping TechNet data fetch.`);
       techNetLoading.value = false;
       return;
     }
-
     try {
       console.log(`Fetching ${apiPrefix.value}/tech_net/${projectId}/${month}...`);
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/tech_net/${projectId}/${month}`);
-
       if (!response.ok) {
         techNetError.value = `Failed to fetch Technical Network data: ${response.status}`;
         return;
       }
-
       const data = await response.json();
       techNetData.value = data.data;
       console.log('Fetched Technical Network Data:', data);
@@ -701,20 +683,20 @@ export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Fetch Social Network Data --------------------
   const fetchSocialNetData = async (projectId, month) => {
     socialNetLoading.value = true;
-    socialNetData.value = null;
     socialNetError.value = null;
-
+    // Only fetch if foundation mode (i.e. selectedFoundation is Apache) because in local mode POST sets socialNetData.
+    if (selectedFoundation.value !== 'Apache' && socialNetData.value) {
+      socialNetLoading.value = false;
+      return;
+    }
     try {
       console.log(`Fetching ${apiPrefix.value}/social_net/${projectId}/${month}...`);
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/social_net/${projectId}/${month}`);
-
       if (!response.ok) {
         socialNetError.value = `Failed to fetch Social Network data: ${response.status}`;
         return;
       }
-
       const data = await response.json();
-      // Assuming data.data contains the social network data
       socialNetData.value = data.data;
       console.log('Fetched Social Network Data:', data);
     } catch (err) {
@@ -738,25 +720,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       commitMeasuresData.value = null;
       return;
     }
-  
     console.log(`Fetching ${apiPrefix.value}/commit_links/${projectId}/${month} for developer: ${developerName}...`);
     commitMeasuresLoading.value = true;
     commitMeasuresError.value = null;
     commitMeasuresData.value = null;
-  
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
-  
       if (!response.ok) {
         let errorMsg = `Failed to fetch commit links: ${response.status}`;
         commitMeasuresError.value = errorMsg;
         return;
       }
-  
       const data = await response.json();
       console.log('Fetched Commit links Data:', data);
-  
-      // Ensure the response has the expected structure
       if (data && data.commits && Array.isArray(data.commits)) {
         const normalizedDeveloperName = normalizeName(developerName);
         const filteredCommits = data.commits
@@ -768,7 +744,6 @@ export const useProjectStore = defineStore('projectStore', () => {
             link: commit.link,
             date: commit.human_date_time,
           }));
-  
         commitMeasuresData.value = filteredCommits;
       } else {
         throw new Error('Invalid email measures data format: Expected "commits" array in the response.');
@@ -782,116 +757,90 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
+  // -------------------- Return --------------------
   return {
-    // -------------------- Foundation --------------------
+    // Foundation
     selectedFoundation,
     setFoundation,
-
-    // -------------------- Project Selection --------------------
+    // Project Selection
     selectedProject,
     selectedMonth,
-
-    // -------------------- GitHub Details --------------------
-    github_url,
-    fork_count,
-    stargazer_count,
-    watch_count,
-
-    // -------------------- Project Descriptions --------------------
-    allDescriptions,
-    eclipseDescriptions,
-
-    // -------------------- Monthly Ranges --------------------
-    monthlyRanges,
-
-    // -------------------- Loading & Error --------------------
-    loading,
-    error,
-
-    // -------------------- Commit Measures --------------------
-    commitMeasuresData,
-    commitMeasuresLoading,
-    commitMeasuresError,
-    fetchCommitMeasuresData,
-
-    // -------------------- Email Measures --------------------
-    emailMeasuresData,
-    emailMeasuresLoading,
-    emailMeasuresError,
-    fetchEmailMeasuresData,
-    fetchEmailLinksData,
-
-    // -------------------- Commit Links --------------------
+    // Developer Selection
+    selectedDeveloper,
+    setSelectedDeveloper,
+    // Social & Technical Node Selections
+    selectedSocialDeveloper,
+    setSelectedSocialDeveloper,
+    selectedTechnicalDeveloper,
+    setSelectedTechnicalDeveloper,
+    // Commit Links
     commitLinksData,
     commitLinksLoading,
     commitLinksError,
     fetchCommitLinksData,
-
-    // -------------------- Graduation Forecast --------------------
+    // Graduation Forecast
     gradForecastData,
     xAxisCategories,
     gradForecastLoading,
     gradForecastError,
     fetchGradForecast,
-
-    // -------------------- Predictions --------------------
+    // Predictions
     predictionsData,
     predictionsLoading,
     predictionsError,
     fetchPredictions,
-
-    // -------------------- Technical Network --------------------
+    // Technical Network
     techNetData,
     techNetLoading,
     techNetError,
     fetchTechNetData,
     clearTechNetData,
-
-    // -------------------- Developer --------------------
-    selectedDeveloper,
-    setSelectedDeveloper,
-    commitLinksData,
-    commitLinksLoading,
-    commitLinksError,
-    fetchCommitLinksData,
-
-    // -------------------- Social Network --------------------
-    socialNetData,
-    socialNetLoading,
-    socialNetError,
-    fetchSocialNetData,
-    clearSocialNetData,
-
-    // << NEW >> Social & Technical Node Selections:
-    selectedSocialDeveloper,
-    setSelectedSocialDeveloper,
-    selectedTechnicalDeveloper,
-    setSelectedTechnicalDeveloper,
-
-    // -------------------- Range Slider --------------------
+    // Email Measures
+    emailMeasuresData,
+    emailMeasuresLoading,
+    emailMeasuresError,
+    fetchEmailMeasuresData,
+    fetchEmailLinksData,
+    // GitHub Details
+    github_url,
+    fork_count,
+    stargazer_count,
+    watch_count,
+    // Project Descriptions
+    allDescriptions,
+    eclipseDescriptions,
+    // Monthly Ranges
+    monthlyRanges,
+    // Loading & Error
+    loading,
+    error,
+    // Range Slider
     showRangeSlider,
     rangeValue,
     singleValue,
-
-    // -------------------- Computed --------------------
+    // Computed: availableMonths, minMonth, maxMonth
     availableMonths,
     minMonth,
     maxMonth,
-
-    // -------------------- Actions --------------------
+    // Actions: fetch projects, set/reset project details, fetch monthly ranges
     fetchAllProjectData,
     fetchEclipseProjects,
     setCurrentProjectDetails,
     resetProjectDetails,
     fetchMonthlyRanges,
-
-    // -------------------- API prefix --------------------
+    // API prefix
     apiPrefix,
-
-    //-----
+    // Upload Git Repository Link (POST)
     uploadGitRepositoryLink,
-
-    // << NEW >> Export reactData for actionables
+    // React Data
     reactData,
+    // Social Network Data
+    socialNetData,
+    socialNetLoading,
+    socialNetError,
+    fetchSocialNetData,
+    clearSocialNetData,
+    // NEW: Local mode reset (preserve forecast and social data)
+    resetLocalProjectDetails,
   };
 });
