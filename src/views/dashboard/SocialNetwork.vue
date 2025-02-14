@@ -42,11 +42,13 @@ import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuet
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
 
-// currentSocialData: foundation mode uses an array; local mode expects socialNetData as an object keyed by month.
+// currentSocialData:
+// • For Foundation mode, socialNetData is an array.
+// • For Local mode, it’s an object keyed by month.
 const currentSocialData = computed(() => {
   if (projectStore.socialNetData) {
     if (Array.isArray(projectStore.socialNetData)) {
-      console.log("Social network data (foundation mode):", projectStore.socialNetData);
+      console.log("Social network data (Foundation mode):", projectStore.socialNetData);
       return projectStore.socialNetData;
     } else if (typeof projectStore.socialNetData === 'object') {
       const key = projectStore.selectedMonth ? projectStore.selectedMonth.toString() : "";

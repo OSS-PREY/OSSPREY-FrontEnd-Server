@@ -91,7 +91,7 @@
                 No available months for the selected project.
               </div>
               <VCard
-                v-if="projectStore.selectedFoundation === 'Apache' && projectStore.selectedProject"
+                v-if="(projectStore.selectedFoundation === 'Apache' || projectStore.selectedFoundation === 'Eclipse') && projectStore.selectedProject"
                 class="metrics-container mt-3"
                 outlined
               >
@@ -114,10 +114,12 @@
 
             <!-- LOCAL PROJECTS BLOCK -->
             <div v-else-if="selectedDataSource === 'local'">
+              <!--
               <VBtn color="primary" class="mb-2" @click="triggerFileInput" block>
                 Browse Local Folder
               </VBtn>
               <input type="file" ref="fileInput" @change="handleFileSelect" webkitdirectory style="display: none;" />
+              -->
               <div class="text-center mb-2">OR</div>
               <VTextField
                 v-model="githubRepoLink"
@@ -130,7 +132,7 @@
               <VBtn color="primary" class="mb-2" @click="uploadRepoLink" block>
                 Upload Repository Link
               </VBtn>
-              <!-- LOCAL Mode Slider (derived from forecast_json via xAxisCategories) -->
+              <!-- LOCAL Mode Slider -->
               <VSlider
                 v-if="localHasValidMonths"
                 v-model="localMonth"
@@ -215,7 +217,7 @@ const sliderMin = computed(() => projectStore.minMonth);
 const sliderMax = computed(() => projectStore.maxMonth);
 const hasValidMonths = computed(() => projectStore.availableMonths.length > 0);
 
-// LOCAL slider computed properties using forecast_json (stored in xAxisCategories)
+// LOCAL slider computed properties (from xAxisCategories)
 const localMonths = computed(() => {
   const categories = projectStore.xAxisCategories;
   if (selectedDataSource.value === 'local' && categories && categories.length > 0) {
@@ -230,7 +232,6 @@ const localHasValidMonths = computed(() => localMonths.value.length > 0);
 const localSliderMin = computed(() => (localHasValidMonths.value ? localMonths.value[0] : 1));
 const localSliderMax = computed(() => (localHasValidMonths.value ? localMonths.value[localMonths.value.length - 1] : 12));
 
-// When localMonths change, update localMonth and set projectStore.selectedMonth
 const localMonth = ref(null);
 watch(localMonths, (newVal) => {
   console.log("Local available months:", newVal);
@@ -260,10 +261,10 @@ const fetchData = async () => {
   console.log('Initial project data fetched.');
 };
 
-// When switching data sources, call resetLocalProjectDetails for local mode.
 const switchDataSource = (source) => {
   selectedDataSource.value = source;
   console.log("Switched to:", source);
+  projectStore.isLocalMode = (source === 'local');
   if (source === 'local') {
     projectStore.resetLocalProjectDetails();
   } else {
@@ -298,12 +299,6 @@ const handleCategoryChange = () => {
 const handleSingleValueChange = () => {
   console.log(`Foundation slider changed. New singleValue: ${projectStore.singleValue}`);
   projectStore.selectedMonth = projectStore.singleValue;
-};
-
-const handleRangeChange = () => {
-  const newMonth = projectStore.rangeValue[0];
-  console.log(`Foundation range slider changed. New rangeValue: ${projectStore.rangeValue}, Setting selectedMonth to ${newMonth}`);
-  projectStore.selectedMonth = newMonth;
 };
 
 const triggerFileInput = () => {
@@ -343,10 +338,8 @@ const uploadRepoLink = async () => {
       alert("Error: " + response.error);
     } else {
       alert("Repository link uploaded successfully!");
-      // Do not clear githubRepoLink here, so the link remains visible.
       console.log("Forecast JSON:", response.forecast_json);
       console.log("Social Network Data:", response.social_net);
-      // Set selectedLocalProject with details derived from the repoLink
       const repoNameMatch = repoLink.match(/\/([^\/]+)\.git$/);
       const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
       selectedLocalProject.value = {
