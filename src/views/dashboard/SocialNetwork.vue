@@ -66,6 +66,8 @@ function reduceTheEmails(inputArray) {
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
   const filteredArray = inputArray.filter((item) => parseInt(item[2], 10) > threshold);
   console.log("Filtered Emails Data:", filteredArray);
+  console.log("Total Emails:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
+  console.log("Number of Senders:", [...new Set(filteredArray.map(item => item[0]))].length);
   return filteredArray;
 }
 

@@ -403,6 +403,11 @@ const fetchGradForecastData = async () => {
     console.warn('No project selected.');
     return;
   }
+  // CHANGE: Check for local mode – if active, skip fetching the graduation forecast via API.
+  if (projectStore.isLocalMode) {
+    console.log("Local mode is active, skipping fetchGradForecast.");
+    return;
+  }
   await projectStore.fetchGradForecast(projectId);
 };
 

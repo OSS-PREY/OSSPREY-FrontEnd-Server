@@ -1,28 +1,20 @@
-<!-- src/components/TechnicalNetwork.vue -->
 <template>
   <VCard class="text-center text-sm-start tech-net-card">
     <VCardItem class="pb-3">
-      <VCardTitle class="text-primary">
-        Technical Network
-      </VCardTitle>
+      <VCardTitle class="text-primary">Technical Network</VCardTitle>
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
-      <div class="sankey-container" ref="sankeyDiv">
-        <!-- Diagram will be rendered here by D3 -->
-      </div>
-
+      <div class="sankey-container" ref="sankeyDiv"></div>
       <!-- Loading Indicator -->
       <div v-if="projectStore.techNetLoading" class="overlay">
         <VProgressCircular indeterminate color="primary" size="50" />
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
-
       <!-- Error Message -->
       <div v-if="projectStore.techNetError" class="overlay error-message">
         {{ projectStore.techNetError }}
       </div>
-
       <!-- No Data Message -->
       <div
         v-if="!projectStore.techNetLoading && !projectStore.techNetError &&
@@ -32,7 +24,6 @@
       >
         No technical network data available for the selected month.
       </div>
-
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
         Please select a project to view its technical network.
@@ -50,6 +41,24 @@ import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuet
 
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
+
+// currentTechnicalData:
+// • For Foundation mode, techNetData is an array.
+// • For Local mode, it’s an object keyed by month.
+const currentTechData = computed(() => {
+  if (projectStore.techNetData) {
+    if (Array.isArray(projectStore.techNetData)) {
+      console.log("Technical network data (Foundation mode):", projectStore.techNetData);
+      return projectStore.techNetData;
+    } else if (typeof projectStore.techNetData === 'object') {
+      const key = projectStore.selectedMonth ? projectStore.selectedMonth.toString() : "";
+      const dataForMonth = projectStore.techNetData[key] || [];
+      console.log(`Technical network data for month ${key}:`, dataForMonth);
+      return dataForMonth;
+    }
+  }
+  return [];
+});
 
 /**
  * Reduces the commits based on threshold logic.
@@ -80,15 +89,19 @@ const clearSankeyDiagram = () => {
  * This version mirrors the Social Network rendering.
  */
 const preparePlotData = () => {
-  if (!projectStore.techNetData || projectStore.techNetData.length === 0) {
+  const techData = currentTechData.value;
+  if (!techData || techData.length === 0) {
     console.warn('No technical network data found to render.');
     clearSankeyDiagram();
     return;
   }
-
   // Apply threshold reduction.
-  const monthData = projectStore.techNetData;
-  const reducedData = reduceTheCommits(monthData);
+  const reducedData = reduceTheCommits(techData);
+  if (reducedData.length === 0) {
+    console.warn('After reduction, no data remains.');
+    clearSankeyDiagram();
+    return;
+  }
 
   // Process data into nodes and links.
   let nodes = [];
@@ -106,25 +119,35 @@ const preparePlotData = () => {
 
   // Remove duplicate nodes and reindex links.
   const nodeMap = {};
-  const uniqueNodes = [];
+  const updatedNodes = [];
+  const updatedLinks = [];
   nodes.forEach((node) => {
     const key = `${node.side}|${node.name}`;
     if (nodeMap[key] === undefined) {
-      nodeMap[key] = uniqueNodes.push({ name: node.name, side: node.side }) - 1;
+      nodeMap[key] = updatedNodes.push({ name: node.name, side: node.side }) - 1;
     }
   });
-  const updatedLinks = links.map(link => ({
-    source: nodeMap[`${nodes[link.source].side}|${nodes[link.source].name}`],
-    target: nodeMap[`${nodes[link.target].side}|${nodes[link.target].name}`],
-    value: link.value,
-  }));
+  links.forEach(link => {
+    const newSource = nodeMap[`source|${nodes[link.source].name}`];
+    const newTarget = nodeMap[`target|${nodes[link.target].name}`];
+    const existingLink = updatedLinks.find(l => l.source === newSource && l.target === newTarget);
+    if (existingLink) {
+      existingLink.value += link.value;
+    } else {
+      updatedLinks.push({
+        source: newSource,
+        target: newTarget,
+        value: link.value
+      });
+    }
+  });
 
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
   // Compute container dimensions.
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
   // Set diagram height to 40% of container width.
-  const containerHeight = containerWidth * 0.4;
+  const containerHeight = containerWidth * 0.45;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
   clearSankeyDiagram();
@@ -142,7 +165,7 @@ const preparePlotData = () => {
     .extent([[margin.left, margin.top], [containerWidth - margin.right, containerHeight - margin.bottom]]);
 
   const graph = {
-    nodes: uniqueNodes.map(d => ({ ...d })),
+    nodes: updatedNodes.map(d => ({ ...d })),
     links: updatedLinks.map(d => ({ ...d }))
   };
 
@@ -220,16 +243,18 @@ const handleResize = () => {
 const fetchAndRenderSankey = () => {
   const projectId = projectStore.selectedProject?.project_id;
   const month = projectStore.selectedMonth;
+  console.log(`Attempting to render TechNet for project_id: ${projectId}, month: ${month}`);
   if (projectId && month !== null && month !== undefined && !isNaN(month)) {
-    projectStore.fetchTechNetData(projectId, month);
+    preparePlotData();
   } else {
     clearSankeyDiagram();
   }
 };
 
 watch(
-  () => projectStore.techNetData,
+  () => currentTechData.value,
   (newData) => {
+    console.log('Current tech network data changed:', newData);
     if (newData && newData.length > 0) {
       preparePlotData();
     } else {
