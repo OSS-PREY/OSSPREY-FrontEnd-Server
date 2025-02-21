@@ -157,7 +157,10 @@
                   </a>
                 </div>
               </div>
-              <div class="coming-soon">Coming Soon</div>
+              <div v-else-if="repoUploading" class="d-flex justify-center align-center">
+                <VProgressCircular indeterminate color="primary" />
+              </div>
+              <div v-else class="coming-soon">Coming Soon</div>
             </div>
           </div>
         </VCardText>
@@ -185,6 +188,7 @@ const selectedCategory = ref(null);
 const selectedLocalProject = ref(null);
 const githubRepoLink = ref('');
 const fileInput = ref(null);
+const repoUploading = ref(false);
 
 // STATIC LISTS
 const foundations = ['Apache', 'Eclipse'];
@@ -331,6 +335,7 @@ const uploadRepoLink = async () => {
     alert("Please enter a valid .git repository URL (it should end with '.git').");
     return;
   }
+  repoUploading.value = true;
   try {
     const response = await projectStore.uploadGitRepositoryLink(repoLink);
     console.log("POST response:", response);
@@ -350,6 +355,8 @@ const uploadRepoLink = async () => {
   } catch (error) {
     console.error("Error uploading repository link:", error);
     alert("Failed to upload repository link.");
+  } finally {
+    repoUploading.value = false;
   }
 };
 

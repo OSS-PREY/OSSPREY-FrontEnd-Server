@@ -86,16 +86,33 @@ const tabData = computed(() => {
 
 // Helper: Return bullet color based on importance
 const getBulletColor = (importance) => {
-  if (importance >= 5) return 'red'; // Critical
+  if (importance >= 5) return 'red';   // Critical
   else if (importance >= 3) return 'yellow'; // Medium
-  else return 'green'; // Low
+  else return 'green';                 // Low
 };
 
-// Ensure sorting is consistent
+// ------------------ CHANGED: handle multi-month ReACT data ------------------
 const sortedActionables = computed(() => {
-  const dataArray = Array.isArray(projectStore.reactData) ? projectStore.reactData : [];
+  const rd = projectStore.reactData;  // can be array or object
+  let dataArray = [];
+
+  if (Array.isArray(rd)) {
+    // Old single-month style
+    dataArray = rd;
+  } else if (rd && typeof rd === 'object') {
+    // Multi-month style: pick the array for the selected month
+    const selMonth = projectStore.selectedMonth;
+    if (selMonth != null && rd[selMonth]) {
+      dataArray = rd[selMonth];
+    } else {
+      dataArray = [];
+    }
+  }
+
+  // Sort descending by importance
   return dataArray.slice().sort((a, b) => b.importance - a.importance);
 });
+// ---------------------------------------------------------------------------
 </script>
 
 <style scoped>

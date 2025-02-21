@@ -1,22 +1,11 @@
-<script setup>
-import { useTheme } from 'vuetify';
-import { VBtn } from 'vuetify/components';
-
-const { global } = useTheme();
-</script>
-
+<!-- src/components/EmailLinks.vue -->
 <template>
-  <VCard class="text-center text-sm-start" style="height: 120px;"> <!-- Reduced height to 30% -->
+  <VCard class="text-center text-sm-start" style="height: auto;">
     <VRow no-gutters style="height: 100%;">
-      <VCol
-        cols="12"
-        sm="12"
-        order="2"
-        order-sm="1"
-      >
+      <VCol cols="12" sm="12">
         <VCardItem class="pb-3">
           <VCardTitle class="text-primary">
-            Email Links
+            Email Link
           </VCardTitle>
         </VCardItem>
 
@@ -31,6 +20,8 @@ const { global } = useTheme();
                 variant="outlined"
                 class="ms-2"
                 style="border-radius: 12px;"
+                @click="viewEmails"
+                :disabled="!emailMeasuresData"
               >
                 Node
               </VBtn>
@@ -39,5 +30,93 @@ const { global } = useTheme();
         </VCardText>
       </VCol>
     </VRow>
+
+    <!-- Dialog for Email Links -->
+    <VDialog v-model="dialogVisible" max-width="800">
+      <VCard>
+        <VCardTitle>
+          Emails by {{ selectedDeveloper }}
+        </VCardTitle>
+        <VCardText>
+          <div v-if="emailLinksLoading">
+            <VProgressCircular indeterminate color="primary" size="50"></VProgressCircular>
+            Loading emails...
+          </div>
+          <div v-else-if="emailLinksError">
+            {{ emailLinksError }}
+          </div>
+          <div v-else-if="emailLinksData && emailLinksData.length">
+            <VSimpleTable>
+              <thead>
+                <tr>
+                  <th>Date and Time</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="email in emailLinksData" :key="email.link">
+                  <td>{{ email.date }}</td>
+                  <td>
+                    <a :href="email.link" target="_blank">{{ email.link }}</a>
+                  </td>
+                </tr>
+              </tbody>
+            </VSimpleTable>
+          </div>
+          <div v-else>
+            No emails found for {{ selectedDeveloper }}.
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VSpacer></VSpacer>
+          <VBtn color="primary" text @click="closeDialog">Close</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </VCard>
 </template>
+
+<script setup>
+import { useTheme } from 'vuetify';
+import {
+  VBtn,
+  VCard,
+  VCardTitle,
+  VCardText,
+  VCardItem,
+  VRow,
+  VCol,
+  VDialog,
+  VCardActions,
+  VSpacer,
+  VProgressCircular,
+} from 'vuetify/components';
+import { ref, computed } from 'vue';
+import { useProjectStore } from '@/stores/projectStore';
+
+const projectStore = useProjectStore();
+
+const emailMeasuresData = computed(() => projectStore.emailMeasuresData);
+const emailMeasuresLoading = computed(() => projectStore.emailMeasuresLoading);
+const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
+
+const emailLinksData = computed(() => projectStore.emailLinksData);
+const emailLinksLoading = computed(() => projectStore.emailLinksLoading);
+const emailLinksError = computed(() => projectStore.emailLinksError);
+const selectedDeveloper = computed(() => projectStore.selectedDeveloper);
+
+const dialogVisible = ref(false);
+
+const viewEmails = () => {
+  if (selectedDeveloper.value) {
+    // When a developer is selected, open the dialog so that the watcher in the store fetches data.
+    dialogVisible.value = true;
+  } else {
+    alert('Please select a developer in the Technical Network.');
+  }
+};
+
+const closeDialog = () => {
+  dialogVisible.value = false;
+};
+</script>
