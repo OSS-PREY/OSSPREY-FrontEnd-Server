@@ -1,4 +1,3 @@
-<!-- src/components/SocialNetworkNode.vue -->
 <template>
   <VCard class="text-center text-sm-start" style="height: 120px;">
     <VRow no-gutters style="height: 100%;">
@@ -8,7 +7,7 @@
             Email Links
           </VCardTitle>
         </VCardItem>
-  
+
         <VCardText>
           <VRow class="d-flex align-center">
             <VCol cols="auto" class="d-flex align-center">
@@ -30,7 +29,7 @@
         </VCardText>
       </VCol>
     </VRow>
-  
+
     <!-- Dialog for displaying email links -->
     <VDialog v-model="dialog" max-width="800">
       <VCard>
@@ -45,7 +44,7 @@
             :items-per-page="10"
             class="elevation-1"
           >
-            <template v-slot:item.mail="{ item }">
+            <template v-slot:item.commit="{ item }">
               <a :href="item.link" target="_blank" rel="noopener noreferrer">
                 Mail
               </a>
@@ -63,26 +62,26 @@
     </VDialog>
   </VCard>
 </template>
-  
+
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardText, VCol, VRow, VBtn, VDialog, VDataTable, VSpacer, VCardTitle, VCardItem, VCardActions } from 'vuetify/components';
-  
+
 const projectStore = useProjectStore();
 const dialog = ref(false);
 const emailLinks = ref([]);
 const loading = ref(false);
-  
+
 // Define table headers
 const headers = [
-  { title: 'Mail', key: 'mail' },
+  { title: 'Mail', key: 'commit' },
   { title: 'Date Time', key: 'date' },
 ];
-  
+
 // Use the dedicated social developer state
 const selectedNodeName = computed(() => projectStore.selectedSocialDeveloper);
-  
+
 /**
  * Formats the date string to a more readable format.
  * @param {string} dateStr - The original date string from the API.
@@ -97,24 +96,24 @@ const formatDate = (dateStr) => {
   if (isNaN(date)) return 'Invalid Date';
   return date.toLocaleString(undefined, options);
 };
-  
+
 /**
  * Opens the dialog and fetches email links for the selected developer.
  */
 const openDialog = async () => {
   if (!selectedNodeName.value) return;
-  
+
   dialog.value = true;
   loading.value = true;
-  
+
   try {
     const projectId = projectStore.selectedProject?.project_id;
     const month = projectStore.selectedMonth;
     const developerName = selectedNodeName.value;
-  
+
     if (projectId && month !== null && month !== undefined && !isNaN(month)) {
       await projectStore.fetchEmailLinksData(projectId, month, developerName);
-      emailLinks.value = projectStore.emailMeasuresData || [];
+      emailLinks.value = projectStore.emailLinksData || [];
     } else {
       emailLinks.value = [];
     }
@@ -125,21 +124,19 @@ const openDialog = async () => {
     loading.value = false;
   }
 };
-  
-// Watch for changes in selectedSocialDeveloper to reset emailLinks when a different developer is selected
+// Watch for changes in selectedSocialDeveloper to reset emailLinks and fetch new data
 watch(
   () => projectStore.selectedSocialDeveloper,
   (newDeveloper, oldDeveloper) => {
-    if (newDeveloper !== oldDeveloper) {
-      emailLinks.value = [];
-      if (dialog.value) {
-        dialog.value = false; // Optionally close the dialog if open
-      }
+    console.log(`Selected Social Developer changed from ${oldDeveloper} to ${newDeveloper}`);
+    if (newDeveloper && newDeveloper !== oldDeveloper) {
+      emailLinks.value = []; // Clear existing email links
+      openDialog(); // Fetch new email links for the selected social developer
     }
   }
 );
 </script>
-  
+
 <style scoped lang="scss">
 /* Add any component-specific styles here */
 </style>

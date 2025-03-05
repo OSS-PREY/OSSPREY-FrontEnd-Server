@@ -125,17 +125,6 @@ const openDialog = async () => {
     loading.value = false;
   }
 };
-  
-/**
- * Opens the commit link in a new tab.
- * @param {string} link - The URL to open.
- */
-const openCommit = (link) => {
-  if (link) {
-    window.open(link, '_blank');
-  }
-};
-  
 // Watch for changes in selectedTechnicalDeveloper to reset commitLinks and fetch new data
 watch(
   () => projectStore.selectedTechnicalDeveloper,

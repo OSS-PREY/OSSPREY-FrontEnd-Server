@@ -111,7 +111,9 @@ const selectedDeveloper = computed(() => projectStore.selectedDeveloper);
 const dialogVisible = ref(false);
 
 const viewCommits = () => {
+  console.log("something", selectedDeveloper);
   if (selectedDeveloper.value) {
+    console.log("something", selectedDeveloper);
     // Dialog is displayed, data should be fetched via watcher in store
     dialogVisible.value = true;
   } else {

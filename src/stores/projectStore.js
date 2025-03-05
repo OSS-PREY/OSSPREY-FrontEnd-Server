@@ -21,89 +21,84 @@ export const useProjectStore = defineStore('projectStore', () => {
   // Local Mode flag – used to determine which workflow (local vs. foundation) is active.
   const isLocalMode = ref(false);
 
-  // Upload Git Repository Link (POST)
+  // -------------------- Raw Local Data --------------------
+  // When in local mode, we store full commit/email data from the POST response.
+  const rawLocalEmailData = ref(null);
+  const rawLocalCommitData = ref(null);
+
+  // -------------------- Upload Git Repository Link (POST) --------------------
   const uploadGitRepositoryLink = async (git_link) => {
     try {
       const response = await fetch(`${baseUrl.value}/api/upload_git_link`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'  // bypass caching issues
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ git_link })
       });
       const data = await response.json();
 
-      // Update Graduation Forecast if available
+      // Graduation Forecast
       if (data.forecast_json) {
-        const keys = Object.keys(data.forecast_json)
-          .map(Number)
-          .sort((a, b) => a - b);
+        const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
         gradForecastData.value = keys.map(k => data.forecast_json[k]);
-        console.log('Inside loop for Graduation Forecast data');
         console.log('Graduation Forecast Data:', gradForecastData.value);
         xAxisCategories.value = keys.map(k => `Month ${k}`);
         console.log('X-Axis Categories:', xAxisCategories.value);
       }
 
-      // ------------------ CHANGED: handle ReACT data ------------------
+      // ReACT data handling
       if (data.react) {
-        // If data.react is an array, it's the old single-month approach
-        if (Array.isArray(data.react)) {
-          reactData.value = data.react;
-        }
-        // If it's an object, it's the new multi-month approach
-        else if (typeof data.react === 'object') {
-          reactData.value = data.react;
-        } else {
-          reactData.value = [];
-        }
+        reactData.value = Array.isArray(data.react) ? data.react : (typeof data.react === 'object' ? data.react : []);
       } else {
         reactData.value = [];
       }
-      // ----------------------------------------------------------------
 
-      // For Local mode: store social network data (object keyed by month)
+      // Social & Technical Network Data (for Local mode)
       if (data.social_net) {
         socialNetData.value = data.social_net;
-        console.log('Inside loop for Social Network data');
         console.log('Social Network Data:', socialNetData.value);
       }
-
-      // For Local mode: store tech network data (object keyed by month)
       if (data.tech_net) {
         techNetData.value = data.tech_net;
-        console.log('Inside loop for Technical Network data');
         console.log('Technical Network Data:', techNetData.value);
       }
 
-      // --- Local Mode Specific Logic ---
+      // In Local mode, store the full raw email/commit data.
+      if (data.issue_data) {
+        rawLocalEmailData.value = data.issue_data;
+        console.log('Raw Local Email (issue) Data:', rawLocalEmailData.value);
+      }
+      if (data.commit_data) {
+        rawLocalCommitData.value = data.commit_data;
+        console.log('Raw Local Commit Data:', rawLocalCommitData.value);
+      }
+
+      // Local Mode Specific Logic
       if (isLocalMode.value) {
-         // Derive repoName from git_link (e.g. "repository" from ".../repository.git")
-         const repoNameMatch = git_link.match(/\/([^\/]+)\.git$/);
-         const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
-         // Assign a temporary project ID for local mode
-         selectedProject.value = {
-            project_id: `local_${repoName}`, 
-            project_name: repoName,
-            github_url: git_link,
-         };
-         console.log(`Local mode: Set selectedProject to local_${repoName}`);
-         // If forecast categories exist, choose the earliest month as default
-         if (xAxisCategories.value && xAxisCategories.value.length > 0) {
-            const months = xAxisCategories.value
-              .filter(str => typeof str === 'string')
-              .map(str => {
-                const parts = str.split(" ");
-                return parts[1] ? Number(parts[1]) : 0;
-              })
-              .sort((a, b) => a - b);
-            selectedMonth.value = months[0]; // Set the earliest month as default
-            console.log(`Local mode: Set selectedMonth to ${selectedMonth.value} based on forecast data.`);
-         } else {
-            selectedMonth.value = 0; // Default to 0 if no months are available
-            console.log("Local mode: No forecast data available. Defaulting selectedMonth to 0.");
-         }
+        const repoNameMatch = git_link.match(/\/([^\/]+)\.git$/);
+        const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
+        selectedProject.value = {
+          project_id: `local_${repoName}`, 
+          project_name: repoName,
+          github_url: git_link,
+        };
+        console.log(`Local mode: Set selectedProject to local_${repoName}`);
+        if (xAxisCategories.value && xAxisCategories.value.length > 0) {
+          const months = xAxisCategories.value
+            .filter(str => typeof str === 'string')
+            .map(str => {
+              const parts = str.split(" ");
+              return parts[1] ? Number(parts[1]) : 0;
+            })
+            .sort((a, b) => a - b);
+          selectedMonth.value = months[0];
+          console.log(`Local mode: Set selectedMonth to ${selectedMonth.value} based on forecast data.`);
+        } else {
+          selectedMonth.value = 0;
+          console.log("Local mode: No forecast data available. Defaulting selectedMonth to 0.");
+        }
       }
 
       return data;
@@ -113,7 +108,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  // Foundation selection – can be "Apache" or "Eclipse"
+  // -------------------- Foundation Selection --------------------
   const selectedFoundation = ref('Apache');
   const setFoundation = (foundation) => {
     selectedFoundation.value = foundation;
@@ -128,68 +123,67 @@ export const useProjectStore = defineStore('projectStore', () => {
   const selectedDeveloper = ref(null);
   const setSelectedDeveloper = (developerName) => {
     selectedDeveloper.value = developerName;
-    console.log('Selected Developer:', selectedDeveloper.value);
+    console.log('Selected Developer:', developerName);
   };
 
-  // Social & Technical Node Selections
+  // Social & Technical Node Selections (no changes needed here)
   const selectedSocialDeveloper = ref(null);
   const setSelectedSocialDeveloper = (developerName) => {
     selectedSocialDeveloper.value = developerName;
-    console.log('Selected Social Developer:', selectedSocialDeveloper.value);
+    console.log('Selected Social Developer:', developerName);
+    // Optionally, if you want local social node clicks to also set the developer:
+    if (isLocalMode.value) {
+      setSelectedDeveloper(developerName);
+    }
   };
 
   const selectedTechnicalDeveloper = ref(null);
   const setSelectedTechnicalDeveloper = (developerName) => {
     selectedTechnicalDeveloper.value = developerName;
-    console.log('Selected Technical Developer:', selectedTechnicalDeveloper.value);
+    console.log('Selected Technical Developer:', developerName);
   };
 
-  // -------------------- Commit Measures State --------------------
+  // -------------------- Measures & Links State --------------------
   const commitMeasuresData = ref(null);
   const commitMeasuresLoading = ref(false);
   const commitMeasuresError = ref(null);
 
-  // -------------------- Email Measures State --------------------
   const emailMeasuresData = ref(null);
   const emailMeasuresLoading = ref(false);
   const emailMeasuresError = ref(null);
 
-  // -------------------- Commit Links State --------------------
   const commitLinksData = ref(null);
   const commitLinksLoading = ref(false);
   const commitLinksError = ref(null);
 
-  // -------------------- Email Links State --------------------
   const emailLinksData = ref(null);
   const emailLinksLoading = ref(false);
   const emailLinksError = ref(null);
 
-  // -------------------- GitHub Details State --------------------
+  // -------------------- GitHub Details --------------------
   const github_url = ref('N/A');
   const fork_count = ref(0);
   const stargazer_count = ref(0);
   const watch_count = ref(0);
 
-  // -------------------- All Project Descriptions --------------------
-  const allDescriptions = ref([]); // Apache projects
-  const eclipseDescriptions = ref([]); // Eclipse projects
+  // -------------------- Project Descriptions --------------------
+  const allDescriptions = ref([]);
+  const eclipseDescriptions = ref([]);
 
-  // -------------------- Monthly Ranges State --------------------
-  const monthlyRanges = ref({}); // Mapping project IDs to monthly ranges
+  // -------------------- Monthly Ranges --------------------
+  const monthlyRanges = ref({});
 
-  // -------------------- Loading and Error States --------------------
+  // -------------------- Loading & Error States --------------------
   const loading = ref(false);
   const error = ref(null);
 
-  // -------------------- Graduation Forecast State --------------------
+  // -------------------- Graduation Forecast --------------------
   const gradForecastLoading = ref(false);
   const gradForecastError = ref(null);
 
-  // -------------------- Technical Network State --------------------
+  // -------------------- Technical & Social Network States --------------------
   const techNetLoading = ref(false);
   const techNetError = ref(null);
-
-  // -------------------- Social Network State --------------------
   const socialNetLoading = ref(false);
   const socialNetError = ref(null);
 
@@ -198,34 +192,66 @@ export const useProjectStore = defineStore('projectStore', () => {
   const rangeValue = ref([1, 12]);
   const singleValue = ref(1);
 
-  // For most endpoints we use a computed prefix. (Special case defined for Eclipse)
+  // -------------------- API Prefix --------------------
   const apiPrefix = computed(() => {
     return selectedFoundation.value === 'Eclipse' ? '/eclipse' : '/api';
   });
+
+  // -------------------- Helpers / Local Filtering --------------------
+  const normalizeName = (name) => {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
+  };
+
+  const filterLocalEmailLinks = (projectId, month, developerName) => {
+    if (!rawLocalEmailData.value || !rawLocalEmailData.value.months) {
+      console.warn('Local Email Data not available or invalid:', rawLocalEmailData.value);
+      return [];
+    }
+    const monthKey = String(month+1);
+    const emailsForMonth = rawLocalEmailData.value.months[monthKey] || [];
+    const devNormalized = normalizeName(developerName);
+    const filtered = emailsForMonth.filter(item => normalizeName(item.dealised_author_full_name || '') === devNormalized)
+      .map(item => ({
+        link: item.link || 'N/A',
+        date: item.human_date_time || 'N/A'
+      }));
+    console.log(`[Local filter] Emails for '${devNormalized}' in Month ${monthKey}:`, filtered);
+    return filtered;
+  };
+
+  const filterLocalCommitLinks = (projectId, month, developerName) => {
+    if (!rawLocalCommitData.value || !rawLocalCommitData.value.months) {
+      console.warn('Local Commit Data not available or invalid:', rawLocalCommitData.value);
+      return [];
+    }
+    const monthKey = String(month+1);
+    const commitsForMonth = rawLocalCommitData.value.months[monthKey] || [];
+    const devNormalized = normalizeName(developerName);
+    const filtered = commitsForMonth.filter(item => normalizeName(item.dealised_author_full_name || '') === devNormalized)
+      .map(item => ({
+        link: item.link || 'N/A',
+        date: item.human_date_time || 'N/A'
+      }));
+    console.log(`[Local filter] Commits for '${devNormalized}' in Month ${monthKey}:`, filtered);
+    return filtered;
+  };
 
   // -------------------- Watchers --------------------
   watch(
     [selectedProject, selectedMonth],
     async ([newProject, newMonth]) => {
       console.log(`Project changed to ${newProject?.project_name || 'None'} and month ${newMonth || 'None'}`);
-      if (newProject && newMonth) {
+      if (newProject && newMonth !== null && newMonth !== undefined) {
         await Promise.all([
-          // Fetch aggregate measures
           fetchCommitMeasuresData(newProject.project_id, newMonth),
           fetchEmailMeasuresData(newProject.project_id, newMonth),
-          // Fetch links if a developer is selected
-          selectedDeveloper.value
-            ? fetchEmailLinksData(newProject.project_id, newMonth, selectedDeveloper.value)
-            : Promise.resolve(),
         ]);
-
         if (!isLocalMode.value) {
           await fetchSocialNetData(newProject.project_id, newMonth);
           await fetchTechNetData(newProject.project_id, newMonth);
           await fetchGradForecast(newProject.project_id);
-          // Optionally, you can fetch commit links here too if needed
         } else {
-          console.log("Local mode - fetching data now for change in project/month.");
+          console.log("Local mode: skipping GET calls for social/tech/forecast on project/month change.");
         }
       } else {
         if (!isLocalMode.value) {
@@ -239,7 +265,7 @@ export const useProjectStore = defineStore('projectStore', () => {
           xAxisCategories.value = [];
           gradForecastError.value = null;
         } else {
-          console.log("Local mode: full reset.");
+          console.log("Local mode: full reset for project/month change.");
         }
       }
     }
@@ -249,31 +275,29 @@ export const useProjectStore = defineStore('projectStore', () => {
     [selectedDeveloper, selectedProject, selectedMonth],
     async ([newDeveloper, newProject, newMonth]) => {
       console.log(`Developer changed to ${newDeveloper || 'None'}`);
-      if (newDeveloper && newProject && newMonth) {
-        if (!isLocalMode.value) {
+      if (newDeveloper && newProject && newMonth !== null && newMonth !== undefined) {
+        // For both commit and email links, if in local mode use filtering,
+        // otherwise make GET calls.
+        if (isLocalMode.value) {
+          commitLinksData.value = filterLocalCommitLinks(newProject.project_id, newMonth, newDeveloper);
+          emailLinksData.value = filterLocalEmailLinks(newProject.project_id, newMonth, newDeveloper);
+        } else {
           await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
           await fetchEmailLinksData(newProject.project_id, newMonth, newDeveloper);
-        } else {
-          console.log("Local mode - pending to be handled differently.");
         }
       } else {
         commitLinksData.value = null;
         commitLinksError.value = null;
-        // Optionally clear links data if developer is deselected
         emailLinksData.value = null;
         emailLinksError.value = null;
       }
     }
   );
 
-  // -------------------- Actions --------------------
+  // -------------------- Fetching Functions --------------------
 
-  // Normalize developer name
-  const normalizeName = (name) => {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
-  };
+  // Foundation Mode fetch functions remain unchanged.
 
-  // Fetch Apache Project Data
   const fetchAllProjectData = async () => {
     loading.value = true;
     error.value = null;
@@ -281,7 +305,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.log('Fetching all Apache project data...');
       const [projectsRes, projectInfoRes] = await Promise.all([
         fetch(`${baseUrl.value}/api/projects`),
-        fetch(`${baseUrl.value}/api/project_info`),
+        fetch(`${baseUrl.value}/api/project_info`)
       ]);
       if (!projectsRes.ok) {
         const errorText = await projectsRes.text();
@@ -296,12 +320,12 @@ export const useProjectStore = defineStore('projectStore', () => {
       const projects = projectsData.projects;
       const projectInfos = projectInfoData.projects;
       const projectInfoMap = new Map();
-      projectInfos.forEach((info) => {
+      projectInfos.forEach(info => {
         projectInfoMap.set(info.project_id.toLowerCase(), info);
       });
       allDescriptions.value = projects
-        .filter((project) => projectInfoMap.has(project.name.toLowerCase()))
-        .map((project) => {
+        .filter(project => projectInfoMap.has(project.name.toLowerCase()))
+        .map(project => {
           const info = projectInfoMap.get(project.name.toLowerCase());
           return {
             project_id: info.project_id,
@@ -309,9 +333,7 @@ export const useProjectStore = defineStore('projectStore', () => {
             description: info.description || 'N/A',
             sponsor: info.sponsor || 'N/A',
             champion: info.champion || 'N/A',
-            mentors: typeof info.mentor === 'string'
-              ? info.mentor.split(',').map((m) => m.trim())
-              : [],
+            mentors: typeof info.mentor === 'string' ? info.mentor.split(',').map(m => m.trim()) : [],
             start_date: info.start_date || 'N/A',
             end_date: info.end_date || 'N/A',
             status: info.status || 'N/A',
@@ -322,18 +344,15 @@ export const useProjectStore = defineStore('projectStore', () => {
           };
         });
       console.log('Mapped Apache Projects:', allDescriptions.value);
-      if (allDescriptions.value.length === 0) {
-        throw new Error('No Apache project data available.');
-      }
+      if (allDescriptions.value.length === 0) throw new Error('No Apache project data available.');
     } catch (err) {
-      console.error('Error fetching and merging Apache project data:', err);
+      console.error('Error fetching Apache project data:', err);
       error.value = 'Failed to fetch project information (Apache).';
     } finally {
       loading.value = false;
     }
   };
 
-  // Fetch Eclipse Project Data
   const fetchEclipseProjects = async () => {
     loading.value = true;
     error.value = null;
@@ -347,8 +366,8 @@ export const useProjectStore = defineStore('projectStore', () => {
       const projectInfoData = await projectInfoRes.json();
       const projectInfos = projectInfoData.projects;
       eclipseDescriptions.value = projectInfos
-        .filter((info) => info.display === true)
-        .map((info) => ({
+        .filter(info => info.display === true)
+        .map(info => ({
           project_id: info.project_id,
           project_name: info.project_name || 'N/A',
           project_url: info.project_url || 'N/A',
@@ -360,11 +379,9 @@ export const useProjectStore = defineStore('projectStore', () => {
           github_url: info.project_url || 'N/A',
         }));
       console.log('Mapped Eclipse Projects:', eclipseDescriptions.value);
-      if (eclipseDescriptions.value.length === 0) {
-        throw new Error('No Eclipse project data available.');
-      }
+      if (eclipseDescriptions.value.length === 0) throw new Error('No Eclipse project data available.');
     } catch (err) {
-      console.error('Error fetching and merging Eclipse project data:', err);
+      console.error('Error fetching Eclipse project data:', err);
       error.value = 'Failed to fetch project information (Eclipse).';
     } finally {
       loading.value = false;
@@ -439,9 +456,9 @@ export const useProjectStore = defineStore('projectStore', () => {
     singleValue.value = 1;
   };
 
-  // For Local mode, reset details without clearing forecast/social data.
+  // Local mode reset (preserving forecast/social data if desired)
   const resetLocalProjectDetails = () => {
-    console.log('Resetting local project details (preserving forecast and social network data).');
+    console.log('Resetting local project details (preserving forecast & social network data).');
     selectedProject.value = null;
     github_url.value = 'N/A';
     fork_count.value = 0;
@@ -472,12 +489,8 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
       }
       const data = await response.json();
-      const projectRange = data.project_ranges.find(
-        (range) => range.project_id.toLowerCase() === project_id.toLowerCase()
-      );
-      if (!projectRange) {
-        throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
-      }
+      const projectRange = data.project_ranges.find(range => range.project_id.toLowerCase() === project_id.toLowerCase());
+      if (!projectRange) throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
       monthlyRanges.value = projectRange.monthly_ranges;
       console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
     } catch (err) {
@@ -493,11 +506,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     if (selectedProject.value) {
       if (selectedFoundation.value === 'Eclipse') {
         const keys = Object.keys(monthlyRanges.value);
-        if (keys.length === 0) {
-          return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-        } else {
-          return keys.map(Number).sort((a, b) => a - b);
-        }
+        return keys.length === 0 ? [1,2,3,4,5,6,7,8,9,10,11,12] : keys.map(Number).sort((a, b) => a - b);
       } else if (Object.keys(monthlyRanges.value).length > 0) {
         return Object.keys(monthlyRanges.value).map(Number).sort((a, b) => a - b);
       }
@@ -507,7 +516,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   const minMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[0] : 1);
   const maxMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[availableMonths.value.length - 1] : 12);
 
-  // -------------------- Fetch Graduation Forecast --------------------
+  // -------------------- Graduation Forecast --------------------
   const fetchGradForecast = async (projectId) => {
     if (!projectId) {
       console.warn('No project selected.');
@@ -517,15 +526,12 @@ export const useProjectStore = defineStore('projectStore', () => {
     console.log('Starting fetchGradForecast...');
     gradForecastLoading.value = true;
     gradForecastData.value = [];
-    if (!isLocalMode.value) {
-      xAxisCategories.value = [];
-    }
+    if (!isLocalMode.value) xAxisCategories.value = [];
     gradForecastError.value = null;
     try {
-      const endpoint =
-        selectedFoundation.value === 'Eclipse'
-          ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
-          : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
+      const endpoint = selectedFoundation.value === 'Eclipse'
+        ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
+        : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
       console.log(`Fetching graduation forecast from: ${endpoint}`);
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -535,15 +541,8 @@ export const useProjectStore = defineStore('projectStore', () => {
       const data = await response.json();
       console.log('Fetched Graduation Forecast Data:', data);
       const sortedData = Object.values(data)
-        .sort((a, b) => {
-          const dateA = a.date || a.month;
-          const dateB = b.date || b.month;
-          return new Date(dateA) - new Date(dateB);
-        })
-        .map(item => ({
-          x: `Month ${item.date || item.month}`,
-          y: item.close,
-        }));
+        .sort((a, b) => new Date(a.date || a.month) - new Date(b.date || b.month))
+        .map(item => ({ x: `Month ${item.date || item.month}`, y: item.close }));
       gradForecastData.value = sortedData.map(item => item.y);
       xAxisCategories.value = sortedData.map(item => item.x);
     } catch (error) {
@@ -570,8 +569,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}`);
       if (!response.ok) {
-        let errorMsg = `Failed to fetch commit measures: ${response.status}`;
-        commitMeasuresError.value = errorMsg;
+        commitMeasuresError.value = `Failed to fetch commit measures: ${response.status}`;
         return;
       }
       const data = await response.json();
@@ -615,8 +613,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
       if (!response.ok) {
-        let errorMsg = `Failed to fetch email measures: ${response.status}`;
-        emailMeasuresError.value = errorMsg;
+        emailMeasuresError.value = `Failed to fetch email measures: ${response.status}`;
         return;
       }
       const data = await response.json();
@@ -653,6 +650,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       commitLinksData.value = null;
       return;
     }
+    // NEW: In local mode, do not make a GET call. Filter from raw data.
+    if (isLocalMode.value) {
+      console.log("Local mode: Filtering commit links from raw data.");
+      commitLinksData.value = filterLocalCommitLinks(projectId, month, developerName);
+      commitLinksLoading.value = false;
+      return;
+    }
     console.log(`Fetching commit links from ${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month} for ${developerName}...`);
     commitLinksLoading.value = true;
     commitLinksError.value = null;
@@ -660,24 +664,20 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
       if (!response.ok) {
-        let errorMsg = `Failed to fetch commit links: ${response.status}`;
-        commitLinksError.value = errorMsg;
+        commitLinksError.value = `Failed to fetch commit links: ${response.status}`;
         return;
       }
       const data = await response.json();
       console.log('Fetched Commit Links Data:', data);
       if (data && data.commits && Array.isArray(data.commits)) {
-        const normalizedDeveloperName = normalizeName(developerName);
-        const filteredCommits = data.commits
-          .filter(commit => {
-            const commitAuthorName = normalizeName(commit.dealised_author_full_name);
-            return commitAuthorName === normalizedDeveloperName;
-          })
-          .map(commit => ({
-            link: commit.link,
-            date: commit.human_date_time,
-          }));
-        commitLinksData.value = filteredCommits;
+        const normalizedDev = normalizeName(developerName);
+        const filtered = data.commits.filter(commit =>
+          normalizeName(commit.dealised_author_full_name || '') === normalizedDev
+        ).map(commit => ({
+          link: commit.link,
+          date: commit.human_date_time,
+        }));
+        commitLinksData.value = filtered;
       } else {
         throw new Error('Invalid commit links data format.');
       }
@@ -698,6 +698,13 @@ export const useProjectStore = defineStore('projectStore', () => {
       emailLinksData.value = null;
       return;
     }
+    // NEW: In local mode, use the raw filter instead of GET.
+    if (isLocalMode.value) {
+      console.log("Local mode: Filtering email links from raw data.");
+      emailLinksData.value = filterLocalEmailLinks(projectId, month, developerName);
+      emailLinksLoading.value = false;
+      return;
+    }
     console.log(`Fetching email links from ${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month} for ${developerName}...`);
     emailLinksLoading.value = true;
     emailLinksError.value = null;
@@ -705,24 +712,20 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
       if (!response.ok) {
-        let errorMsg = `Failed to fetch email links: ${response.status}`;
-        emailLinksError.value = errorMsg;
+        emailLinksError.value = `Failed to fetch email links: ${response.status}`;
         return;
       }
       const data = await response.json();
       console.log('Fetched Email Links Data:', data);
       if (data && data.commits && Array.isArray(data.commits)) {
-        const normalizedDeveloperName = normalizeName(developerName);
-        const filteredEmails = data.commits
-          .filter(commit => {
-            const emailAuthorName = normalizeName(commit.dealised_author_full_name);
-            return emailAuthorName === normalizedDeveloperName;
-          })
-          .map(commit => ({
-            link: commit.link || 'N/A',
-            date: commit.human_date_time || 'N/A',
-          }));
-        emailLinksData.value = filteredEmails;
+        const normalizedDev = normalizeName(developerName);
+        const filtered = data.commits.filter(commit =>
+          normalizeName(commit.dealised_author_full_name || '') === normalizedDev
+        ).map(commit => ({
+          link: commit.link || 'N/A',
+          date: commit.human_date_time || 'N/A'
+        }));
+        emailLinksData.value = filtered;
       } else {
         throw new Error('Invalid email links data format.');
       }
@@ -740,10 +743,9 @@ export const useProjectStore = defineStore('projectStore', () => {
     techNetLoading.value = true;
     techNetError.value = null;
     try {
-      const endpoint =
-        selectedFoundation.value === 'Eclipse'
-          ? `${baseUrl.value}/eclipse/tech_net/${projectId}/${month}`
-          : `${baseUrl.value}/api/tech_net/${projectId}/${month}`;
+      const endpoint = selectedFoundation.value === 'Eclipse'
+        ? `${baseUrl.value}/eclipse/tech_net/${projectId}/${month}`
+        : `${baseUrl.value}/api/tech_net/${projectId}/${month}`;
       console.log(`Fetching tech network from: ${endpoint}`);
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -771,10 +773,9 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetLoading.value = true;
     socialNetError.value = null;
     try {
-      const endpoint =
-        selectedFoundation.value === 'Eclipse'
-          ? `${baseUrl.value}/eclipse/social_net/${projectId}/${month}`
-          : `${baseUrl.value}/api/social_net/${projectId}/${month}`;
+      const endpoint = selectedFoundation.value === 'Eclipse'
+        ? `${baseUrl.value}/eclipse/social_net/${projectId}/${month}`
+        : `${baseUrl.value}/api/social_net/${projectId}/${month}`;
       console.log(`Fetching social network from: ${endpoint}`);
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -797,7 +798,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetError.value = null;
   };
 
-  // -------------------- Return --------------------
+  // -------------------- Return Everything --------------------
   return {
     // Foundation
     selectedFoundation,
@@ -813,22 +814,19 @@ export const useProjectStore = defineStore('projectStore', () => {
     setSelectedSocialDeveloper,
     selectedTechnicalDeveloper,
     setSelectedTechnicalDeveloper,
-    // Commit Measures
+    // Measures & Links
     commitMeasuresData,
     commitMeasuresLoading,
     commitMeasuresError,
     fetchCommitMeasuresData,
-    // Email Measures
     emailMeasuresData,
     emailMeasuresLoading,
     emailMeasuresError,
     fetchEmailMeasuresData,
-    // Commit Links
     commitLinksData,
     commitLinksLoading,
     commitLinksError,
     fetchCommitLinksData,
-    // Email Links
     emailLinksData,
     emailLinksLoading,
     emailLinksError,
@@ -839,12 +837,17 @@ export const useProjectStore = defineStore('projectStore', () => {
     gradForecastLoading,
     gradForecastError,
     fetchGradForecast,
-    // Technical Network
+    // Technical & Social Network Data
     techNetData,
     techNetLoading,
     techNetError,
     fetchTechNetData,
     clearTechNetData,
+    socialNetData,
+    socialNetLoading,
+    socialNetError,
+    fetchSocialNetData,
+    clearSocialNetData,
     // GitHub Details
     github_url,
     fork_count,
@@ -862,31 +865,26 @@ export const useProjectStore = defineStore('projectStore', () => {
     showRangeSlider,
     rangeValue,
     singleValue,
-    // Computed: availableMonths, minMonth, maxMonth
+    // Computed Properties
     availableMonths,
     minMonth,
     maxMonth,
-    // Local mode flag
+    // Local Mode Flag & Raw Data
     isLocalMode,
-    // Actions: fetch projects, set/reset project details, fetch monthly ranges
+    rawLocalEmailData,
+    rawLocalCommitData,
+    // Actions
     fetchAllProjectData,
     fetchEclipseProjects,
     setCurrentProjectDetails,
     resetProjectDetails,
+    resetLocalProjectDetails,
     fetchMonthlyRanges,
-    // API prefix
+    // API Prefix
     apiPrefix,
-    // Upload Git Repository Link (POST)
+    // Upload Git Repository Link
     uploadGitRepositoryLink,
     // React Data
     reactData,
-    // Social Network Data
-    socialNetData,
-    socialNetLoading,
-    socialNetError,
-    fetchSocialNetData,
-    clearSocialNetData,
-    // Local mode reset (preserve forecast and social data)
-    resetLocalProjectDetails,
   };
 });

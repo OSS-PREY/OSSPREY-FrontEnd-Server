@@ -54,10 +54,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="email in emailLinksData" :key="email.link">
-                  <td>{{ email.date }}</td>
+                <tr v-for="commit in emailLinksData" :key="commit.link">
+                  <td>{{ commit.human_date_time }}</td>
                   <td>
-                    <a :href="email.link" target="_blank">{{ email.link }}</a>
+                    <a :href="commit.link" target="_blank">{{ commit.link }}</a>
                   </td>
                 </tr>
               </tbody>
@@ -103,16 +103,18 @@ const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 const emailLinksData = computed(() => projectStore.emailLinksData);
 const emailLinksLoading = computed(() => projectStore.emailLinksLoading);
 const emailLinksError = computed(() => projectStore.emailLinksError);
-const selectedDeveloper = computed(() => projectStore.selectedDeveloper);
+const selectedDeveloper = computed(() => projectStore.setSelectedSocialDeveloper);
 
 const dialogVisible = ref(false);
 
 const viewEmails = () => {
+  console.log("something", selectedDeveloper);
   if (selectedDeveloper.value) {
     // When a developer is selected, open the dialog so that the watcher in the store fetches data.
+    console.log(selectedDeveloper.value);
     dialogVisible.value = true;
   } else {
-    alert('Please select a developer in the Technical Network.');
+    alert('Please select a developer in the Social Network.');
   }
 };
 
