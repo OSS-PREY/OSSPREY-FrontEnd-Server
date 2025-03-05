@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('https://oss-decal.priyal.me');
+  const baseUrl = ref('https://ospex-backend.priyal.org');
 
   // Graduation Forecast State
   const gradForecastData = ref([]);
