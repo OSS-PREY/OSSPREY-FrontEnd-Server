@@ -26,6 +26,10 @@ export const useProjectStore = defineStore('projectStore', () => {
   const rawLocalEmailData = ref(null);
   const rawLocalCommitData = ref(null);
 
+  // -------------------- Local Metadata --------------------
+  // Store metadata fetched from the GitHub API for local mode.
+  const localMetadata = ref(null);
+
   // -------------------- Upload Git Repository Link (POST) --------------------
   const uploadGitRepositoryLink = async (git_link) => {
     try {
@@ -50,9 +54,18 @@ export const useProjectStore = defineStore('projectStore', () => {
 
       // ReACT data handling
       if (data.react) {
-        reactData.value = Array.isArray(data.react) ? data.react : (typeof data.react === 'object' ? data.react : []);
+        reactData.value = Array.isArray(data.react)
+          ? data.react
+          : (typeof data.react === 'object' ? data.react : []);
+        console.log('ReACT Data:', reactData.value);
       } else {
         reactData.value = [];
+      }
+
+      // Process metadata (store it for display in ProjectDetails)
+      if (data.metadata) {
+        localMetadata.value = data.metadata;
+        console.log('Metadata received:', localMetadata.value);
       }
 
       // Social & Technical Network Data (for Local mode)
@@ -75,7 +88,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         console.log('Raw Local Commit Data:', rawLocalCommitData.value);
       }
 
-      // Local Mode Specific Logic
+      // Local Mode Specific Logic: Set the project details based solely on the repo URL.
       if (isLocalMode.value) {
         const repoNameMatch = git_link.match(/\/([^\/]+)\.git$/);
         const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
@@ -207,14 +220,15 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.warn('Local Email Data not available or invalid:', rawLocalEmailData.value);
       return [];
     }
-    const monthKey = String(month+1);
+    const monthKey = String(month + 1);
     const emailsForMonth = rawLocalEmailData.value.months[monthKey] || [];
     const devNormalized = normalizeName(developerName);
-    const filtered = emailsForMonth.filter(item => normalizeName(item.dealised_author_full_name || '') === devNormalized)
-      .map(item => ({
-        link: item.link || 'N/A',
-        date: item.human_date_time || 'N/A'
-      }));
+    const filtered = emailsForMonth.filter(item =>
+      normalizeName(item.dealised_author_full_name || '') === devNormalized
+    ).map(item => ({
+      link: item.link || 'N/A',
+      date: item.human_date_time || 'N/A'
+    }));
     console.log(`[Local filter] Emails for '${devNormalized}' in Month ${monthKey}:`, filtered);
     return filtered;
   };
@@ -224,14 +238,15 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.warn('Local Commit Data not available or invalid:', rawLocalCommitData.value);
       return [];
     }
-    const monthKey = String(month+1);
+    const monthKey = String(month + 1);
     const commitsForMonth = rawLocalCommitData.value.months[monthKey] || [];
     const devNormalized = normalizeName(developerName);
-    const filtered = commitsForMonth.filter(item => normalizeName(item.dealised_author_full_name || '') === devNormalized)
-      .map(item => ({
-        link: item.link || 'N/A',
-        date: item.human_date_time || 'N/A'
-      }));
+    const filtered = commitsForMonth.filter(item =>
+      normalizeName(item.dealised_author_full_name || '') === devNormalized
+    ).map(item => ({
+      link: item.link || 'N/A',
+      date: item.human_date_time || 'N/A'
+    }));
     console.log(`[Local filter] Commits for '${devNormalized}' in Month ${monthKey}:`, filtered);
     return filtered;
   };
@@ -295,7 +310,6 @@ export const useProjectStore = defineStore('projectStore', () => {
   );
 
   // -------------------- Fetching Functions --------------------
-
   // Foundation Mode fetch functions remain unchanged.
 
   const fetchAllProjectData = async () => {
@@ -506,7 +520,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     if (selectedProject.value) {
       if (selectedFoundation.value === 'Eclipse') {
         const keys = Object.keys(monthlyRanges.value);
-        return keys.length === 0 ? [1,2,3,4,5,6,7,8,9,10,11,12] : keys.map(Number).sort((a, b) => a - b);
+        return keys.length === 0 ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : keys.map(Number).sort((a, b) => a - b);
       } else if (Object.keys(monthlyRanges.value).length > 0) {
         return Object.keys(monthlyRanges.value).map(Number).sort((a, b) => a - b);
       }
@@ -873,6 +887,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     isLocalMode,
     rawLocalEmailData,
     rawLocalCommitData,
+    localMetadata,
     // Actions
     fetchAllProjectData,
     fetchEclipseProjects,

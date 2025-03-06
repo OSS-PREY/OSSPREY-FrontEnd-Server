@@ -11,10 +11,6 @@
         <VProgressCircular indeterminate color="primary" size="50" />
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
-      <!-- Error Message -->
-      <div v-if="projectStore.techNetError" class="overlay error-message">
-        {{ projectStore.techNetError }}
-      </div>
       <!-- No Data Message -->
       <div
         v-if="!projectStore.techNetLoading && !projectStore.techNetError &&

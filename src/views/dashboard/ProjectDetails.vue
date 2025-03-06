@@ -16,97 +16,172 @@
 
           <!-- Display project details -->
           <div v-else>
-            <!-- Apache Fields -->
-            <div v-if="isApacheProject">
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>About:</strong>&nbsp;
-                  {{ projectStore.selectedProject.description || 'No description available.' }}
-                </VCol>
-              </VRow>
-
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>Status:</strong>&nbsp;
-                  <span :class="statusClass" class="status-badge">
-                    {{ projectStore.selectedProject.status }}
-                  </span>
-                </VCol>
-              </VRow>
-
-              <VRow class="mb-3" gap="3">
-                <VCol cols="6">
-                  <div>
-                    <strong>Start date:</strong>&nbsp;
-                    {{ projectStore.selectedProject.start_date || 'N/A' }}
-                  </div>
-                </VCol>
-                <VCol cols="6">
-                  <div>
-                    <strong>End date:</strong>&nbsp;
-                    {{ projectStore.selectedProject.end_date || 'N/A' }}
-                  </div>
-                </VCol>
-              </VRow>
-
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>Project URL:</strong>
-                  <a :href="projectStore.selectedProject.github_url" target="_blank">{{ projectStore.selectedProject.github_url || 'N/A'}}</a>
-                </VCol>
-              </VRow>
-
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>Sponsor:</strong>&nbsp; {{ projectStore.selectedProject.sponsor || 'N/A' }}
-                </VCol>
-              </VRow>
-              
-
-            </div>
-
-            <!-- Eclipse Fields -->
-            <div v-if="isEclipseProject">
-              <VRow class="mb-3">
-                <VCol cols="12" class="d-flex align-items-center">
-                  <strong>Status:</strong>&nbsp;
-                  <span :class="statusClass" class="status-badge">
-                    {{ projectStore.selectedProject.status }}
-                  </span>
-                </VCol>
-              </VRow>
-
-              <div v-if="projectStore.selectedProject.releases && projectStore.selectedProject.releases.length">
-                <VRow class="mb-3">
-                  <VCol cols="12">
-                    <strong>Releases/Reviews:</strong>
+            <!-- LOCAL MODE: Only show these fields when local mode is active -->
+            <div v-if="projectStore.isLocalMode && projectStore.localMetadata">
+              <!-- Metrics Card (same styling as in ProjectSelector) -->
+              <VCard class="metrics-container mt-3" outlined>
+                <VRow align="center" justify="space-around">
+                  <VCol class="d-flex align-center" cols="auto">
+                    <VIcon size="20">fa-solid fa-eye</VIcon>
+                    <span class="ml-1">Watch: {{ projectStore.localMetadata.watchers || 'N/A' }}</span>
+                  </VCol>
+                  <VCol class="d-flex align-center" cols="auto">
+                    <VIcon size="20">fa-solid fa-code-fork</VIcon>
+                    <span class="ml-1">Fork: {{ projectStore.localMetadata.forks || 'N/A' }}</span>
+                  </VCol>
+                  <VCol class="d-flex align-center" cols="auto">
+                    <VIcon size="20">fa-solid fa-star</VIcon>
+                    <span class="ml-1">Star: {{ projectStore.localMetadata.stars || 'N/A' }}</span>
                   </VCol>
                 </VRow>
-                <div class="table-container">
-                  <table class="table table-bordered">
-                    <thead>
-                      <tr class="table-primary">
-                        <th>Release/Review</th>
-                        <th>Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="(release, index) in projectStore.selectedProject.releases"
-                        :key="index"
-                      >
-                        <td class="actionable-cell">
-                          <a :href="release.url" target="_blank" rel="noopener noreferrer">
-                            {{ release.name }}
-                          </a>
-                        </td>
-                        <td>{{ formatDate(release.date) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+              </VCard>
+              <br>
+              <VRow class="mb-3">
+                <VCol cols="12" sm="6">
+                  <div>
+                    <strong>Created At:</strong>&nbsp;
+                    {{ projectStore.localMetadata.created_at ? new Date(projectStore.localMetadata.created_at).toLocaleString() : 'N/A' }}
+                  </div>
+                </VCol>
+                <VCol cols="12" sm="6">
+                  <div>
+                    <strong>Updated At:</strong>&nbsp;
+                    {{ projectStore.localMetadata.updated_at ? new Date(projectStore.localMetadata.updated_at).toLocaleString() : 'N/A' }}
+                  </div>
+                </VCol>
+              </VRow>
+              <VRow class="mb-3">
+                <VCol cols="12">
+                  <div>
+                    <strong>Description:</strong>&nbsp;{{ projectStore.localMetadata.description || 'No description available.' }}
+                  </div>
+                </VCol>
+              </VRow>
+
+              <VRow class="mb-3">
+                <VCol cols="12">
+                  <div>
+                    <strong>Languages:</strong>&nbsp;
+                    <span v-if="projectStore.localMetadata.languages && projectStore.localMetadata.languages.length">
+                      {{ projectStore.localMetadata.languages.join(', ') }}
+                    </span>
+                    <span v-else>N/A</span>
+                  </div>
+                </VCol>
+              </VRow>
+
+              <VRow class="mb-3" v-if="projectStore.localMetadata.latest_release">
+                <VCol cols="12">
+                  <div>
+                    <strong>Latest Release:</strong>&nbsp;
+                    <span v-if="typeof projectStore.localMetadata.latest_release === 'object'">
+                      Name: {{ projectStore.localMetadata.latest_release.name }},
+                      Tag: {{ projectStore.localMetadata.latest_release.tag }},
+                      Published At: {{ projectStore.localMetadata.latest_release.published_at }}
+                    </span>
+                    <span v-else>
+                      {{ projectStore.localMetadata.latest_release || 'No release available' }}
+                    </span>
+                  </div>
+                </VCol>
+              </VRow>
+            </div>
+
+            <!-- NON-LOCAL MODE: Apache and Eclipse fields -->
+            <div v-else>
+              <!-- Apache Fields -->
+              <div v-if="isApacheProject">
+                <VRow class="mb-3">
+                  <VCol cols="12" class="d-flex align-items-center">
+                    <strong>About:</strong>&nbsp;
+                    {{ projectStore.selectedProject.description || 'No description available.' }}
+                  </VCol>
+                </VRow>
+
+                <VRow class="mb-3">
+                  <VCol cols="12" class="d-flex align-items-center">
+                    <strong>Status:</strong>&nbsp;
+                    <span :class="statusClass" class="status-badge">
+                      {{ projectStore.selectedProject.status }}
+                    </span>
+                  </VCol>
+                </VRow>
+
+                <VRow class="mb-3" gap="3">
+                  <VCol cols="6">
+                    <div>
+                      <strong>Start date:</strong>&nbsp;
+                      {{ projectStore.selectedProject.start_date || 'N/A' }}
+                    </div>
+                  </VCol>
+                  <VCol cols="6">
+                    <div>
+                      <strong>End date:</strong>&nbsp;
+                      {{ projectStore.selectedProject.end_date || 'N/A' }}
+                    </div>
+                  </VCol>
+                </VRow>
+
+                <VRow class="mb-3">
+                  <VCol cols="12" class="d-flex align-items-center">
+                    <strong>Project URL:</strong>
+                    <a :href="projectStore.selectedProject.github_url" target="_blank">
+                      {{ projectStore.selectedProject.github_url || 'N/A' }}
+                    </a>
+                  </VCol>
+                </VRow>
+
+                <VRow class="mb-3">
+                  <VCol cols="12" class="d-flex align-items-center">
+                    <strong>Sponsor:</strong>&nbsp;{{ projectStore.selectedProject.sponsor || 'N/A' }}
+                  </VCol>
+                </VRow>
+              </div>
+
+              <!-- Eclipse Fields -->
+              <div v-if="isEclipseProject">
+                <VRow class="mb-3">
+                  <VCol cols="12" class="d-flex align-items-center">
+                    <strong>Status:</strong>&nbsp;
+                    <span :class="statusClass" class="status-badge">
+                      {{ projectStore.selectedProject.status }}
+                    </span>
+                  </VCol>
+                </VRow>
+
+                <div v-if="projectStore.selectedProject.releases && projectStore.selectedProject.releases.length">
+                  <VRow class="mb-3">
+                    <VCol cols="12">
+                      <strong>Releases/Reviews:</strong>
+                    </VCol>
+                  </VRow>
+                  <div class="table-container">
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr class="table-primary">
+                          <th>Release/Review</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          v-for="(release, index) in projectStore.selectedProject.releases"
+                          :key="index"
+                        >
+                          <td class="actionable-cell">
+                            <a :href="release.url" target="_blank" rel="noopener noreferrer">
+                              {{ release.name }}
+                            </a>
+                          </td>
+                          <td>{{ formatDate(release.date) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
+            <!-- End NON-LOCAL MODE Section -->
           </div>
         </VCardText>
       </VCol>
@@ -120,12 +195,11 @@ import { useProjectStore } from '@/stores/projectStore';
 
 const projectStore = useProjectStore();
 
-const isApacheProject = computed(() => projectStore.selectedFoundation === 'Apache');
-const isEclipseProject = computed(() => projectStore.selectedFoundation === 'Eclipse');
+const isApacheProject = computed(() => projectStore.selectedFoundation === 'Apache' && !projectStore.isLocalMode);
+const isEclipseProject = computed(() => projectStore.selectedFoundation === 'Eclipse' && !projectStore.isLocalMode);
 
 const statusClass = computed(() => {
   if (!projectStore.selectedProject || !projectStore.selectedProject.status) return 'status-default';
-
   const status = projectStore.selectedProject.status.toLowerCase();
   switch (status) {
     case 'retired':
@@ -155,7 +229,6 @@ const formatDate = (dateStr) => {
 };
 </script>
 
-
 <style scoped lang="scss">
 .project-details-card {
   height: 400px;
@@ -171,22 +244,22 @@ const formatDate = (dateStr) => {
 
 /* Status-specific styles */
 .status-retired {
-  background-color: #e0f7fa; /* Light Blue */
+  background-color: #e0f7fa;
   color: #006064;
 }
 
 .status-graduated {
-  background-color: #e8f5e9; /* Light Green */
+  background-color: #e8f5e9;
   color: #1b5e20;
 }
 
 .status-current {
-  background-color: #fffde7; /* Yellow */
+  background-color: #fffde7;
   color: #f9a825;
 }
 
 .status-default {
-  background-color: #f5f5f5; /* Grey */
+  background-color: #f5f5f5;
   color: #616161;
 }
 
@@ -205,16 +278,16 @@ a:hover {
 
 /* Table styling similar to your other component */
 .table-container {
-  max-height: 400px; /* Adjust as needed */
-  overflow-y: auto; /* Enable vertical scrolling */
-  overflow-x: auto; /* Enable horizontal scrolling for wide tables */
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: auto;
   display: block;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures consistent column widths */
+  table-layout: fixed;
 }
 
 .table-bordered {
@@ -267,7 +340,6 @@ a:hover {
   background-color: green;
 }
 
-/* Legend styling */
 .priority-legend {
   display: flex;
   align-items: center;
@@ -280,14 +352,24 @@ a:hover {
   margin-right: 16px;
 }
 
-/* Adjusting cell widths */
 .feature-name-header,
 .feature-name-cell {
-  width: 25%; /* Adjust as needed */
+  width: 25%;
 }
 
 .actionable-header,
 .actionable-cell {
-  width: 75%; /* Adjust as needed */
+  width: 75%;
+}
+
+/* Metrics container styling for local mode */
+.metrics-container {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-primary), 0.08);
+  overflow: auto;
+}
+.ml-1 {
+  margin-left: 4px;
 }
 </style>
