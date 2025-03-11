@@ -428,11 +428,14 @@ export const useProjectStore = defineStore('projectStore', () => {
       } else {
         const min = minMonth.value;
         const max = maxMonth.value;
+        
         rangeValue.value = [min, max];
         singleValue.value = min;
         selectedMonth.value = min;
+        
         console.log(`Project details set for project ID: ${project.project_id}`);
         console.log(`Selected Month set to: ${selectedMonth.value}`);
+        console.log("Available Months:", availableMonths.value);
       }
     } catch (err) {
       console.error(`Error setting project details for ${project.project_id}:`, err);
@@ -529,6 +532,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   });
   const minMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[0] : 1);
   const maxMonth = computed(() => availableMonths.value.length > 0 ? availableMonths.value[availableMonths.value.length - 1] : 12);
+  
 
   // -------------------- Graduation Forecast --------------------
   const fetchGradForecast = async (projectId) => {
