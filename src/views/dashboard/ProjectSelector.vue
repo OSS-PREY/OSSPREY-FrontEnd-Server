@@ -12,7 +12,7 @@
           <VCol cols="12" class="d-flex justify-center">
             <VBtn
               color="primary"
-              :variant="selectedDataSource === 'foundation' ? 'contained' : 'outlined'"
+              :variant="selectedDataSource === 'foundation' ? 'outlined' : 'text'"
               class="ms-2"
               @click="switchDataSource('foundation')"
             >
@@ -20,7 +20,7 @@
             </VBtn>
             <VBtn
               color="primary"
-              :variant="selectedDataSource === 'local' ? 'contained' : 'outlined'"
+              :variant="selectedDataSource === 'local' ? 'outlined' : 'text'"
               class="ms-2"
               @click="switchDataSource('local')"
             >
