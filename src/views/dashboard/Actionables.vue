@@ -110,7 +110,11 @@ const sortedActionables = computed(() => {
   }
 
   // Sort descending by importance
+<<<<<<< HEAD
   return dataArray.slice().sort((a, b) => b.importance - a.importance).slice(0, 10);
+=======
+  return dataArray.slice().sort((a, b) => b.importance - a.importance).slice(0, 10);;
+>>>>>>> f249e70b0bb47d836faeef6445195971dfce82a2
 });
 // ---------------------------------------------------------------------------
 </script>
