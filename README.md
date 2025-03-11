@@ -1,13 +1,13 @@
-# OSSPEX Dashboard
+# OSPEX Dashboard
 
-The **Open Source Sustainability Explorer (OSSPEX)** dashboard is a Vue.js-based application that provides visual insights into open-source projects, offering metrics and recommendations to improve project health. This guide will help you set up and use the dashboard effectively.
+The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based application that provides visual insights into open-source projects, offering metrics and recommendations to improve project health. This guide will help you set up and use the dashboard effectively.
 
 ## Key Functionalities
 
 - **Project Information**: Explore detailed metrics for open-source projects from the Apache and Eclipse Foundations, for instance, project description, social networks, technical networks, and github repositories to name a few.
 - **Project Health Metric**: The graduation forecast for each project gives you an insight of how the project is performing over that month, or a selected range of months. (The values range from 0 to 1) 
-- [Coming Soon] **Recommendations**: The dashboard will provide actionable steps to address performance issues. For instance, if a project's score is below 0.5 for a specific month, it will analyze historical data and suggest targeted improvements to help the project achieve or surpass the 0.5 threshold.
-- **Interactive UI**: Leverage interactive elements, including filters and drill-down views, to refine and explore data. Feel free to select any project from the foundations and select a month, the data would be populated, and the advanced analytics provide the social and technical network values for that project and month (if available).
+- **Recommendations**: The dashboard will provide actionable steps to address performance issues. For instance, if a project's score is below 0.5 for a specific month, it will analyze historical data and suggest targeted improvements to help the project achieve or surpass the 0.5 threshold.
+- **Advanced month-wise analytics**: Leverage interactive elements, including filters and drill-down views, to refine and explore data. Feel free to select any project from the foundations and select a month, the data would be populated, and the advanced analytics provide the social and technical network values for that project and month (if available).
 
 ## How to Use OSSPEX
 
