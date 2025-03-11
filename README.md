@@ -9,9 +9,9 @@ The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based 
 - **Recommendations**: The dashboard will provide actionable steps to address performance issues. For instance, if a project's score is below 0.5 for a specific month, it will analyze historical data and suggest targeted improvements to help the project achieve or surpass the 0.5 threshold.
 - **Advanced month-wise analytics**: Leverage interactive elements, including filters and drill-down views, to refine and explore data. Feel free to select any project from the foundations and select a month, the data would be populated, and the advanced analytics provide the social and technical network values for that project and month (if available).
 
-## How to Use OSSPEX
+## How to Use OSPEX
 
-1. **Select a Technology and Project**:
+1. **Select a Mode (Foundation/Local). If Foundation mode, then select project (and technology, if applicable)**:
    - Use the input drop-down menu to choose a desired technology.
    - Search for a specific project and repository within the technology.
    - Once that's selected, drag the month selector to a specific month whose data you want to visualize
@@ -21,9 +21,9 @@ The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based 
    - To access the **Social Network for Issues/Emails** and **Technical Network for Commits**, ensure that a repository is selected. This is visible when you click on the 'See Advanced Analytics' option located at the bottom of the page
 
 3. **Visual Details**:
-   - **Graduation Forecast**:
+   - **Probability of Sustainability**:
      - Displays a forecast value for each project time period.
-     - Another tab shows a more refined view, i.e. 3 months for that project
+     - [Upcoming] Shows the probability of sustainability for future months in local mode.
    - **Social Network: Emails**: 
      - Visualizes email exchanges between developers for the selected project and time period.
      - Shows sender and replier nodes, developer names, and interaction percentages.
