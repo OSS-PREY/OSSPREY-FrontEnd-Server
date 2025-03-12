@@ -1,8 +1,6 @@
 <script setup>
 import { ref } from 'vue'; // Import ref to manage collapse state
 import Actionables from '@/views/dashboard/Actionables.vue';
-import CommitLinks from '@/views/dashboard/CommitLinks.vue';
-import EmailLinks from '@/views/dashboard/EmailLinks.vue';
 import GraduationForecast from '@/views/dashboard/GraduationForecast.vue';
 import SocialNetworkNode from '@/views/dashboard/SocialNetworkNode.vue';
 import TechnicalNetworkNode from '@/views/dashboard/TechnicalNetworkNode.vue';
@@ -18,9 +16,6 @@ import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue';
 import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue';
 import Committers from '@/views/dashboard/Committers.vue';
 import Title from '@/views/dashboard/Title.vue';
-import CurrentMonth from '@/views/dashboard/CurrentMonth.vue';
-import CurrentProject from '@/views/dashboard/CurrentProject.vue';
-
 const isCollapsed = ref(true); // Manage collapse state here
 
 // Function to toggle the collapse state for all cards

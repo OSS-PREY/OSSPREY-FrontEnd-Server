@@ -11,10 +11,7 @@
           </div>
           <div class="d-flex">
             <span v-if="numCommits !== null">{{ numCommits }}</span>
-            <span v-else-if="commitMeasuresLoading">N/A</span>
-            <span v-else>
-              Data Unavailable
-            </span>
+            <span v-else="commitMeasuresLoading"></span>
           </div>
         </VCol>
       </VRow>
@@ -34,6 +31,6 @@ const commitMeasuresLoading = computed(() => projectStore.commitMeasuresLoading)
 const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const numCommits = computed(() => {
-  return commitMeasuresData.value ? commitMeasuresData.value.numCommits : null;
+  return commitMeasuresData.value ? commitMeasuresData.value.num_commits : null;
 });
 </script>

@@ -11,10 +11,7 @@
           </div>
           <div class="d-flex">
             <span v-if="numSenders !== null">{{ numSenders }}</span>
-            <span v-else-if="emailMeasuresLoading">N/A</span>
-            <span v-else>
-              Data Unavailable
-            </span>
+            <span v-else-if="emailMeasuresLoading"></span>
           </div>
         </VCol>
       </VRow>
