@@ -1,7 +1,5 @@
-<!-- src/components/EmailsPerSender.vue -->
-
 <template>
-  <VCard class="mx-auto" style="box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);height: 150px;">
+  <VCard class="mx-auto" style="box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); height: 150px;">
     <VCardText>
       <VRow>
         <VCol cols="auto">
@@ -31,6 +29,20 @@ const emailMeasuresLoading = computed(() => projectStore.emailMeasuresLoading);
 const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const emailsPerSender = computed(() => {
-  return emailMeasuresData.value ? emailMeasuresData.value.email_per_dev : null;
+  if (projectStore.isLocalMode) {
+    if (!projectStore.reducedEmails || projectStore.reducedEmails.length === 0) return 0;
+
+    // Compute total emails
+    const totalEmails = projectStore.reducedEmails.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+
+    // Compute unique senders
+    const uniqueSenders = new Set(projectStore.reducedEmails.map(item => item[0]));
+
+    // Avoid division by zero & return an integer
+    return uniqueSenders.size > 0 ? Math.round(totalEmails / uniqueSenders.size) : 0;
+  }
+
+  // Foundation Mode: Use API Data
+  return emailMeasuresData.value ? Math.round(emailMeasuresData.value.email_per_dev) : null;
 });
 </script>

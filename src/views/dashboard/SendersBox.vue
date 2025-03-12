@@ -31,6 +31,16 @@ const emailMeasuresLoading = computed(() => projectStore.emailMeasuresLoading);
 const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const numSenders = computed(() => {
+  if (projectStore.isLocalMode) {
+    if (!projectStore.reducedEmails || projectStore.reducedEmails.length === 0) return 0;
+
+    // Get unique senders (first column in reducedEmails)
+    const uniqueSenders = new Set(projectStore.reducedEmails.map(item => item[0]));
+    return uniqueSenders.size;
+  }
+
+  // Foundation Mode: Use API Data
   return emailMeasuresData.value ? emailMeasuresData.value.num_senders : null;
 });
+
 </script>

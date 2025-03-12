@@ -31,6 +31,12 @@ const emailMeasuresLoading = computed(() => projectStore.emailMeasuresLoading);
 const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const numEmails = computed(() => {
+  if (projectStore.isLocalMode) {
+    if (!projectStore.reducedEmails || projectStore.reducedEmails.length === 0) return 0;
+    return projectStore.reducedEmails.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+  }
+
+  // Foundation Mode: Use API Data
   return emailMeasuresData.value ? emailMeasuresData.value.num_emails : null;
 });
 </script>

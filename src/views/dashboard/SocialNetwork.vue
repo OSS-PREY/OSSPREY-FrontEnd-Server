@@ -64,6 +64,7 @@ function reduceTheEmails(inputArray) {
   console.log("Filtered Social Network Data:", filteredArray);
   console.log("Total Emails:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
   console.log("Number of Senders:", [...new Set(filteredArray.map(item => item[0]))].length);
+  console.log("Emails per sender:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0) / filteredArray.length);
   return filteredArray;
 }
 
@@ -82,6 +83,11 @@ const preparePlotData = () => {
     return;
   }
   const reducedData = reduceTheEmails(socialData);
+  // **Store in Pinia store (only for local mode)**
+  if (projectStore.isLocalMode) {
+    projectStore.setReducedEmails(reducedData);
+  }
+
   if (reducedData.length === 0) {
     console.warn('After reduction, no data remains.');
     clearSankeyDiagram();

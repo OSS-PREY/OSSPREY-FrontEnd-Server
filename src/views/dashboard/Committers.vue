@@ -31,6 +31,16 @@ const commitMeasuresLoading = computed(() => projectStore.commitMeasuresLoading)
 const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const numCommitters = computed(() => {
+  if (projectStore.isLocalMode) {
+    if (!projectStore.reducedCommits || projectStore.reducedCommits.length === 0) return 0;
+    
+    // Get unique committers (first column in reducedCommits)
+    const uniqueCommitters = new Set(projectStore.reducedCommits.map(item => item[0]));
+    return uniqueCommitters.size;
+  }
+
+  // Foundation Mode: Use API Data
   return commitMeasuresData.value ? commitMeasuresData.value.num_committers : null;
 });
+
 </script>

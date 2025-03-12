@@ -67,6 +67,7 @@ function reduceTheCommits(inputArray) {
   console.log("Filtered Commits Data:", filteredArray);
   console.log("Total Commits:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
   console.log("Number of Committers:", [...new Set(filteredArray.map(item => item[0]))].length);
+  console.log("Commits per committer:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0) / filteredArray.length);
   return filteredArray;
 }
 
@@ -93,6 +94,12 @@ const preparePlotData = () => {
   }
   // Apply threshold reduction.
   const reducedData = reduceTheCommits(techData);
+  
+  // **Store in Pinia store (only for local mode)**
+  if (projectStore.isLocalMode) {
+    projectStore.setReducedCommits(reducedData);
+  }
+  
   if (reducedData.length === 0) {
     console.warn('After reduction, no data remains.');
     clearSankeyDiagram();

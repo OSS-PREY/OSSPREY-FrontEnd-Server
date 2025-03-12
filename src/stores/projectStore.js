@@ -17,6 +17,8 @@ export const useProjectStore = defineStore('projectStore', () => {
   // Local Mode - Technical and Social Network Data
   const techNetData = ref(null);
   const socialNetData = ref(null);
+  const reducedCommits = ref(null);
+  const reducedEmails = ref(null);
 
   // Local Mode flag – used to determine which workflow (local vs. foundation) is active.
   const isLocalMode = ref(false);
@@ -213,6 +215,17 @@ export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Helpers / Local Filtering --------------------
   const normalizeName = (name) => {
     return name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
+  };
+
+  // Local Mode: Filter commit and email statistics from Technical Network function
+  const setReducedCommits = (data) => {
+    reducedCommits.value = data;
+    console.log('Updated Reduced Commits Data:', reducedCommits.value);
+  };
+  
+  const setReducedEmails = (data) => {
+    reducedEmails.value = data;
+    console.log('Updated Reduced Emails Data:', reducedEmails.value);
   };
 
   const filterLocalEmailLinks = (projectId, month, developerName) => {
@@ -905,5 +918,10 @@ export const useProjectStore = defineStore('projectStore', () => {
     uploadGitRepositoryLink,
     // React Data
     reactData,
+    // [Testing] Technical Network local mode stats
+    reducedCommits,
+    setReducedCommits,  
+    reducedEmails,
+    setReducedEmails,
   };
 });

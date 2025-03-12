@@ -31,6 +31,20 @@ const commitMeasuresLoading = computed(() => projectStore.commitMeasuresLoading)
 const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const commitsPerCommitter = computed(() => {
+  if (projectStore.isLocalMode) {
+    if (!projectStore.reducedCommits || projectStore.reducedCommits.length === 0) return 0;
+
+    // Compute total commits
+    const totalCommits = projectStore.reducedCommits.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+
+    // Compute unique committers
+    const uniqueCommitters = new Set(projectStore.reducedCommits.map(item => item[0]));
+
+    // Avoid division by zero
+    return uniqueCommitters.size > 0 ? Math.round(totalCommits / uniqueCommitters.size) : '';
+  }
+
+  // Foundation Mode: Use API Data
   return commitMeasuresData.value ? commitMeasuresData.value.commit_per_dev : null;
 });
 </script>
