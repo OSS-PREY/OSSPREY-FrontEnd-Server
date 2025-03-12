@@ -43,6 +43,14 @@ const emailsPerSender = computed(() => {
   }
 
   // Foundation Mode: Use API Data
-  return emailMeasuresData.value ? Math.round(emailMeasuresData.value.email_per_dev) : null;
+  if (emailMeasuresData.value) {
+    return Math.round(
+      projectStore.selectedFoundation === 'Apache'
+        ? emailMeasuresData.value.email_per_dev
+        : emailMeasuresData.value.emails_per_dev
+    );
+  }
+
+  return null;
 });
 </script>
