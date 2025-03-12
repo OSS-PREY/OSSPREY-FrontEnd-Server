@@ -12,6 +12,7 @@
     <VCardText class="d-flex align-center gap-3">
       <div>
         <p class="mb-0">{{ tabData.title }}</p>
+        <p class="mb-0">{{ tabData.monthDetail }}</p>
         <div class="d-flex align-center gap-2">
           <h6 class="text-h6">{{ tabData.stats }}</h6>
         </div>
@@ -80,6 +81,7 @@ const tabData = computed(() => {
       avatar: statsVerticalWallet,
       title: '',
       stats: 'How do you stay on track? With these steps below:',
+      monthDetail: `Current month: ${projectStore.selectedMonth || ''}`,
     },
   }[currentTab.value];
 });

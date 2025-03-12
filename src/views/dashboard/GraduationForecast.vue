@@ -18,7 +18,7 @@
       <!-- Existing Avatar (if any) -->
       <VAvatar size="48" rounded :image="tabData.avatar" v-if="tabData.avatar" />
       <div>
-        <p class="mb-0">{{ tabData.title }}</p>
+        <p class="mb-0">{{ tabData.title }}<span class="ms-2">| {{ tabData.monthDetail }}</span></p>
         <div class="d-flex align-center gap-2">
           <h6 class="text-h6">{{ tabData.stats }}</h6>
         </div>
@@ -334,7 +334,8 @@ const tabData = computed(() => {
       title: `Current Project: ${projectStore.selectedProject?.project_id || 'None'}`,
       stats: gradForecastLoading.value
         ? 'Loading forecast data...'
-        : `Forecast Data: ${gradForecastData.value.length} months available`
+        : `Forecast Data: ${gradForecastData.value.length} months available`,
+        monthDetail: `Current Month: ${projectStore.selectedMonth || 'None'}`,
     };
   } else if (currentTab.value === 'monthly') {
     return {
