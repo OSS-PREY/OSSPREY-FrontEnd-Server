@@ -8,10 +8,10 @@
         rel="noopener noreferrer"
         class="footer-link"
       >DECAL Lab</a> 
-      in CS Department @ UC Davis by <strong>Priyal Soni</strong> and <strong> Vladimir Filkov</strong>
+      in CS Department @ UC Davis by <strong>Priyal Soni, Arjun Ashok, Nafiz Imtiaz Khan</strong> and <strong> Vladimir Filkov</strong>
     </span>
     <span class="footer-text">
-      | Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All Rights Reserved. Used with permission.
+      Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All Rights Reserved. Used with permission.
     </span>
   </div>
 </template>
