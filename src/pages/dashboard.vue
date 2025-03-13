@@ -119,18 +119,6 @@ const toggleCollapse = () => {
         </VCol>
       </VRow>
 
-      <!-- Fifth Row: Commit and Email Links -->
-      <!-- <VRow>
-        
-        <VCol cols="6" md="6" sm="6">
-          <EmailLinks />
-        </VCol>
-
-        <VCol cols="6" md="6" sm="6">
-          <CommitLinks />
-        </VCol>
-      </VRow> -->
-
       <VRow>
         <!-- Sixth Row: Static Info Boxes -->
         <VCol cols="12" md="2">
