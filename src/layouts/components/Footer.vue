@@ -13,6 +13,9 @@
     <span class="footer-text">
       Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All Rights Reserved. Used with permission.
     </span>
+    <span class="footer-text">
+      OSPEx is a tool to facilitate project development on a sustainable trajectory. It offers direct analytics of project metrics and temporal AI-based sustainability forecasts, as well as evidence-based recommendations for improving the forecast.
+    </span>
   </div>
 </template>
 
