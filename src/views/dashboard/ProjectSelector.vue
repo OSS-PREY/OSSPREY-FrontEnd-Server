@@ -331,10 +331,12 @@ const uploadRepoLink = async () => {
     alert('Please enter a Git Repository URL.');
     return;
   }
-  if (!repoLink.toLowerCase().endsWith('.git')) {
-    alert("Please enter a valid .git repository URL (it should end with '.git').");
+  // Example (just remove the strict ".git" requirement):
+  if (!repoLink.toLowerCase().startsWith('https://github.com/')) {
+    alert("Please enter a valid GitHub repository URL, e.g. https://github.com/owner/repo");
     return;
   }
+
   repoUploading.value = true;
   try {
     const response = await projectStore.uploadGitRepositoryLink(repoLink);

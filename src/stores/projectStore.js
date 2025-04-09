@@ -33,8 +33,23 @@ export const useProjectStore = defineStore('projectStore', () => {
   const localMetadata = ref(null);
 
   // -------------------- Upload Git Repository Link (POST) --------------------
-  const uploadGitRepositoryLink = async (git_link) => {
+  const uploadGitRepositoryLink = async (inputUrl) => {
     try {
+      let git_link = inputUrl.trim();
+
+    // 1) Remove any trailing slash
+    if (git_link.endsWith('/')) {
+      git_link = git_link.slice(0, -1);
+    }
+
+    // 2) If it starts with https://github.com/, ensure it ends with .git
+    //    (This covers both https://github.com/owner/repo and https://github.com/owner/repo.git)
+    if (git_link.toLowerCase().startsWith('https://github.com/') && !git_link.toLowerCase().endsWith('.git')) {
+      git_link += '.git';
+    }
+
+    console.log('Normalized GitHub URL:', git_link);
+
       const response = await fetch(`${baseUrl.value}/api/upload_git_link`, {
         method: 'POST',
         headers: { 
