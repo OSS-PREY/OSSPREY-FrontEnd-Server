@@ -20,7 +20,7 @@
             </VBtn>
             <VBtn
               color="primary"
-              :variant="selectedDataSource === 'local' ? 'outlined' : 'text'"
+              :variant="selectedDataSource === 'GitHub' ? 'outlined' : 'text'"
               class="ms-2"
               @click="switchDataSource('local')"
             >
@@ -123,11 +123,11 @@
               <div class="text-center mb-2">OR</div>
               <VTextField
                 v-model="githubRepoLink"
-                label="Git Repository URL"
+                label="GitHub Repository URL"
                 outlined
                 dense
                 class="mb-3"
-                placeholder="https://github.com/username/repository.git"
+                placeholder="https://github.com/username/repository"
               />
               <VBtn color="primary" class="mb-2" @click="uploadRepoLink" block>
                 Upload Repository Link
@@ -160,7 +160,7 @@
               <div v-else-if="repoUploading" class="d-flex justify-center align-center">
                 <VProgressCircular indeterminate color="primary" />
               </div>
-              <div v-else class="coming-soon">Coming Soon</div>
+              <!-- <div v-else class="coming-soon">Coming Soon</div> -->
             </div>
           </div>
         </VCardText>
