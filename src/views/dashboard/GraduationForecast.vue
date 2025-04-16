@@ -118,10 +118,75 @@ const currentTab = ref('yearly'); // Default to 'yearly'
 // Reactive selected month (1-indexed, provided via your Project Selector)
 const selectedMonth = computed(() => projectStore.selectedMonth || 1);
 
+
+function gaussianKernel(size, sigma) {
+  const kernel = [];
+  const center = Math.floor(size / 2);
+  let sum = 0;
+
+  for (let i = 0; i < size; i++) {
+    const x = i - center;
+    const value = Math.exp(-(x * x) / (2 * sigma * sigma));
+    kernel.push(value);
+    sum += value;
+  }
+
+  // Normalize the kernel
+  return kernel.map(v => v / sum);
+}
+
+// function applyGaussianSmoothing(data, kernelSize = 10, sigma = 1.0) {
+//   const kernel = gaussianKernel(kernelSize, sigma);
+//   const half = Math.floor(kernelSize / 2);
+//   const smoothed = [];
+
+//   for (let i = 0; i < data.length; i++) {
+//     let sum = 0;
+//     for (let j = 0; j < kernel.length; j++) {
+//       const index = i + j - half;
+//       if (index >= 0 && index < data.length) {
+//         sum += data[index] * kernel[j];
+//       }
+//     }
+//     smoothed.push(sum);
+//   }
+
+//   return smoothed;
+// }
+function applyGaussianSmoothing(data, kernelSize = 10, sigma = 1.0) {
+  const kernel = gaussianKernel(kernelSize, sigma);
+  const half = Math.floor(kernelSize / 2);
+  const paddedData = [0, ...data]; // Inject a 0 at the start
+  const smoothed = [];
+
+  for (let i = 0; i < data.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < kernel.length; j++) {
+      const index = i + j - half;
+      if (index >= 0 && index < paddedData.length) {
+        sum += paddedData[index] * kernel[j];
+      }
+    }
+    smoothed.push(sum);
+  }
+
+  return smoothed;
+}
+
+
+
+
+
 // Computed properties for loading and error states
 const gradForecastLoading = computed(() => projectStore.gradForecastLoading);
 const gradForecastError = computed(() => projectStore.gradForecastError);
-const gradForecastData = computed(() => projectStore.gradForecastData);
+// const gradForecastData = computed(() => projectStore.gradForecastData);
+const gradForecastData = computed(() => {
+  const raw = projectStore.gradForecastData;
+  // raw[0] = 0
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  return applyGaussianSmoothing(raw, 5, 1.0); // kernel size = 5, sigma = 1.0
+});
 const predictionsLoading = computed(() => projectStore.predictionsLoading);
 const predictionsError = computed(() => projectStore.predictionsError);
 const predictionsData = computed(() => projectStore.predictionsData);
