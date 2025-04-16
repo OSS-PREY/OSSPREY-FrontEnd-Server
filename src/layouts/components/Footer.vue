@@ -1,20 +1,25 @@
 <template>
   <div class="footer-container">
     <span class="footer-text">
-      Developed at 
-      <a
-        href="https://decallab.cs.ucdavis.edu/join/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="footer-link"
-      >DECAL Lab</a> 
-      in CS Department @ UC Davis by <strong>Priyal Soni, Nafiz Imtiaz Khan, Arjun Ashok</strong> and <strong> Vladimir Filkov</strong>
+      Developed at the 
+      <a href="https://decallab.cs.ucdavis.edu/join/" target="_blank" rel="noopener noreferrer" class="footer-link">DECAL Lab</a>, 
+      in the CS Department, UC Davis, by 
+      <strong>
+        <a href="https://www.linkedin.com/in/priyal-soni-150" target="_blank" rel="noopener noreferrer" class="footer-link">Priyal Soni</a>, 
+        <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>, 
+        <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>
+      </strong>, and 
+      <strong>
+        <a href="https://www.cs.ucdavis.edu/~filkov/" target="_blank" rel="noopener noreferrer" class="footer-link">Vladimir Filkov</a>
+      </strong>.
     </span>
+    
     <span class="footer-text">
-      Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All Rights Reserved. Used with permission.
+      Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All rights reserved. Used with permission.
     </span>
+
     <span class="footer-text">
-      OSPEx is a tool to facilitate project development on a sustainable trajectory. It offers direct analytics of project metrics and temporal AI-based sustainability forecasts, as well as evidence-based recommendations for improving the forecast.
+      OSPEx is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability.
     </span>
   </div>
 </template>

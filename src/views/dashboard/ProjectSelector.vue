@@ -20,11 +20,11 @@
             </VBtn>
             <VBtn
               color="primary"
-              :variant="selectedDataSource === 'GitHub' ? 'outlined' : 'text'"
+              :variant="selectedDataSource === 'local' ? 'outlined' : 'text'"
               class="ms-2"
               @click="switchDataSource('local')"
             >
-              Local
+              GitHub
             </VBtn>
           </VCol>
         </VRow>
