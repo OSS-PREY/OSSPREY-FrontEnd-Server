@@ -47,6 +47,10 @@ TypeScript shims `.vue` imports to a generic Vue component type. For enhanced pr
 ## Project Setup
 
 1. **Ensure Node.js Version**: Make sure Node.js version 14.x or above is installed.
+   Run the following command to ensure npm is installed in your machine:
+   ```
+   sudo apt install npm
+   ```
 2. Clone the repository:
 
    ```sh
