@@ -123,7 +123,7 @@
               <div class="text-center mb-2">OR</div>
               <VTextField
                 v-model="githubRepoLink"
-                label="Git Repository URL (.git link)"
+                label="Git Repository URL"
                 outlined
                 dense
                 class="mb-3"
