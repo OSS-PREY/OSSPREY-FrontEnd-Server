@@ -88,7 +88,7 @@ npm install
 Contributions are welcome! However, do ensure that you are not committing directly to this repo. Do feel free to fork this though, and open a Pull Request for a minor fix or otherwise. For major changes, please open an issue first to discuss what you'd like to change. And we can work on integrating it!
 
 ### Contact
-<!-- In case of any questions, feel free to reach out to priyal15.soni@gmail.com or pdsoni@ucdavis.edu. -->
+In case of any questions, feel free to reach out to nikhan@ucdavis.edu.
 
 ### License
 This project is licensed under the Apache License 2.0.
