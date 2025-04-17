@@ -291,7 +291,12 @@ const yearlyChartConfig = computed(() => {
       tickAmount: 4,
       labels: {
         formatter: function (val) {
+          if(val==null){
+            return '';
+          }
+          else{
           return val.toFixed(2);
+          }
         }
       }
     },
@@ -372,7 +377,13 @@ const monthlyChartConfig = computed(() => {
       tickAmount: 4,
       labels: {
         formatter: function (val) {
-          return val.toFixed(2);
+          if(val==null){
+            return '';
+          }
+          else{
+            return val.toFixed(2);
+          }
+          
         }
       }
     },
