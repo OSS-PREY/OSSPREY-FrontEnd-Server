@@ -113,7 +113,7 @@ const sortedActionables = computed(() => {
   }
   console.log('DATA Array:', rd);
 
-  if(dataArray.length>10){
+  if(dataArray.length>=10){
     return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
   }
   else{

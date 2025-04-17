@@ -5,7 +5,9 @@
   <meta charset="UTF-8" />
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OSS Project Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <title>OSPEx</title>
 </head>
 
 <body>
@@ -13,8 +15,10 @@
   </div>
   <script type="module" src="/src/main.js"></script>
   <script>
-    const loaderColor = localStorage.getItem('sneat-initial-loader-bg') || '#FFFFFF'
-    const primaryColor = localStorage.getItem('sneat-initial-loader-color') || '#696CFF'
+    // const loaderColor = localStorage.getItem('sneat-initial-loader-bg') || '#FFFFFF'
+    // const primaryColor = localStorage.getItem('sneat-initial-loader-color') || '#7386d5'
+    const loaderColor = '#7386d5'
+    const primaryColor = '#7386d5'
 
     if (loaderColor)
       document.documentElement.style.setProperty('--initial-loader-bg', loaderColor)
