@@ -196,22 +196,32 @@ const eclipseCategories = [
   'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin',
   'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT',
   'SOA Platform', 'PolarSys', 'LocationTech', 'OpenHW Group', 'AsciiDoc'
-];
+].sort((a, b) => a.localeCompare(b));
 
 // FOUNDATION computed properties
 const shouldShowProjectAutocomplete = computed(() => {
   return (projectStore.selectedFoundation === 'Apache') ||
          (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value);
 });
+
 const projectItems = computed(() => {
-  if (projectStore.selectedFoundation === 'Apache') return projectStore.allDescriptions;
-  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
-    return projectStore.eclipseDescriptions.filter(project =>
-      project.tech.toLowerCase() === selectedCategory.value.toLowerCase()
+  if (projectStore.selectedFoundation === 'Apache') {
+    return [...projectStore.allDescriptions].sort((a, b) =>
+      a.project_name.localeCompare(b.project_name)
     );
+  }
+  if (projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value) {
+    return [...projectStore.eclipseDescriptions]
+      .filter(project =>
+        project.tech.toLowerCase() === selectedCategory.value.toLowerCase()
+      )
+      .sort((a, b) =>
+        a.project_name.localeCompare(b.project_name)
+      );
   }
   return [];
 });
+
 const projectLabel = computed(() => {
   return projectStore.selectedFoundation === 'Apache' ? 'Project'
        : projectStore.selectedFoundation === 'Eclipse' && selectedCategory.value ? 'Eclipse Project'
