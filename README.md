@@ -36,10 +36,6 @@ The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based 
    - Below the social and technical network visuals, find monthly stats, like the number of email exchanges, number of commits, etc.
    - Resize windows and adjust network visuals for a better understanding of the data.
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/)
-
 ## Type Support for `.vue` Imports in TypeScript
 
 TypeScript shims `.vue` imports to a generic Vue component type. For enhanced prop type validation, use `Volar: Switch TS Plugin on/off` from the VS Code command palette.
