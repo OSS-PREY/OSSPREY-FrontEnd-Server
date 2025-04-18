@@ -1,4 +1,4 @@
-<!-- src/components/Graduationforecast.vue -->
+<!-- src/components/Graduationforecast.vue projectStore.selectedProject.start_date--> 
 <template>
   <VCard>
     <!-- Tabs Section -->
@@ -135,24 +135,6 @@ function gaussianKernel(size, sigma) {
   return kernel.map(v => v / sum);
 }
 
-// function applyGaussianSmoothing(data, kernelSize = 10, sigma = 1.0) {
-//   const kernel = gaussianKernel(kernelSize, sigma);
-//   const half = Math.floor(kernelSize / 2);
-//   const smoothed = [];
-
-//   for (let i = 0; i < data.length; i++) {
-//     let sum = 0;
-//     for (let j = 0; j < kernel.length; j++) {
-//       const index = i + j - half;
-//       if (index >= 0 && index < data.length) {
-//         sum += data[index] * kernel[j];
-//       }
-//     }
-//     smoothed.push(sum);
-//   }
-
-//   return smoothed;
-// }
 function applyGaussianSmoothing(data, kernelSize = 10, sigma = 1.0) {
   const kernel = gaussianKernel(kernelSize, sigma);
   const half = Math.floor(kernelSize / 2);
@@ -173,6 +155,50 @@ function applyGaussianSmoothing(data, kernelSize = 10, sigma = 1.0) {
   return smoothed;
 }
 
+function generateMonthlyXAxisCategories(startDateStr, endDateStr) {
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+  const result = [];
+
+  if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) return result;
+
+  const current = new Date(startDate);
+
+  while (current <= endDate) {
+    result.push(current.toLocaleDateString('default', { month: 'short', year: 'numeric' }));
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return result;
+}
+
+
+const computedXCategories = computed(() => {
+  if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
+    return generateMonthlyXAxisCategories(
+      projectStore.selectedProject.start_date,
+      projectStore.selectedProject.end_date
+    );
+  } else if (projectStore.localMetadata?.created_at && projectStore.localMetadata?.updated_at) {
+    const createdAtFormatted = new Date(projectStore.localMetadata.created_at).toISOString().split('T')[0];
+    const updatedAtFormatted = new Date(new Date(projectStore.localMetadata.updated_at).setMonth(new Date(projectStore.localMetadata.updated_at).getMonth() + 1)).toISOString().split('T')[0];
+
+    return generateMonthlyXAxisCategories(
+      createdAtFormatted,
+      updatedAtFormatted
+    );
+
+  } else if (projectStore.selectedProject?.end_date) {
+    return generateMonthlyXAxisCategories(
+      new Date(),
+      projectStore.selectedProject.end_date
+    );
+  }
+  
+  else {
+    return projectStore.xAxisCategories || [];
+  }
+});
 
 
 
@@ -199,7 +225,20 @@ const predictionsData = computed(() => projectStore.predictionsData);
 // (The overlapping point at index (selectedMonth - 1) makes the two segments join seamlessly.)
 const yearlySeries = computed(() => {
   const allData = gradForecastData.value || [];
-  const xCategories = projectStore.xAxisCategories || [];
+  // const xCategories = projectStore.xAxisCategories || [];
+  const xCategories = computedXCategories.value;
+  // if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
+  //  xCategories = generateMonthlyXAxisCategories(
+  //   projectStore.selectedProject.start_date,
+  //   projectStore.selectedProject.end_date
+  // );
+  // }
+  // else{
+  //   xCategories = projectStore.xAxisCategories || [];
+  // }
+
+
+
   const selected = selectedMonth.value; // e.g. 5 means month 5 is selected; its index is 4
 
   // Build Series A: show valid values for indices 0 .. selected-1, and null for later indices.
@@ -275,7 +314,7 @@ const yearlyChartConfig = computed(() => {
     },
     xaxis: {
       type: 'category',
-      categories: projectStore.xAxisCategories,
+      categories: computedXCategories.value,
       axisTicks: { show: false },
       axisBorder: { show: false },
       labels: {
@@ -316,7 +355,6 @@ const yearlyChartConfig = computed(() => {
 });
 
 // -------------------- Month-wise Forecast (Monthly) --------------------
-// (Retained from your original implementation.)
 const monthlySeries = computed(() => {
   const adjustedForecast = predictionsData.value.adjusted_forecast || {};
   const dataPoints = Object.values(adjustedForecast).map(item => item.close);
