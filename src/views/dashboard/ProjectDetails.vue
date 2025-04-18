@@ -39,14 +39,14 @@
               <VRow class="mb-3">
                 <VCol cols="12" sm="6">
                   <div>
-                    <strong>Created At:</strong>&nbsp;
-                    {{ projectStore.localMetadata.created_at ? new Date(projectStore.localMetadata.created_at).toLocaleString() : 'N/A' }}
+                    <strong>Started At:</strong>&nbsp;
+                    {{ projectStore.localMetadata.created_at ? new Date(projectStore.localMetadata.created_at).toISOString().slice(0, 10) : 'N/A' }}
                   </div>
                 </VCol>
                 <VCol cols="12" sm="6">
                   <div>
                     <strong>Updated At:</strong>&nbsp;
-                    {{ projectStore.localMetadata.updated_at ? new Date(projectStore.localMetadata.updated_at).toLocaleString() : 'N/A' }}
+                    {{ projectStore.localMetadata.updated_at ? new Date(projectStore.localMetadata.updated_at).toISOString().slice(0, 10) : 'N/A' }}
                   </div>
                 </VCol>
               </VRow>

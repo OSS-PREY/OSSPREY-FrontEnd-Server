@@ -148,10 +148,10 @@
               />
               <div v-if="selectedLocalProject" class="mt-4">
                 <div>
-                  <strong>Local Project Name:</strong> {{ selectedLocalProject.project_name }}
+                  <strong>GitHub Project Name:</strong> {{ selectedLocalProject.project_name }}
                 </div>
                 <div>
-                  <strong>Local Project URL:</strong>
+                  <strong>GitHub Project URL:</strong>
                   <a :href="selectedLocalProject.github_url" target="_blank">
                     {{ selectedLocalProject.github_url }}
                   </a>
