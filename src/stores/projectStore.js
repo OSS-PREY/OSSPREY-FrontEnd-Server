@@ -6,6 +6,9 @@ export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
   const baseUrl = ref('https://ospex-backend.priyal.org');
   // const baseUrl = ref('http://173.255.220.16:5001/');
+
+  // const baseUrl = ref('http://127.0.0.1:5000/');
+  
   
   
 
@@ -567,102 +570,6 @@ export const useProjectStore = defineStore('projectStore', () => {
   
 
   // -------------------- Graduation Forecast --------------------
-  // const fetchGradForecast = async (projectId) => {
-  //   if (!projectId) {
-  //     console.warn('No project selected.');
-  //     gradForecastError.value = 'No project selected.';
-  //     return;
-  //   }
-  //   console.log('Starting fetchGradForecast...');
-  //   gradForecastLoading.value = true;
-  //   gradForecastData.value = [];
-  //   if (!isLocalMode.value) xAxisCategories.value = [];
-  //   gradForecastError.value = null;
-  //   try {
-  //     const endpoint = selectedFoundation.value === 'Eclipse'
-  //       ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
-  //       : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
-  //     console.log(`Fetching graduation forecast from: ${endpoint}`);
-  //     const response = await fetch(endpoint);
-  //     if (!response.ok) {
-  //       gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
-  //       return;
-  //     }
-  //     const data = await response.json();
-  //     console.log('Fetched Graduation Forecast Data:', data);
-  //     const sortedData = Object.values(data)
-  //       .sort((a, b) => new Date(a.date || a.month) - new Date(b.date || b.month))
-  //       .map(item => ({ x: `Month ${item.date || item.month}`, y: item.close }));
-  //     gradForecastData.value = sortedData.map(item => item.y);
-  //     xAxisCategories.value = sortedData.map(item => item.x);
-  //   } catch (error) {
-  //     console.error('Error fetching Graduation Forecast data:', error);
-  //     gradForecastError.value = 'Error fetching Graduation Forecast data.';
-  //   } finally {
-  //     gradForecastLoading.value = false;
-  //     console.log('Finished fetchGradForecast.');
-
-  //   }
-  // };
-
-
-
-  // const fetchGradForecast = async (projectId) => {
-  //   if (!projectId) {
-  //     console.warn('No project selected.');
-  //     gradForecastError.value = 'No project selected.';
-  //     return;
-  //   }
-  //   console.log('Starting fetchGradForecast...');
-  //   gradForecastLoading.value = true;
-  //   gradForecastData.value = [];
-  //   if (!isLocalMode.value) xAxisCategories.value = [];
-  //   gradForecastError.value = null;
-  //   try {
-  //     const endpoint = selectedFoundation.value === 'Eclipse'
-  //       ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
-  //       : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
-  //     console.log(`Fetching graduation forecast from: ${endpoint}`);
-  //     const response = await fetch(endpoint);
-  //     if (!response.ok) {
-  //       gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
-  //       return;
-  //     }
-  //     const data = await response.json();
-  //     console.log('Fetched Graduation Forecast Data:', data);
-  //     const sortedData = Object.values(data)
-  //       .sort((a, b) => new Date(a.date || a.month) - new Date(b.date || b.month))
-  //       .map(item => ({ x: `Month ${item.date || item.month}`, y: item.close }));
-  //     gradForecastData.value = sortedData.map(item => item.y);
-  //     xAxisCategories.value = sortedData.map(item => item.x);
-
-
-  //     console.log('Grad Forecast Data:', gradForecastData.value);
-
-  
-  //     // // ✅ Load reactData from a static JSON file in public folder
-  //     // const reactFilePath = '/react-data.json';
-  //     // const reactRes = await fetch(reactFilePath);
-  //     // if (!reactRes.ok) {
-  //     //   throw new Error(`Failed to load react-data.json: ${reactRes.status}`);
-  //     // }
-  //     // const reactJson = await reactRes.json();
-  //     // reactData.value = reactJson;
-  //     // console.log('Loaded reactData from file:', reactData.value);
-  //     ////INTEGRATE HERE
-
-
-
-
-  
-  //   } catch (error) {
-  //     console.error('Error fetching Graduation Forecast data:', error);
-  //     gradForecastError.value = 'Error fetching Graduation Forecast data.';
-  //   } finally {
-  //     gradForecastLoading.value = false;
-  //     console.log('Finished fetchGradForecast.');
-  //   }
-  // };
 
   const fetchGradForecast = async (projectId) => {
     if (!projectId) {
@@ -1031,63 +938,6 @@ export const useProjectStore = defineStore('projectStore', () => {
   };
 
   const sortedActionables = ref([]);
-
-  // -------------------- Actionables: Unified for Local & Foundation --------------------
-  // watchEffect(async () => {
-  //   console.log("Calculating actionables...");
-  //   if (isLocalMode.value) {
-  //     const rd = reactData.value;
-  //     const selMonth = selectedMonth.value;
-  //     let dataArray = [];
-  
-  //     if (Array.isArray(rd)) {
-  //       dataArray = rd;
-  //     } else if (rd && typeof rd === 'object') {
-  //       dataArray = (selMonth != null && rd[selMonth]) ? rd[selMonth] : [];
-  //     }
-  
-  //     sortedActionables.value = dataArray
-  //       .slice()
-  //       .sort((a, b) => b.importance - a.importance)
-  //       .slice(0, 10);
-  //     return;
-  //   }
-  
-  //   // Foundation mode
-  //   const gradData = gradForecastData.value;
-  
-  //   if (!gradData || gradData.length === 0) {
-  //     sortedActionables.value = [];
-  //     return;
-  //   }
-  
-  //   const lastValue = gradData[gradData.length - 1];
-  //   const avgValue = gradData.reduce((a, b) => a + b, 0) / gradData.length;
-  
-  //   const actionables = [];
-  
-  //   if (lastValue < 0.4) {
-  //     actionables.push({ message: '⚠️ Project momentum is low. Consider mentoring intervention.', importance: 5 });
-  //   }
-  
-  //   if (gradData.some(v => v < 0.3)) {
-  //     actionables.push({ message: '📉 Forecast dipped below 30%—check project health metrics.', importance: 4 });
-  //   }
-  
-  //   if (gradData[gradData.length - 1] > gradData[0]) {
-  //     actionables.push({ message: '📈 Positive trajectory detected. Consider early graduation push.', importance: 3 });
-  //   }
-  
-  //   if (avgValue > 0.6) {
-  //     actionables.push({ message: '✅ Consistently strong forecast. Highlight in monthly report.', importance: 2 });
-  //   }
-  
-  //   sortedActionables.value = actionables.sort((a, b) => b.importance - a.importance);
-  // });
-
-  // watch(() => sortedActionables.value, (val) => {
-  //   console.log("Updated actionables:", val);
-  // });
   
 
   // -------------------- Return Everything --------------------

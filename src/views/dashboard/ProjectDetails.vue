@@ -23,15 +23,15 @@
                 <VRow align="center" justify="space-around">
                   <VCol class="d-flex align-center" cols="auto">
                     <VIcon size="20">fa-solid fa-eye</VIcon>
-                    <span class="ml-1">Watch: {{ projectStore.localMetadata.watchers || 'N/A' }}</span>
+                    <span class="ml-1">Watch: {{ projectStore.localMetadata.watchers || '0' }}</span>
                   </VCol>
                   <VCol class="d-flex align-center" cols="auto">
                     <VIcon size="20">fa-solid fa-code-fork</VIcon>
-                    <span class="ml-1">Fork: {{ projectStore.localMetadata.forks || 'N/A' }}</span>
+                    <span class="ml-1">Fork: {{ projectStore.localMetadata.forks || '0' }}</span>
                   </VCol>
                   <VCol class="d-flex align-center" cols="auto">
                     <VIcon size="20">fa-solid fa-star</VIcon>
-                    <span class="ml-1">Star: {{ projectStore.localMetadata.stars || 'N/A' }}</span>
+                    <span class="ml-1">Star: {{ projectStore.localMetadata.stars || '0' }}</span>
                   </VCol>
                 </VRow>
               </VCard>
