@@ -4,10 +4,12 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('https://ospex-backend.priyal.org');
+  // const baseUrl = ref('https://ospex-backend.priyal.org');
   // const baseUrl = ref('http://173.255.220.16:5001/');
 
   // const baseUrl = ref('http://127.0.0.1:5000/');
+  const baseUrl = ref('/api');  // uses the Netlify redirect
+
   
   
   
