@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('/');  // uses the Netlify redirect
+  const baseUrl = ref('/api');  // uses the Netlify redirect
 
 
   // Graduation Forecast State
