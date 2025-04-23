@@ -96,7 +96,7 @@ const getBulletColor = (importance) => {
 // ------------------ CHANGED: handle multi-month ReACT data ------------------
 const sortedActionables = computed(() => {
   const rd = projectStore.reactData;  // can be array or object
-  console.log('ReACT data PRINTING:', rd);
+  // console.log('ReACT data PRINTING:', rd);
   let dataArray = [];
 
   if (Array.isArray(rd)) {
@@ -111,7 +111,7 @@ const sortedActionables = computed(() => {
       dataArray = [];
     }
   }
-  console.log('DATA Array:', rd);
+  // console.log('DATA Array:', rd);
 
   if(dataArray.length>=10){
     return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
