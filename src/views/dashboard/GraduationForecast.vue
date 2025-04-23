@@ -173,32 +173,63 @@ function generateMonthlyXAxisCategories(startDateStr, endDateStr) {
 }
 
 
+// const computedXCategories = computed(() => {
+//   if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
+//     return generateMonthlyXAxisCategories(
+//       projectStore.selectedProject.start_date,
+//       projectStore.selectedProject.end_date
+//     );
+//   } else if (projectStore.localMetadata?.created_at && projectStore.localMetadata?.updated_at) {
+//     const createdAtFormatted = new Date(projectStore.localMetadata.created_at).toISOString().split('T')[0];
+//     const updatedAtFormatted = new Date(new Date(projectStore.localMetadata.updated_at).setMonth(new Date(projectStore.localMetadata.updated_at).getMonth() + 1)).toISOString().split('T')[0];
+
+//     return generateMonthlyXAxisCategories(
+//       createdAtFormatted,
+//       updatedAtFormatted
+//     );
+
+//   } else if (projectStore.selectedProject?.end_date) {
+//     return generateMonthlyXAxisCategories(
+//       new Date(),
+//       projectStore.selectedProject.end_date
+//     );
+//   }
+  
+//   else {
+//     return projectStore.xAxisCategories || [];
+//   }
+// });
+
 const computedXCategories = computed(() => {
+  let categories = [];
+
   if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
-    return generateMonthlyXAxisCategories(
+    categories = generateMonthlyXAxisCategories(
       projectStore.selectedProject.start_date,
       projectStore.selectedProject.end_date
     );
   } else if (projectStore.localMetadata?.created_at && projectStore.localMetadata?.updated_at) {
     const createdAtFormatted = new Date(projectStore.localMetadata.created_at).toISOString().split('T')[0];
-    const updatedAtFormatted = new Date(new Date(projectStore.localMetadata.updated_at).setMonth(new Date(projectStore.localMetadata.updated_at).getMonth() + 1)).toISOString().split('T')[0];
-
-    return generateMonthlyXAxisCategories(
-      createdAtFormatted,
-      updatedAtFormatted
-    );
-
-  } else if (projectStore.selectedProject?.end_date) {
-    return generateMonthlyXAxisCategories(
-      new Date(),
-      projectStore.selectedProject.end_date
-    );
+    const updatedAtFormatted = new Date(projectStore.localMetadata.updated_at).toISOString().split('T')[0];
+    categories = generateMonthlyXAxisCategories(createdAtFormatted, updatedAtFormatted);
+  } else {
+    categories = projectStore.xAxisCategories || [];
   }
-  
-  else {
-    return projectStore.xAxisCategories || [];
+
+  // Always add 4 extra future months
+  if (categories.length > 0) {
+    const lastDate = new Date(categories[categories.length - 1]);
+    for (let i = 0; i < 4; i++) {
+      lastDate.setMonth(lastDate.getMonth() + 1);
+      categories.push(
+        lastDate.toLocaleDateString('default', { month: 'short', year: 'numeric' })
+      );
+    }
   }
+
+  return categories;
 });
+
 
 
 
@@ -218,46 +249,113 @@ const predictionsError = computed(() => projectStore.predictionsError);
 const predictionsData = computed(() => projectStore.predictionsData);
 
 // -------------------- All Months Forecast (Yearly) --------------------
-// We create two series that together show the full forecast.
-// • Series A (actual): for indices 0 to (selectedMonth - 1) (i.e. months 1 through selectedMonth)
-// • Series B (projection): for indices (selectedMonth - 1) to end (i.e. starting at the selected month)
-// In both series the underlying y values come directly from the API.
-// (The overlapping point at index (selectedMonth - 1) makes the two segments join seamlessly.)
+
 const yearlySeries = computed(() => {
   const allData = gradForecastData.value || [];
-  // const xCategories = projectStore.xAxisCategories || [];
   const xCategories = computedXCategories.value;
-  // if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
-  //  xCategories = generateMonthlyXAxisCategories(
-  //   projectStore.selectedProject.start_date,
-  //   projectStore.selectedProject.end_date
-  // );
-  // }
-  // else{
-  //   xCategories = projectStore.xAxisCategories || [];
-  // }
+  const selected = selectedMonth.value;
+  const selectedIdx = selected - 1;
+
+  const normalize = (arr) => {
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    const scaled = arr.map(v => (v - min) / (max - min));
+    return { scaled, min, max };
+  };
+
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+  const fitAR1 = (data) => {
+    const n = data.length;
+    const meanX = data.slice(0, n - 1).reduce((a, b) => a + b, 0) / (n - 1);
+    const meanY = data.slice(1).reduce((a, b) => a + b, 0) / (n - 1);
+    let cov = 0, varX = 0;
+    for (let i = 0; i < n - 1; i++) {
+      cov += (data[i] - meanX) * (data[i + 1] - meanY);
+      varX += (data[i] - meanX) ** 2;
+    }
+    const phi = cov / varX;
+    const intercept = meanY - phi * meanX;
+    const predictions = data.slice(0, n - 1).map(x => intercept + phi * x);
+    const residuals = data.slice(1).map((actual, i) => actual - predictions[i]);
+    const stdError = Math.sqrt(residuals.reduce((s, r) => s + r ** 2, 0) / residuals.length);
+    return { phi, intercept, stdError };
+  };
+
+
+  const createBranch = (name, mode) => {
+  const inputSeries = allData.slice(0, selectedIdx + 1);
+  const { scaled: normData } = normalize(inputSeries);
+
+  const { phi, intercept, stdError } = fitAR1(normData);
+  const baseVal = clamp01(normData[selectedIdx]);
+
+  const z = 2.58; // 99% confidence
+  const forecast = [];
+
+  let last = baseVal;
+
+  for (let i = 0; i < 4; i++) {
+    if (i === 0) {
+      forecast.push(baseVal); // force exact match
+      continue;
+    }
+
+    last = intercept + phi * last;
+
+    let adjusted;
+    if (mode === "positive") {
+      adjusted = clamp01(Math.max(baseVal, last + z * stdError));
+    } else if (mode === "negative") {
+      adjusted = clamp01(Math.min(baseVal, last - z * stdError));
+    } else {
+      adjusted = clamp01(last);
+    }
+
+    forecast.push(adjusted);
+    last = adjusted;
+  }
+
+  // Build full { x, y } objects for the chart
+  const dataPoints = xCategories.map((x, idx) => {
+    if (idx === selectedIdx) {
+      return { x, y: allData[selectedIdx] };
+    }
+    if (idx > selectedIdx && idx <= selectedIdx + 4) {
+      const forecastIdx = idx - selectedIdx;
+      return { x, y: forecast[forecastIdx] };
+    }
+    return { x, y: null };
+  });
+
+  return { name, data: dataPoints };
+};
 
 
 
-  const selected = selectedMonth.value; // e.g. 5 means month 5 is selected; its index is 4
 
-  // Build Series A: show valid values for indices 0 .. selected-1, and null for later indices.
-  const seriesAData = allData.map((val, index) => ({
-    x: xCategories[index] || `Month ${index + 1}`,
-    y: index < selected ? val : null
+  // === Series Assembly ===
+  const seriesActual = xCategories.map((x, idx) => ({
+    x,
+    y: idx < selected ? allData[idx] ?? null : null
   }));
 
-  // Build Series B: show nulls for indices before (selected - 1), then valid values from index (selected - 1) onward.
-  const seriesBData = allData.map((val, index) => ({
-    x: xCategories[index] || `Month ${index + 1}`,
-    y: index >= selected - 1 ? val : null
-  }));
-
-  return [
-    { name: 'Graduation Forecast', data: seriesAData },
-    { name: '', data: seriesBData }
+  const result = [
+    { name: 'Actual Forecast', data: seriesActual }
   ];
+
+  if (allData.length > 0 && selectedIdx >= 0 && selectedIdx < allData.length) {
+    result.push(createBranch('Neutral Projection', "neutral"));
+    result.push(createBranch('Positive Projection', "positive"));
+    result.push(createBranch('Negative Projection', "negative"));
+  }
+
+  return result;
 });
+
+
+
+
 
 // Define the chart configuration for Yearly Forecasts
 const yearlyChartConfig = computed(() => {
@@ -265,7 +363,7 @@ const yearlyChartConfig = computed(() => {
   const variableTheme = vuetifyTheme.current.value.variables;
   const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
   const selected = selectedMonth.value;
-  const selectedIndex = selected - 1; // 0-indexed
+  const selectedIndex = selected - 1;
 
   return {
     chart: {
@@ -276,8 +374,7 @@ const yearlyChartConfig = computed(() => {
     stroke: {
       width: 3,
       curve: 'smooth',
-      // The first series is solid; the second is dashed.
-      dashArray: [0, 5]
+      dashArray: [0, 5, 5, 5] // solid for actual, dashed for all projections
     },
     grid: {
       strokeDashArray: 4.5,
@@ -289,23 +386,25 @@ const yearlyChartConfig = computed(() => {
         bottom: 7
       }
     },
-    // Series colors: primary for actual; grey for projected.
-    colors: [currentTheme.primary, '#9e9e9e'],
+    colors: [
+      currentTheme.primary, // actual
+      '#9e9e9e',             // neutral
+      '#4CAF50',             // positive
+      '#F44336'              // negative
+    ],
     markers: {
       size: 5,
       hover: { size: 7 },
       discrete: [
         {
-          // For Series A, at the selected month index, show a marker with a thick green border.
           seriesIndex: 0,
           dataPointIndex: selectedIndex,
           fillColor: currentTheme.primary,
-          strokeColor: "#4CAF50", // Green border
+          strokeColor: "#4CAF50",
           strokeWidth: 4,
           size: 5
         },
         {
-          // For Series B, hide the marker for the overlapping point.
           seriesIndex: 1,
           dataPointIndex: selectedIndex,
           size: 0
@@ -326,28 +425,32 @@ const yearlyChartConfig = computed(() => {
     },
     yaxis: {
       min: 0,
-      max: 1, // Adjust if your data range changes
+      max: 1,
       tickAmount: 4,
       labels: {
-        formatter: function (val) {
-          if(val==null){
-            return '';
-          }
-          else{
-          return val.toFixed(2);
-          }
-        }
+        formatter: (val) => (val == null ? '' : val.toFixed(2))
       }
     },
     legend: {
-      show: false // Hide legend so the two segments are not labeled separately.
+      show: false
     },
     tooltip: {
       shared: true,
       intersect: false,
       y: {
         title: {
-          formatter: () => 'Graduation Forecast'
+          formatter: function (seriesName) {
+            return seriesName.includes('Projection')
+              ? `Projection: ${seriesName.split(' ')[0]}`
+              : 'Graduation Forecast';
+          }
+        },
+        formatter: function (value, { seriesIndex, w }) {
+          if (value == null) return '';
+          const label = w.globals.seriesNames[seriesIndex];
+          return label.includes('Projection')
+            ? `${value.toFixed(2)} (Projected)`
+            : value.toFixed(2);
         }
       }
     }
@@ -381,7 +484,7 @@ const monthlyChartConfig = computed(() => {
     stroke: {
       width: 3,
       curve: 'smooth',
-      dashArray: 5
+      dashArray: [0, 5, 5, 5] // solid for actual, dashed for projections
     },
     grid: {
       strokeDashArray: 4.5,
