@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('/api');  // uses the Netlify redirect
+  const baseUrl = ref('api/');  // uses the Netlify redirect
 
 
   // Graduation Forecast State
@@ -66,6 +66,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
         gradForecastData.value = keys.map(k => data.forecast_json[k]);
         console.log('Graduation Forecast Data:', gradForecastData.value);
+        xAxisCategories.value = [];  // ✅ Reset before assigning
         xAxisCategories.value = keys.map(k => `Month ${k}`);
         console.log('X-Axis Categories:', xAxisCategories.value);
       }
@@ -117,20 +118,25 @@ export const useProjectStore = defineStore('projectStore', () => {
           github_url: git_link,
         };
         console.log(`Local mode: Set selectedProject to local_${repoName}`);
-        if (xAxisCategories.value && xAxisCategories.value.length > 0) {
-          const months = xAxisCategories.value
-            .filter(str => typeof str === 'string')
-            .map(str => {
-              const parts = str.split(" ");
-              return parts[1] ? Number(parts[1]) : 0;
-            })
-            .sort((a, b) => a - b);
-          selectedMonth.value = months[0];
-          console.log(`Local mode: Set selectedMonth to ${selectedMonth.value} based on forecast data.`);
-        } else {
+        // Use it only to set a default when data is first loaded
+        if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
           selectedMonth.value = 0;
-          console.log("Local mode: No forecast data available. Defaulting selectedMonth to 0.");
+          console.log("Set default selectedMonth to 1 on initialization.");
         }
+        // if (xAxisCategories.value && xAxisCategories.value.length > 0) {
+        //   const months = xAxisCategories.value
+        //     .filter(str => typeof str === 'string')
+        //     .map(str => {
+        //       const parts = str.split(" ");
+        //       return parts[1] ? Number(parts[1]) : 0;
+        //     })
+        //     .sort((a, b) => a - b);
+        //   selectedMonth.value = months[0];
+        //   console.log(`Local mode: Set selectedMonth to ${selectedMonth.value} based on forecast data.`);
+        // } else {
+        //   selectedMonth.value = 0;
+        //   console.log("Local mode: No forecast data available. Defaulting selectedMonth to 0.");
+        // }
       }
 
       return data;

@@ -82,7 +82,7 @@
                 :step="1"
                 class="mb-3"
                 label="Select Month"
-                ticks="always"
+                :ticks="true"
                 tick-size="4"
                 thumb-label
                 @update:modelValue="handleSingleValueChange"
@@ -141,7 +141,7 @@
                 :step="1"
                 class="mb-3"
                 label="Select Month"
-                ticks="always"
+                :ticks="true"
                 tick-size="4"
                 thumb-label
                 @update:modelValue="handleLocalMonthChange"
@@ -232,16 +232,27 @@ const sliderMax = computed(() => projectStore.maxMonth);
 const hasValidMonths = computed(() => projectStore.availableMonths.length > 0);
 
 // LOCAL slider computed properties (from xAxisCategories)
+// const localMonths = computed(() => {
+//   const categories = projectStore.xAxisCategories;
+//   if (selectedDataSource.value === 'local' && categories && categories.length > 0) {
+//     return categories.map(label => {
+//       const parts = label.split(" ");
+//       return Number(parts[1]);
+//     }).sort((a, b) => a - b);
+//   }
+//   return [];
+// });
 const localMonths = computed(() => {
   const categories = projectStore.xAxisCategories;
-  if (selectedDataSource.value === 'local' && categories && categories.length > 0) {
-    return categories.map(label => {
-      const parts = label.split(" ");
-      return Number(parts[1]);
-    }).sort((a, b) => a - b);
+  if (selectedDataSource.value === 'local' && Array.isArray(categories)) {
+    return categories.slice(0, 200).map((_, index) => index + 1); // limit to 100 months
   }
   return [];
 });
+
+
+
+
 const localHasValidMonths = computed(() => localMonths.value.length > 0);
 const localSliderMin = computed(() => (localHasValidMonths.value ? localMonths.value[0] : 1));
 const localSliderMax = computed(() => (localHasValidMonths.value ? localMonths.value[localMonths.value.length - 1] : 12));
@@ -281,8 +292,11 @@ const switchDataSource = (source) => {
   projectStore.isLocalMode = (source === 'local');
   if (source === 'local') {
     projectStore.resetLocalProjectDetails();
+    projectStore.xAxisCategories = [];  // 🔧 Reset here
+    projectStore.selectedMonth = null;
   } else {
     projectStore.resetProjectDetails();
+    projectStore.xAxisCategories = [];  // 🔧 Reset here
   }
 };
 
