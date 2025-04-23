@@ -4,15 +4,8 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  // const baseUrl = ref('https://ospex-backend.priyal.org');
-  // const baseUrl = ref('http://173.255.220.16:5001/');
-
-  // const baseUrl = ref('http://127.0.0.1:5000/');
   const baseUrl = ref('/api');  // uses the Netlify redirect
 
-  
-  
-  
 
   // Graduation Forecast State
   const gradForecastData = ref([]);
@@ -82,11 +75,11 @@ export const useProjectStore = defineStore('projectStore', () => {
         reactData.value = Array.isArray(data.react)
           ? data.react
           : (typeof data.react === 'object' ? data.react : []);
-        console.log('ReACT Data:', reactData.value);
+        // console.log('ReACT Data:', reactData.value);
       } else {
         reactData.value = [];
       }
-      console.log("ReACT Data PRINTING:", reactData.value);
+      // console.log("ReACT Data PRINTING:", reactData.value);
 
       // Process metadata (store it for display in ProjectDetails)
       if (data.metadata) {
@@ -679,7 +672,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   
       // ✅ Store all month-wise actionables
       reactData.value = reactResultsByMonth;
-      console.log('✅ All-month ReACT results:', reactData.value);
+      // console.log('✅ All-month ReACT results:', reactData.value);
 
       }
   
