@@ -17,7 +17,7 @@ const { global } = useTheme();
             alt="OSPEx Logo"
             style="height: 32px; width: auto; margin-right: 10px;"
           />
-          OSPREY (Open Source PRojEct sustainabilitY tracker)
+          OSSPREY (Open Source Software PRojEct sustainabilitY tracker)
         </VCardTitle>
 
         <!-- Theme Switcher -->
