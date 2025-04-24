@@ -4,7 +4,7 @@
     <VCardText>
       <VTabs v-model="currentTab" class="v-tabs-pill">
         <VTab value="income" class="highlighted-tab">
-          Recommendations
+          Actionable Recommendations
         </VTab>
       </VTabs>
     </VCardText>
