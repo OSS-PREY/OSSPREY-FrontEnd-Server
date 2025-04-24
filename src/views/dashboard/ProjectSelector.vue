@@ -191,7 +191,7 @@ const fileInput = ref(null);
 const repoUploading = ref(false);
 
 // STATIC LISTS
-const foundations = ['Apache', 'Eclipse'];
+const foundations = ['Apache'];
 const eclipseCategories = [
   'Modeling', 'IoT', 'Tools', 'Technology', 'Web Tools Platforms', 'Science', 'Digital Twin',
   'Automotive', 'Cloud Development', 'Adoptium', 'EE4J', 'Eclipse Project', 'Oniro', 'RT',
