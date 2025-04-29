@@ -172,34 +172,6 @@ function generateMonthlyXAxisCategories(startDateStr, endDateStr) {
   return result;
 }
 
-
-// const computedXCategories = computed(() => {
-//   if (projectStore.selectedProject?.start_date && projectStore.selectedProject?.end_date) {
-//     return generateMonthlyXAxisCategories(
-//       projectStore.selectedProject.start_date,
-//       projectStore.selectedProject.end_date
-//     );
-//   } else if (projectStore.localMetadata?.created_at && projectStore.localMetadata?.updated_at) {
-//     const createdAtFormatted = new Date(projectStore.localMetadata.created_at).toISOString().split('T')[0];
-//     const updatedAtFormatted = new Date(new Date(projectStore.localMetadata.updated_at).setMonth(new Date(projectStore.localMetadata.updated_at).getMonth() + 1)).toISOString().split('T')[0];
-
-//     return generateMonthlyXAxisCategories(
-//       createdAtFormatted,
-//       updatedAtFormatted
-//     );
-
-//   } else if (projectStore.selectedProject?.end_date) {
-//     return generateMonthlyXAxisCategories(
-//       new Date(),
-//       projectStore.selectedProject.end_date
-//     );
-//   }
-  
-//   else {
-//     return projectStore.xAxisCategories || [];
-//   }
-// });
-
 const computedXCategories = computed(() => {
   let categories = [];
 
@@ -229,10 +201,6 @@ const computedXCategories = computed(() => {
 
   return categories;
 });
-
-
-
-
 
 // Computed properties for loading and error states
 const gradForecastLoading = computed(() => projectStore.gradForecastLoading);
@@ -484,7 +452,7 @@ const monthlyChartConfig = computed(() => {
     stroke: {
       width: 3,
       curve: 'smooth',
-      dashArray: [0, 5, 5, 5] // solid for actual, dashed for projections
+      dashArray: [0, 5, 5, 5] 
     },
     grid: {
       strokeDashArray: 4.5,

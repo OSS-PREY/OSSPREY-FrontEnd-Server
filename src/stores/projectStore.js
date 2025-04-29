@@ -66,7 +66,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
         gradForecastData.value = keys.map(k => data.forecast_json[k]);
         console.log('Graduation Forecast Data:', gradForecastData.value);
-        xAxisCategories.value = [];  // ✅ Reset before assigning
+        xAxisCategories.value = [];  
         xAxisCategories.value = keys.map(k => `Month ${k}`);
         console.log('X-Axis Categories:', xAxisCategories.value);
       }
