@@ -6,6 +6,15 @@ export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
   const baseUrl = ref('api/');  
 
+  const ngrokFetch = async (url, options = {}) => {
+    const headers = {
+      ...(options.headers || {}),
+      'ngrok-skip-browser-warning': 'true',
+    };
+  
+    return fetch(url, { ...options, headers });
+  };
+
 
   // Graduation Forecast State
   const gradForecastData = ref([]);
@@ -51,7 +60,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
     console.log('Normalized GitHub URL:', git_link);
 
-      const response = await fetch(`${baseUrl.value}/api/upload_git_link`, {
+      const response = await ngrokFetch(`${baseUrl.value}/api/upload_git_link`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -354,8 +363,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     try {
       console.log('Fetching all Apache project data...');
       const [projectsRes, projectInfoRes] = await Promise.all([
-        fetch(`${baseUrl.value}/api/projects`),
-        fetch(`${baseUrl.value}/api/project_info`)
+        ngrokFetch(`${baseUrl.value}/api/projects`),
+        ngrokFetch(`${baseUrl.value}/api/project_info`)
       ]);
       if (!projectsRes.ok) {
         const errorText = await projectsRes.text();
@@ -408,7 +417,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     error.value = null;
     try {
       console.log('Fetching all Eclipse project data...');
-      const projectInfoRes = await fetch(`${baseUrl.value}/eclipse/project_info`);
+      const projectInfoRes = await ngrokFetch(`${baseUrl.value}/eclipse/project_info`);
       if (!projectInfoRes.ok) {
         const errorText = await projectInfoRes.text();
         throw new Error(`Failed to fetch Eclipse project_info: ${projectInfoRes.status} ${errorText}`);
@@ -536,7 +545,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     if (selectedFoundation.value !== 'Apache') return;
     try {
       console.log(`Fetching monthly ranges for Apache project ID: ${project_id}`);
-      const response = await fetch(`${baseUrl.value}/api/monthly_ranges`);
+      const response = await ngrokFetch(`${baseUrl.value}/api/monthly_ranges`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
@@ -588,7 +597,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       const endpoint = selectedFoundation.value === 'Eclipse'
         ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
         : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
-      const response = await fetch(endpoint);
+      const response = await ngrokFetch(endpoint);
       if (!response.ok) {
         gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
         return;
@@ -604,11 +613,9 @@ export const useProjectStore = defineStore('projectStore', () => {
       gradForecastData.value = sortedData.map(item => item.y);
       xAxisCategories.value = sortedData.map(item => item.x);
   
-      // ✅ Load static JSON files
-      const reactJson = await (await fetch('/react_set.json')).json();
-      const rawData = await (await fetch('/foundation.json')).json();
+      const reactJson = await (await ngrokFetch('/react_set.json')).json();
+      const rawData = await (await ngrokFetch('/foundation.json')).json();
   
-      // ✅ Extract project-specific data manually
       const projected = projectId;
       const filteredByProject = rawData.filter(row => row.proj_name === projected);
       if (filteredByProject.length === 0) {
@@ -707,7 +714,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     commitMeasuresError.value = null;
     commitMeasuresData.value = null;
     try {
-      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}`);
+      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}`);
       if (!response.ok) {
         commitMeasuresError.value = `Failed to fetch commit measures: ${response.status}`;
         return;
@@ -751,7 +758,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     emailMeasuresError.value = null;
     emailMeasuresData.value = null;
     try {
-      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
+      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
       if (!response.ok) {
         emailMeasuresError.value = `Failed to fetch email measures: ${response.status}`;
         return;
@@ -802,7 +809,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     commitLinksError.value = null;
     commitLinksData.value = null;
     try {
-      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
+      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
       if (!response.ok) {
         commitLinksError.value = `Failed to fetch commit links: ${response.status}`;
         return;
@@ -850,7 +857,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     emailLinksError.value = null;
     emailLinksData.value = null;
     try {
-      const response = await fetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
+      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
       if (!response.ok) {
         emailLinksError.value = `Failed to fetch email links: ${response.status}`;
         return;
@@ -887,7 +894,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         ? `${baseUrl.value}/eclipse/tech_net/${projectId}/${month}`
         : `${baseUrl.value}/api/tech_net/${projectId}/${month}`;
       console.log(`Fetching tech network from: ${endpoint}`);
-      const response = await fetch(endpoint);
+      const response = await ngrokFetch(endpoint);
       if (!response.ok) {
         techNetError.value = `Failed to fetch Tech Network data: ${response.status}`;
         return;
@@ -917,7 +924,7 @@ export const useProjectStore = defineStore('projectStore', () => {
         ? `${baseUrl.value}/eclipse/social_net/${projectId}/${month}`
         : `${baseUrl.value}/api/social_net/${projectId}/${month}`;
       console.log(`Fetching social network from: ${endpoint}`);
-      const response = await fetch(endpoint);
+      const response = await ngrokFetch(endpoint);
       if (!response.ok) {
         socialNetError.value = `Failed to fetch Social Network data: ${response.status}`;
         return;
