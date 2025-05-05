@@ -320,7 +320,7 @@ const exampleRepos = [
   { label: 'Seer - https://github.com/epasveer/seer.git', value: 'https://github.com/epasveer/seer.git' },
   { label: 'git-sizer - https://github.com/github/git-sizer', value: 'https://github.com/github/git-sizer' },
   { label: 'ReACTive - https://github.com/Nafiz43/ReACTive', value: 'https://github.com/Nafiz43/ReACTive' },
-  { label: 'Portfolio - https://github.com/Nafiz43/portfolio', value: 'hhttps://github.com/Nafiz43/portfolio' },
+  { label: 'Portfolio - https://github.com/Nafiz43/portfolio', value: 'https://github.com/Nafiz43/portfolio' },
   // { label: 'linux - https://github.com/torvalds/linux', value: 'https://github.com/torvalds/linux' },
 ];
 
