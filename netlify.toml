@@ -1,5 +1,0 @@
-[[redirects]]
-  from = "/api/*"
-  to = "https://f29e-169-237-5-231.ngrok-free.app/:splat"
-  status = 200
-  force = true

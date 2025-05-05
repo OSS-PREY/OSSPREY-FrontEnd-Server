@@ -112,7 +112,6 @@
               </VCard>
             </div>
 
-            <!-- LOCAL PROJECTS BLOCK -->
             <div v-else-if="selectedDataSource === 'local'">
               <!--
               <VBtn color="primary" class="mb-2" @click="triggerFileInput" block>
@@ -120,18 +119,29 @@
               </VBtn>
               <input type="file" ref="fileInput" @change="handleFileSelect" webkitdirectory style="display: none;" />
               -->
+
               <div class="text-center mb-2">OR</div>
-              <VTextField
+
+              <VAutocomplete
                 v-model="githubRepoLink"
+                :items="exampleRepos"
                 label="GitHub Repository URL"
+                placeholder="https://github.com/username/repository"
                 outlined
                 dense
                 class="mb-3"
-                placeholder="https://github.com/username/repository"
+                hide-no-data
+                hide-selected
+                return-object
+                item-title="label"
+                item-value="value"
+                @update:modelValue="val => githubRepoLink = typeof val === 'string' ? val : val.value"
               />
+
               <VBtn color="primary" class="mb-2" @click="uploadRepoLink" block>
                 Upload Repository Link
               </VBtn>
+
               <!-- LOCAL Mode Slider -->
               <VSlider
                 v-if="localHasValidMonths"
@@ -146,6 +156,7 @@
                 thumb-label
                 @update:modelValue="handleLocalMonthChange"
               />
+
               <div v-if="selectedLocalProject" class="mt-4">
                 <div>
                   <strong>GitHub Project Name:</strong> {{ selectedLocalProject.github_url.split('/').pop() }}
@@ -157,11 +168,15 @@
                   </a>
                 </div>
               </div>
+
               <div v-else-if="repoUploading" class="d-flex justify-center align-center">
                 <VProgressCircular indeterminate color="primary" />
               </div>
-              <!-- <div v-else class="coming-soon">Coming Soon</div> -->
             </div>
+
+
+
+
           </div>
         </VCardText>
       </VCol>
@@ -299,6 +314,18 @@ const switchDataSource = (source) => {
     projectStore.xAxisCategories = [];  // 🔧 Reset here
   }
 };
+
+
+const exampleRepos = [
+  { label: 'Seer - https://github.com/epasveer/seer.git', value: 'https://github.com/epasveer/seer.git' },
+  { label: 'git-sizer - https://github.com/github/git-sizer', value: 'https://github.com/github/git-sizer' },
+  { label: 'ReACTive - https://github.com/Nafiz43/ReACTive', value: 'https://github.com/Nafiz43/ReACTive' },
+  { label: 'Portfolio - https://github.com/Nafiz43/portfolio', value: 'hhttps://github.com/Nafiz43/portfolio' },
+  // { label: 'linux - https://github.com/torvalds/linux', value: 'https://github.com/torvalds/linux' },
+];
+
+// let githubRepoLink = ref('');
+
 
 const handleFoundationChange = async () => {
   console.log(`Foundation changed to: ${projectStore.selectedFoundation}`);
