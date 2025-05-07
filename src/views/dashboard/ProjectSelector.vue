@@ -129,8 +129,8 @@
                 class="mb-3"
                 placeholder="https://github.com/username/repository"
               />
-              <VBtn color="primary" class="mb-2" @click="uploadRepoLink" block>
-                Upload Repository Link
+              <VBtn color="primary" class="mb-2" :disabled="buttonDisabled"  @click="uploadRepoLink" block>
+                Process Repository
               </VBtn>
               <!-- LOCAL Mode Slider -->
               <VSlider
@@ -348,12 +348,18 @@ const handleFileSelect = (event) => {
   event.target.value = '';
 };
 
+const buttonDisabled = ref(false)
+
 const uploadRepoLink = async () => {
+  
   const repoLink = githubRepoLink.value.trim();
   console.log("Repo link entered:", repoLink);
   if (repoLink === '') {
     alert('Please enter a Git Repository URL.');
     return;
+  }
+  else{
+    buttonDisabled.value = true;
   }
   // Example (just remove the strict ".git" requirement):
   if (!repoLink.toLowerCase().startsWith('https://github.com/')) {
