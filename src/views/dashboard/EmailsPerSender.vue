@@ -4,7 +4,7 @@
       <VRow>
         <VCol cols="auto">
           <div>
-            <h6 class="text-h6 font-weight-medium mb-2">Emails per Sender</h6>
+            <h6 class="text-h6 font-weight-medium mb-2">Issues/Emails per Sender</h6>
             <br>
           </div>
           <div class="d-flex">
