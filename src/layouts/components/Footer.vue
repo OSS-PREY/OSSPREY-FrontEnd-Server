@@ -5,7 +5,6 @@
       <a href="https://decallab.cs.ucdavis.edu/join/" target="_blank" rel="noopener noreferrer" class="footer-link">DECAL Lab</a>, 
       in the CS Department, UC Davis, by 
       <strong>
-        <!-- <a href="https://www.linkedin.com/in/priyal-soni-150" target="_blank" rel="noopener noreferrer" class="footer-link"> </a>, -->
         Priyal Soni,
         <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>, 
         <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>
@@ -20,7 +19,7 @@
     </span>
 
     <span class="footer-text">
-      OSSPREY is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability. <a href="https://github.com/orgs/OSS-PREY/repositories" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Link</a>
+      OSSPREY is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability. [<a href="https://oss-prey.github.io/OSSPREY-Website/" target="_blank" rel="noopener noreferrer" class="footer-link">Website Link</a>] [<a href="https://github.com/orgs/OSS-PREY/repositories" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Link</a>]
     </span>
   </div>
 </template>
