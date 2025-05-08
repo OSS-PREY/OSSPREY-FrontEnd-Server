@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('https://f8da-169-237-5-231.ngrok-free.app');  
+  const baseUrl = ref('https://ossprey.ngrok.app/');  
 
   const ngrokFetch = async (url, options = {}) => {
     const headers = {
