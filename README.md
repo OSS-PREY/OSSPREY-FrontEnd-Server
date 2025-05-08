@@ -88,7 +88,11 @@ npm install
 Contributions are welcome! However, do ensure that you are not committing directly to this repo. Do feel free to fork this though, and open a Pull Request for a minor fix or otherwise. For major changes, please open an issue first to discuss what you'd like to change. And we can work on integrating it!
 
 ### Contact
-In case of any questions, feel free to reach out to nikhan@ucdavis.edu.
+If you have any questions or concerns, feel free to contact the current tech lead,  
+**Nafiz Imtiaz Khan** ([nikhan@ucdavis.edu](mailto:nikhan@ucdavis.edu)).
+
+For general discussions, contributions, and community updates, join our  
+[OSSPREY Slack workspace](https://join.slack.com/t/osspreyworkspace/shared_invite/zt-35bsf2ypc-tS1a5~~n~33FzVUZptKFUA).
 
 ### License
 This project is licensed under the Apache License 2.0.
