@@ -85,7 +85,7 @@ npm install
 ```
 
 ### Contributing
-Contributions are welcome! However, do ensure that you are not committing directly to this repo. Do feel free to fork this though, and open a Pull Request for a minor fix or otherwise. For major changes, please open an issue first to discuss what you'd like to change. And we can work on integrating it!
+We welcome contributions! To get started, feel free to browse through the open issues—your insights and efforts are greatly appreciated. If you’d like to suggest improvements or fix a bug, please fork the repository and open a Pull Request (PR). For substantial changes or new features, we recommend opening an issue first to start a discussion. We’re looking forward to collaborating with you!
 
 ### Contact
 If you have any questions or concerns, feel free to contact the current tech lead,  
