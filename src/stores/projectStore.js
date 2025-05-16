@@ -134,13 +134,7 @@ export const useProjectStore = defineStore('projectStore', () => {
           singleValue.value = lastMonthIndex;
           console.log(`Set default selectedMonth to ${lastMonthIndex} on initialization.`);
         }
-
-        // if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
-        //   const lastMonthIndex = xAxisCategories.value.length - 1;
-        //   selectedMonth.value = lastMonthIndex;
-        //   singleValue.value = lastMonthIndex + 1; // Adding +1 as month numbering often starts at 1
-        //   console.log(`Set default selectedMonth to ${lastMonthIndex + 1} on initialization.`);
-        // }
+ 
         // if (xAxisCategories.value && xAxisCategories.value.length > 0) {
         //   const months = xAxisCategories.value
         //     .filter(str => typeof str === 'string')
