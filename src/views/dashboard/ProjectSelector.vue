@@ -261,7 +261,7 @@ const localMonth = ref(null);
 watch(localMonths, (newVal) => {
   console.log("Local available months:", newVal);
   if (newVal.length > 0 && (localMonth.value === null || !newVal.includes(localMonth.value))) {
-    localMonth.value = newVal[0];
+    localMonth.value = newVal[newVal.length - 1]; // Use last (max) month as default
     projectStore.selectedMonth = localMonth.value;
   }
 });
