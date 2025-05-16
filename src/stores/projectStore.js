@@ -129,9 +129,18 @@ export const useProjectStore = defineStore('projectStore', () => {
         console.log(`Local mode: Set selectedProject to local_${repoName}`);
         // Use it only to set a default when data is first loaded
         if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
-          selectedMonth.value = 0;
-          console.log("Set default selectedMonth to 1 on initialization.");
+          const lastMonthIndex = xAxisCategories.value.length - 1;
+          selectedMonth.value = lastMonthIndex;
+          singleValue.value = lastMonthIndex;
+          console.log(`Set default selectedMonth to ${lastMonthIndex} on initialization.`);
         }
+
+        // if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
+        //   const lastMonthIndex = xAxisCategories.value.length - 1;
+        //   selectedMonth.value = lastMonthIndex;
+        //   singleValue.value = lastMonthIndex + 1; // Adding +1 as month numbering often starts at 1
+        //   console.log(`Set default selectedMonth to ${lastMonthIndex + 1} on initialization.`);
+        // }
         // if (xAxisCategories.value && xAxisCategories.value.length > 0) {
         //   const months = xAxisCategories.value
         //     .filter(str => typeof str === 'string')
@@ -475,8 +484,8 @@ export const useProjectStore = defineStore('projectStore', () => {
         const max = maxMonth.value;
         
         rangeValue.value = [min, max];
-        singleValue.value = min;
-        selectedMonth.value = min;
+        singleValue.value = max;
+        selectedMonth.value = max;
         
         console.log(`Project details set for project ID: ${project.project_id}`);
         console.log(`Selected Month set to: ${selectedMonth.value}`);
