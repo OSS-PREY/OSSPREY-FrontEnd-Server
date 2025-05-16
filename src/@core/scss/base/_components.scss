@@ -186,3 +186,14 @@
 .v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__thumb {
   color: #fff !important;
 }
+
+
+h2.section-header,
+.section-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+}

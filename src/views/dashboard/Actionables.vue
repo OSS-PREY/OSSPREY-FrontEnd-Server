@@ -2,11 +2,9 @@
 <template>
   <VCard class="text-center text-sm-start project-actionables-card">
     <VCardText>
-      <VTabs v-model="currentTab" class="v-tabs-pill">
-        <VTab value="income" class="highlighted-tab">
-          Actionable Recommendations
-        </VTab>
-      </VTabs>
+      <div class="section-header">
+        <h2>Actionable Recommendations</h2>
+      </div>
     </VCardText>
 
     <VCardText class="d-flex align-center gap-3">
@@ -112,7 +110,7 @@ const sortedActionables = computed(() => {
     }
   }
   // console.log('DATA Array:', rd);
-
+  
   if(dataArray.length>=10){
     return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
   }
@@ -135,23 +133,16 @@ const sortedActionables = computed(() => {
 }
 
 /* Tabs */
-.highlighted-tab {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 5px 10px;
-  background-color: #f0f8ff;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 16px;
-  color: #333;
-  border: 1px solid #007bff;
-  margin: 0;
-  text-align: left;
+.section-header {
+  margin-bottom: 16px;
 }
 
-.v-tabs {
-  justify-content: flex-start;
+.section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  position: relative;
+  margin: 0;
 }
 
 /* Priority Labels */

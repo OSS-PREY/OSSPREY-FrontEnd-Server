@@ -2,10 +2,9 @@
   <VCard class="text-center text-sm-start project-details-card">
     <VRow no-gutters class="h-100">
       <VCol cols="12" sm="12">
+        <!-- Header -->
         <VCardItem class="pb-3">
-          <VCardTitle class="text-primary">
-            Project Details
-          </VCardTitle>
+          <h2 class="section-header">Project Details</h2>
         </VCardItem>
 
         <VCardText class="h-100">

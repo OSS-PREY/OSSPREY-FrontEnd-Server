@@ -2,10 +2,9 @@
   <VCard class="text-center text-sm-start" style="height: 120px;">
     <VRow no-gutters style="height: 100%;">
       <VCol cols="12" sm="12" order="2" order-sm="1">
+        <!-- Header -->
         <VCardItem class="pb-3">
-          <VCardTitle class="text-primary">
-            Email Links
-          </VCardTitle>
+          <h2 class="section-header">Email Links</h2>
         </VCardItem>
 
         <VCardText>
@@ -88,9 +87,9 @@ const selectedNodeName = computed(() => projectStore.selectedSocialDeveloper);
  * @returns {string} - The formatted date string.
  */
 const formatDate = (dateStr) => {
-  const options = { 
-    year: 'numeric', month: 'short', day: 'numeric', 
-    hour: '2-digit', minute: '2-digit', second: '2-digit' 
+  const options = {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   };
   const date = new Date(dateStr);
   if (isNaN(date)) return 'Invalid Date';

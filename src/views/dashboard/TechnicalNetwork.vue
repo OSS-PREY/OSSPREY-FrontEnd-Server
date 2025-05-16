@@ -1,7 +1,8 @@
 <template>
   <VCard class="text-center text-sm-start tech-net-card">
+    <!-- Header -->
     <VCardItem class="pb-3">
-      <VCardTitle class="text-primary">Technical Network</VCardTitle>
+      <h2 class="section-header">Technical Network</h2>
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
@@ -94,12 +95,12 @@ const preparePlotData = () => {
   }
   // Apply threshold reduction.
   const reducedData = reduceTheCommits(techData);
-  
+
   // **Store in Pinia store (only for local mode)**
   if (projectStore.isLocalMode) {
     projectStore.setReducedCommits(reducedData);
   }
-  
+
   if (reducedData.length === 0) {
     console.warn('After reduction, no data remains.');
     clearSankeyDiagram();

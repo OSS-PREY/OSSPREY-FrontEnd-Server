@@ -1,7 +1,8 @@
 <template>
   <VCard class="text-center text-sm-start social-net-card">
+    <!-- Header -->
     <VCardItem class="pb-3">
-      <VCardTitle class="text-primary">Social Network</VCardTitle>
+      <h2 class="section-header">Social Network</h2>
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
