@@ -1,16 +1,11 @@
-<!-- src/components/Graduationforecast.vue projectStore.selectedProject.start_date--> 
+<!-- src/components/Graduationforecast.vue projectStore.selectedProject.start_date-->
 <template>
   <VCard>
     <!-- Tabs Section -->
     <VCardText>
-      <VTabs v-model="currentTab" class="v-tabs-pill">
-        <VTab value="yearly" class="highlighted-tab">
-          Probability of Sustainability
-        </VTab>
-        <!-- <VTab value="monthly" class="highlighted-tab">
-          Month-wise Forecast
-        </VTab> -->
-      </VTabs>
+      <div class="section-header">
+        <h2>Probability of Sustainability</h2>
+      </div>
     </VCardText>
 
     <!-- Tab Information Section -->
@@ -32,12 +27,7 @@
       </VCardText>
       <VCardText v-if="gradForecastLoading">Loading data...</VCardText>
       <VCardText v-else>
-        <VueApexCharts
-          type="line"
-          :height="230"
-          :options="yearlyChartConfig"
-          :series="yearlySeries"
-        />
+        <VueApexCharts type="line" :height="230" :options="yearlyChartConfig" :series="yearlySeries" />
       </VCardText>
     </VCardText>
 
@@ -48,18 +38,9 @@
       </VCardText>
       <VCardText v-if="predictionsLoading">Loading predictions...</VCardText>
       <VCardText v-else>
-        <VueApexCharts
-          type="line"
-          :height="230"
-          :options="monthlyChartConfig"
-          :series="monthlySeries"
-        />
+        <VueApexCharts type="line" :height="230" :options="monthlyChartConfig" :series="monthlySeries" />
         <!-- Existing Table (Assuming it's for Predictions) -->
-        <VDataTable
-          :headers="predictionsTableHeaders"
-          :items="predictionsTableData"
-          class="mt-5"
-        >
+        <VDataTable :headers="predictionsTableHeaders" :items="predictionsTableData" class="mt-5">
           <template #item.close="{ item }">
             {{ item.close.toFixed(4) }}
           </template>
@@ -81,10 +62,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="(release, index) in projectReleases"
-                  :key="index"
-                >
+                <tr v-for="(release, index) in projectReleases" :key="index">
                   <td class="actionable-cell">
                     <a :href="release.url" target="_blank" rel="noopener noreferrer">
                       {{ release.name }}
@@ -252,52 +230,52 @@ const yearlySeries = computed(() => {
 
 
   const createBranch = (name, mode) => {
-  const inputSeries = allData.slice(0, selectedIdx + 1);
-  const { scaled: normData } = normalize(inputSeries);
+    const inputSeries = allData.slice(0, selectedIdx + 1);
+    const { scaled: normData } = normalize(inputSeries);
 
-  const { phi, intercept, stdError } = fitAR1(normData);
-  const baseVal = clamp01(normData[selectedIdx]);
+    const { phi, intercept, stdError } = fitAR1(normData);
+    const baseVal = clamp01(normData[selectedIdx]);
 
-  const z = 2.58; // 99% confidence
-  const forecast = [];
+    const z = 2.58; // 99% confidence
+    const forecast = [];
 
-  let last = baseVal;
+    let last = baseVal;
 
-  for (let i = 0; i < 4; i++) {
-    if (i === 0) {
-      forecast.push(baseVal); // force exact match
-      continue;
+    for (let i = 0; i < 4; i++) {
+      if (i === 0) {
+        forecast.push(baseVal); // force exact match
+        continue;
+      }
+
+      last = intercept + phi * last;
+
+      let adjusted;
+      if (mode === "positive") {
+        adjusted = clamp01(Math.max(baseVal, last + z * stdError));
+      } else if (mode === "negative") {
+        adjusted = clamp01(Math.min(baseVal, last - z * stdError));
+      } else {
+        adjusted = clamp01(last);
+      }
+
+      forecast.push(adjusted);
+      last = adjusted;
     }
 
-    last = intercept + phi * last;
+    // Build full { x, y } objects for the chart
+    const dataPoints = xCategories.map((x, idx) => {
+      if (idx === selectedIdx) {
+        return { x, y: allData[selectedIdx] };
+      }
+      if (idx > selectedIdx && idx <= selectedIdx + 4) {
+        const forecastIdx = idx - selectedIdx;
+        return { x, y: forecast[forecastIdx] };
+      }
+      return { x, y: null };
+    });
 
-    let adjusted;
-    if (mode === "positive") {
-      adjusted = clamp01(Math.max(baseVal, last + z * stdError));
-    } else if (mode === "negative") {
-      adjusted = clamp01(Math.min(baseVal, last - z * stdError));
-    } else {
-      adjusted = clamp01(last);
-    }
-
-    forecast.push(adjusted);
-    last = adjusted;
-  }
-
-  // Build full { x, y } objects for the chart
-  const dataPoints = xCategories.map((x, idx) => {
-    if (idx === selectedIdx) {
-      return { x, y: allData[selectedIdx] };
-    }
-    if (idx > selectedIdx && idx <= selectedIdx + 4) {
-      const forecastIdx = idx - selectedIdx;
-      return { x, y: forecast[forecastIdx] };
-    }
-    return { x, y: null };
-  });
-
-  return { name, data: dataPoints };
-};
+    return { name, data: dataPoints };
+  };
 
 
 
@@ -452,7 +430,7 @@ const monthlyChartConfig = computed(() => {
     stroke: {
       width: 3,
       curve: 'smooth',
-      dashArray: [0, 5, 5, 5] 
+      dashArray: [0, 5, 5, 5]
     },
     grid: {
       strokeDashArray: 4.5,
@@ -486,13 +464,13 @@ const monthlyChartConfig = computed(() => {
       tickAmount: 4,
       labels: {
         formatter: function (val) {
-          if(val==null){
+          if (val == null) {
             return '';
           }
-          else{
+          else {
             return val.toFixed(2);
           }
-          
+
         }
       }
     },
@@ -520,7 +498,7 @@ const tabData = computed(() => {
       stats: gradForecastLoading.value
         ? 'Loading forecast data...'
         : `Forecast Data: ${gradForecastData.value.length} months available`,
-        monthDetail: `Current Month: ${projectStore.selectedMonth || 'None'}`,
+      monthDetail: `Current Month: ${projectStore.selectedMonth || 'None'}`,
     };
   } else if (currentTab.value === 'monthly') {
     return {
@@ -610,27 +588,21 @@ watch(
 </script>
 
 <style scoped>
-.highlighted-tab {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 5px 10px;
-  background-color: #f0f8ff;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 16px;
-  color: #333;
-  border: 1px solid #007bff;
-  margin: 0;
-  text-align: left;
+.section-header {
+  margin-bottom: 16px;
 }
 
-.v-tabs {
-  justify-content: flex-start;
+.section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  position: relative;
+  margin: 0;
 }
 
 .table-container {
-  max-height: 400px; /* Adjust as needed */
+  max-height: 400px;
+  /* Adjust as needed */
   overflow-y: auto;
   overflow-x: auto;
   display: block;

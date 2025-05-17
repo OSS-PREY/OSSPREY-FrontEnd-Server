@@ -4,7 +4,7 @@
       <VCol cols="12" sm="12">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <VCardTitle class="text-primary">Project Selector</VCardTitle>
+          <h2 class="section-header">Project Selector</h2>
         </VCardItem>
 
         <!-- Data Source Buttons -->

@@ -134,8 +134,7 @@ export const useProjectStore = defineStore('projectStore', () => {
           singleValue.value = lastMonthIndex;
           console.log(`Set default selectedMonth to ${lastMonthIndex} on initialization.`);
         }
-
-
+ 
         // if (xAxisCategories.value && xAxisCategories.value.length > 0) {
         //   const months = xAxisCategories.value
         //     .filter(str => typeof str === 'string')
