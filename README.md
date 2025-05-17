@@ -23,14 +23,14 @@ The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based 
 3. **Visual Details**:
    - **Probability of Sustainability**:
      - Displays a forecast value for each project time period.
-     - [Upcoming] Shows the probability of sustainability for future months in local mode.
+     - Shows the probability of sustainability for future months in GitHub mode.
    - **Social Network: Emails**: 
      - Visualizes email exchanges between developers for the selected project and time period.
      - Shows sender and replier nodes, developer names, and interaction percentages.
    - **Social Network: Issues**:
      - Illustrates issue-comment exchanges between developers for the selected repository and month.
    - **Technical Network**:
-     - Similar to the social network but focused on developers and files they committed to.
+     - Similar to the social network, but focused on developers and files they committed to.
 
 4. **Statistics and Adjustments**:
    - Below the social and technical network visuals, find monthly stats, like the number of email exchanges, number of commits, etc.
