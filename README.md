@@ -1,4 +1,4 @@
-# OSPEX Dashboard
+# OSSPREY Dashboard
 
 The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based application that provides visual insights into open-source projects, offering metrics and recommendations to improve project health. This guide will help you set up and use the dashboard effectively.
 
@@ -9,7 +9,7 @@ The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based 
 - **Recommendations**: The dashboard will provide actionable steps to address performance issues. For instance, if a project's score is below 0.5 for a specific month, it will analyze historical data and suggest targeted improvements to help the project achieve or surpass the 0.5 threshold.
 - **Advanced month-wise analytics**: Leverage interactive elements, including filters and drill-down views, to refine and explore data. Feel free to select any project from the foundations and select a month, the data would be populated, and the advanced analytics provide the social and technical network values for that project and month (if available).
 
-## How to Use OSPEX
+## How to Use
 
 1. **Select a Mode (Foundation/Local). If Foundation mode, then select project (and technology, if applicable)**:
    - Use the input drop-down menu to choose a desired technology.
