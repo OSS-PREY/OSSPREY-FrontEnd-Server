@@ -287,13 +287,13 @@ const yearlySeries = computed(() => {
   }));
 
   const result = [
-    { name: 'Actual Forecast', data: seriesActual }
+    { name: 'Observed Graduation Probability', data: seriesActual }
   ];
 
   if (allData.length > 0 && selectedIdx >= 0 && selectedIdx < allData.length) {
-    result.push(createBranch('Neutral Projection', "neutral"));
-    result.push(createBranch('Positive Projection', "positive"));
-    result.push(createBranch('Negative Projection', "negative"));
+    result.push(createBranch('Positive Forecast', "positive"));
+    result.push(createBranch('Neutral Forecast', "neutral"));
+    result.push(createBranch('Negative Forecast', "negative"));
   }
 
   return result;
@@ -333,10 +333,10 @@ const yearlyChartConfig = computed(() => {
       }
     },
     colors: [
-      currentTheme.primary, // actual
-      '#9e9e9e',             // neutral
-      '#4CAF50',             // positive
-      '#F44336'              // negative
+      currentTheme.primary, // observed
+      '#4CAF50',            // positive
+      '#9e9e9e',            // neutral
+      '#F44336'             // negative
     ],
     markers: {
       size: 5,
@@ -378,7 +378,12 @@ const yearlyChartConfig = computed(() => {
       }
     },
     legend: {
-      show: false
+      show: true,
+      position: 'top',
+      horizontalAlign: 'left',
+      labels: {
+        colors: currentTheme['on-surface']
+      }
     },
     tooltip: {
       shared: true,
@@ -386,17 +391,11 @@ const yearlyChartConfig = computed(() => {
       y: {
         title: {
           formatter: function (seriesName) {
-            return seriesName.includes('Projection')
-              ? `Projection: ${seriesName.split(' ')[0]}`
-              : 'Graduation Forecast';
+            return seriesName;
           }
         },
-        formatter: function (value, { seriesIndex, w }) {
-          if (value == null) return '';
-          const label = w.globals.seriesNames[seriesIndex];
-          return label.includes('Projection')
-            ? `${value.toFixed(2)} (Projected)`
-            : value.toFixed(2);
+        formatter: function (value) {
+          return value == null ? '' : value.toFixed(2);
         }
       }
     }
