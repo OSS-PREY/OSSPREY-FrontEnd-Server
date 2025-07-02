@@ -365,7 +365,8 @@ const yearlyChartConfig = computed(() => {
       labels: {
         style: {
           fontSize: '14px',
-          colors: disabledTextColor
+          colors: disabledTextColor,
+          fontFamily: 'Lora, serif'
         }
       }
     },
@@ -374,7 +375,10 @@ const yearlyChartConfig = computed(() => {
       max: 1,
       tickAmount: 4,
       labels: {
-        formatter: (val) => (val == null ? '' : val.toFixed(2))
+        formatter: (val) => (val == null ? '' : val.toFixed(2)),
+        style: {
+          fontFamily: 'Lora, serif'
+        }
       }
     },
     legend: {
@@ -382,7 +386,8 @@ const yearlyChartConfig = computed(() => {
       position: 'top',
       horizontalAlign: 'left',
       labels: {
-        colors: currentTheme['on-surface']
+        colors: currentTheme['on-surface'],
+        fontFamily: 'Lora, serif'
       }
     },
     tooltip: {
@@ -453,7 +458,8 @@ const monthlyChartConfig = computed(() => {
       labels: {
         style: {
           fontSize: '14px',
-          colors: disabledTextColor
+          colors: disabledTextColor,
+          fontFamily: 'Lora, serif'
         }
       }
     },
@@ -470,6 +476,9 @@ const monthlyChartConfig = computed(() => {
             return val.toFixed(2);
           }
 
+        },
+        style: {
+          fontFamily: 'Lora, serif'
         }
       }
     },
@@ -478,7 +487,8 @@ const monthlyChartConfig = computed(() => {
       position: 'top',
       horizontalAlign: 'right',
       labels: {
-        colors: currentTheme['on-surface']
+        colors: currentTheme['on-surface'],
+        fontFamily: 'Lora, serif'
       }
     },
     tooltip: {
