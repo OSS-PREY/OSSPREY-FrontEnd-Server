@@ -5,10 +5,10 @@
       <a href="https://decallab.cs.ucdavis.edu/join/" target="_blank" rel="noopener noreferrer" class="footer-link">DECAL Lab</a>, 
       in the CS Department, UC Davis, by 
       <strong>
+        <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>,
         Priyal Soni,
-        <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>, 
         <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>
-      </strong>, and 
+      </strong>, and
       <strong>
         <a href="https://www.cs.ucdavis.edu/~filkov/" target="_blank" rel="noopener noreferrer" class="footer-link">Vladimir Filkov</a>
       </strong>.
