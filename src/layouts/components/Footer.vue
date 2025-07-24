@@ -15,7 +15,15 @@
     </span>
     
     <span class="footer-text">
-      Copyright © {{ new Date().getFullYear() }} The Regents of the University of California, Davis campus. All rights reserved. Used with permission.
+      Copyright © {{ new Date().getFullYear() }} The Regents of the
+      <a
+        href="https://www.ucdavis.edu/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+        >University of California, Davis</a
+      >
+      campus. All rights reserved. Used with permission.
     </span>
 
     <span class="footer-text">
