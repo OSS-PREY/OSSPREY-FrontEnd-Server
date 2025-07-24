@@ -39,7 +39,6 @@
                 item-title="project_name" item-value="project_id" :label="projectLabel" class="mb-3" outlined dense
                 :loading="projectStore.loading" :error="!!projectStore.error" :error-messages="projectStore.error"
                 return-object hide-no-data hide-details clearable />
-              <!-- Foundation Mode Slider -->
               <VSlider v-if="hasValidMonths" v-model="projectStore.singleValue" :min="sliderMin" :max="sliderMax"
                 :step="1" class="mb-3" label="Select Month" :ticks="true" tick-size="4" thumb-label
                 @update:modelValue="handleSingleValueChange" />
