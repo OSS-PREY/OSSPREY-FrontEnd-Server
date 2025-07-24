@@ -6,7 +6,7 @@
       in the CS Department, UC Davis, by 
       <strong>
         <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>,
-        Priyal Soni,
+        <a href="https://github.com/priyalsoni15" target="_blank" rel="noopener noreferrer" class="footer-link">Priyal Soni</a>,
         <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>
       </strong>, and
       <strong>
