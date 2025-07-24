@@ -367,6 +367,8 @@ watch(
 
 onMounted(() => {
   fetchData();
+  // Ensure local mode is active so GitHub uploads show the slider correctly
+  switchDataSource('local');
 });
 </script>
 
