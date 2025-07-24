@@ -70,7 +70,7 @@
             -->
 
             <!-- LOCAL PROJECTS BLOCK -->
-            <div v-else-if="selectedDataSource === 'local'">
+            <div v-if="selectedDataSource === 'local'">
               <!--
               <VBtn color="primary" class="mb-2" @click="triggerFileInput" block>
                 Browse Local Folder
