@@ -8,6 +8,7 @@
         </VCardItem>
 
         <!-- Data Source Buttons -->
+        <!--
         <VRow class="mb">
           <VCol cols="12" class="d-flex justify-center">
             <VBtn color="primary" :variant="selectedDataSource === 'foundation' ? 'outlined' : 'text'" class="ms-2"
@@ -20,12 +21,13 @@
             </VBtn>
           </VCol>
         </VRow>
+        -->
 
         <!-- Content Area -->
         <VCardText class="content-area">
           <div v-if="projectStore.loading" class="loading">Loading projects...</div>
           <div v-else>
-            <!-- FOUNDATION / ECLIPSE BLOCK -->
+            <!-- FOUNDATION / ECLIPSE BLOCK
             <div v-if="selectedDataSource === 'foundation'">
               <div v-if="projectStore.error" class="text-error">{{ projectStore.error }}</div>
               <VSelect v-model="projectStore.selectedFoundation" :items="foundations" label="Foundation" class="mb-3"
@@ -37,7 +39,6 @@
                 item-title="project_name" item-value="project_id" :label="projectLabel" class="mb-3" outlined dense
                 :loading="projectStore.loading" :error="!!projectStore.error" :error-messages="projectStore.error"
                 return-object hide-no-data hide-details clearable />
-              <!-- Foundation Mode Slider -->
               <VSlider v-if="hasValidMonths" v-model="projectStore.singleValue" :min="sliderMin" :max="sliderMax"
                 :step="1" class="mb-3" label="Select Month" :ticks="true" tick-size="4" thumb-label
                 @update:modelValue="handleSingleValueChange" />
@@ -66,16 +67,21 @@
                 </VRow>
               </VCard>
             </div>
+            -->
 
             <!-- LOCAL PROJECTS BLOCK -->
-            <div v-else-if="selectedDataSource === 'local'">
+            <div v-if="selectedDataSource === 'local'">
               <!--
               <VBtn color="primary" class="mb-2" @click="triggerFileInput" block>
                 Browse Local Folder
               </VBtn>
               <input type="file" ref="fileInput" @change="handleFileSelect" webkitdirectory style="display: none;" />
               -->
-              <div class="text-center mb-2">OR</div>
+              <div class="promo-text mb-4">
+                <p class="promo-title">🌱 Is Your GitHub Project Built to Last?</p>
+                <p>Explore how your project has evolved, how it stands today, and where it's headed next.</p>
+                <p class="promo-instruction">Just paste your GitHub repository URL below and let <strong>OSSPREY</strong> generate instant insights and actionable forecasts.</p>
+              </div>
               <VTextField v-model="githubRepoLink" label="GitHub Repository URL" outlined dense class="mb-3"
                 placeholder="https://github.com/username/repository" />
               <VBtn color="primary" class="mb-2" :disabled="buttonDisabled" @click="uploadRepoLink" block>
@@ -119,8 +125,8 @@ import { useRouter } from 'vue-router';
 const projectStore = useProjectStore();
 const router = useRouter();
 
-// Data source: foundation or local
-const selectedDataSource = ref('foundation');
+// Data source: GitHub only (foundation option hidden for now)
+const selectedDataSource = ref('local');
 
 // FOUNDATION reactive variables
 const selectedProject = ref(null);
@@ -361,6 +367,8 @@ watch(
 
 onMounted(() => {
   fetchData();
+  // Ensure local mode is active so GitHub uploads show the slider correctly
+  switchDataSource('local');
 });
 </script>
 
@@ -435,5 +443,22 @@ onMounted(() => {
   margin-top: 20px;
   font-style: italic;
   color: grey;
+}
+
+.promo-text {
+  text-align: center;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+}
+
+.promo-title {
+  color: #4caf50;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.promo-instruction {
+  color: #1976d2;
+  font-weight: 500;
 }
 </style>
