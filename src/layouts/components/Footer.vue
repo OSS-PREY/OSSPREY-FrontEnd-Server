@@ -7,7 +7,8 @@
       <strong>
         <a href="https://nafiz43.github.io/portfolio/" target="_blank" rel="noopener noreferrer" class="footer-link">Nafiz Imtiaz Khan</a>,
         <a href="https://github.com/priyalsoni15" target="_blank" rel="noopener noreferrer" class="footer-link">Priyal Soni</a>,
-        <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>
+        <a href="https://www.linkedin.com/in/arjashok" target="_blank" rel="noopener noreferrer" class="footer-link">Arjun Ashok</a>,
+        <a href="https://www.linkedin.com/in/sankalp-kashyap" target="_blank" rel="noopener noreferrer" class="footer-link">Sankalp Kashyap</a>
       </strong>, and
       <strong>
         <a href="https://www.cs.ucdavis.edu/~filkov/" target="_blank" rel="noopener noreferrer" class="footer-link">Vladimir Filkov</a>
