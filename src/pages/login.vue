@@ -48,10 +48,39 @@ const forgotPassword = () => {
 
       <VDivider class="my-6" />
 
-      <VBtn block color="red-darken-1" size="large" class="mb-4" prepend-icon="mdi-google" @click="socialLogin('Google')">
+      <VBtn
+        block
+        color="red-darken-1"
+        size="large"
+        class="mb-4"
+        @click="socialLogin('Google')"
+      >
+        <template #prepend>
+          <VImg
+            src="https://developers.google.com/identity/images/g-logo.png"
+            alt="Google logo"
+            height="24"
+            width="24"
+            class="mr-2"
+          />
+        </template>
         Login with Google
       </VBtn>
-      <VBtn block color="grey-darken-3" size="large" prepend-icon="mdi-github" @click="socialLogin('GitHub')">
+      <VBtn
+        block
+        color="grey-darken-3"
+        size="large"
+        @click="socialLogin('GitHub')"
+      >
+        <template #prepend>
+          <VImg
+            src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+            alt="GitHub logo"
+            height="24"
+            width="24"
+            class="mr-2"
+          />
+        </template>
         Login with GitHub
       </VBtn>
     </VCard>
