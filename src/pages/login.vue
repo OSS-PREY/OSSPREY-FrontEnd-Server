@@ -10,20 +10,44 @@ const submit = () => {
   // Placeholder authentication logic
   router.push('/dashboard')
 }
+
+const socialLogin = provider => {
+  alert('The feature is currently under development')
+}
+
+const forgotPassword = () => {
+  alert('Password reset is currently under development')
+}
 </script>
 
 <template>
   <VContainer class="d-flex align-center justify-center" style="height: 100vh;">
-    <VCard class="pa-8" max-width="400">
-      <VCardTitle class="text-h5 text-center mb-6">Login</VCardTitle>
+    <VCard class="pa-12" max-width="500" elevation="8">
+      <VCardTitle class="text-h4 text-center mb-2">Welcome Back</VCardTitle>
+      <VCardSubtitle class="text-center mb-8">Sign in to continue to OSSPREY</VCardSubtitle>
+
       <VForm @submit.prevent="submit">
         <VTextField v-model="userId" label="User ID" required class="mb-4" />
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
-        <VBtn type="submit" block class="mb-4">Login</VBtn>
+        <VBtn type="submit" block size="large" class="mb-4 py-4">Login</VBtn>
       </VForm>
-      <div class="text-center">
-        <RouterLink to="/register">Need an account? Register</RouterLink>
-      </div>
+
+      <VBtn block variant="outlined" size="large" class="mb-4 py-4" to="/register">
+        Register
+      </VBtn>
+
+      <VBtn block variant="text" class="mb-4" @click="forgotPassword">
+        Forgot Password?
+      </VBtn>
+
+      <VDivider class="my-6" />
+
+      <VBtn block color="red-darken-1" size="large" class="mb-4" prepend-icon="mdi-google" @click="socialLogin('Google')">
+        Login with Google
+      </VBtn>
+      <VBtn block color="grey-darken-3" size="large" prepend-icon="mdi-github" @click="socialLogin('GitHub')">
+        Login with GitHub
+      </VBtn>
     </VCard>
   </VContainer>
 </template>
