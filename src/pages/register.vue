@@ -19,6 +19,12 @@ const submit = () => {
 <template>
   <VContainer class="d-flex align-center justify-center" style="height: 100vh;">
     <VCard class="pa-12" max-width="600" elevation="8">
+      <VImg
+        src="https://oss-prey.github.io/OSSPREY-Website/static/images/favicon.ico"
+        alt="OSSPREY Logo"
+        height="64"
+        class="mx-auto mb-6"
+      />
       <VCardTitle class="text-h4 text-center mb-2">Create Account</VCardTitle>
       <VCardSubtitle class="text-center mb-8">Join the OSSPREY community today</VCardSubtitle>
       <VForm @submit.prevent="submit">
