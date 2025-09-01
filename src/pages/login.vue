@@ -2,13 +2,41 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-const userId = ref('')
+const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
 const router = useRouter()
 
-const submit = () => {
-  // Placeholder authentication logic
-  router.push('/dashboard')
+const submit = async () => {
+  errorMessage.value = ''
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
+      throw new Error(msg)
+    }
+
+    router.push('/dashboard')
+  }
+  catch (err) {
+    const message =
+      err instanceof TypeError
+        ? `Network error: ${err.message}`
+        : err.message || 'Login failed.'
+    errorMessage.value = `Login failed: ${message}`
+  }
 }
 
 const socialLogin = provider => {
@@ -33,8 +61,15 @@ const forgotPassword = () => {
       <VCardSubtitle class="text-center mb-8">Sign in to continue to OSSPREY</VCardSubtitle>
 
       <VForm @submit.prevent="submit">
-        <VTextField v-model="userId" label="User ID" required class="mb-4" />
+        <VTextField v-model="email" label="Email" type="email" required class="mb-4" />
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
+        <VAlert
+          v-if="errorMessage"
+          type="error"
+          density="compact"
+          class="mb-4"
+          :text="errorMessage"
+        />
         <VBtn type="submit" block size="large" class="mb-4 py-4">Login</VBtn>
       </VForm>
 
