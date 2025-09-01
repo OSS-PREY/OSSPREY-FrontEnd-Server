@@ -1,12 +1,28 @@
 export const routes = [
   {
     path: '/',
-    component: () => import('@/layouts/default.vue'), // This points to your layout
+    component: () => import('@/layouts/blank.vue'),
     children: [
       {
-        path: '', // The empty path makes this the default child route
+        path: '',
+        name: 'Login',
+        component: () => import('@/pages/login.vue'),
+      },
+      {
+        path: 'register',
+        name: 'Register',
+        component: () => import('@/pages/register.vue'),
+      },
+    ],
+  },
+  {
+    path: '/dashboard',
+    component: () => import('@/layouts/default.vue'),
+    children: [
+      {
+        path: '',
         name: 'Dashboard',
-        component: () => import('@/pages/dashboard.vue'), // This points to your Dashboard component
+        component: () => import('@/pages/dashboard.vue'),
       },
     ],
   },
