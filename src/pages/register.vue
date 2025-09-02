@@ -18,6 +18,18 @@ const submit = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailPattern.test(email.value)) {
+    errorMessage.value = 'Please enter a valid email address.'
+    return
+  }
+
+  const passwordPattern = /^(?=.*[A-Z])(?=.*\d).{8,}$/
+  if (!passwordPattern.test(password.value)) {
+    errorMessage.value = 'Password must be at least 8 characters long and include at least one number and one uppercase letter.'
+    return
+  }
+
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
     return
