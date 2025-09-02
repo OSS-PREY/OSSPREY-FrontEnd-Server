@@ -8,11 +8,51 @@ const affiliation = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const referral = ref('')
+const errorMessage = ref('')
+const successMessage = ref('')
 const router = useRouter()
 
-const submit = () => {
-  // Placeholder registration logic
-  router.push('/')
+const submit = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        full_name: fullName.value,
+        email: email.value,
+        affiliation: affiliation.value,
+        password: password.value,
+        referral: referral.value,
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
+      throw new Error(msg)
+    }
+
+    successMessage.value = data.message || 'Registration successful. Please log in.'
+    router.push('/')
+  }
+  catch (err) {
+    const message =
+      err instanceof TypeError
+        ? `Network error: ${err.message}`
+        : err.message || 'Registration failed.'
+    errorMessage.value = `Registration failed: ${message}`
+  }
 }
 </script>
 
@@ -34,6 +74,20 @@ const submit = () => {
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
         <VTextField v-model="confirmPassword" label="Confirm Password" type="password" required class="mb-4" />
         <VTextField v-model="referral" label="How did you hear about this app?" class="mb-4" />
+        <VAlert
+          v-if="errorMessage"
+          type="error"
+          density="compact"
+          class="mb-4"
+          :text="errorMessage"
+        />
+        <VAlert
+          v-if="successMessage"
+          type="success"
+          density="compact"
+          class="mb-4"
+          :text="successMessage"
+        />
         <VBtn type="submit" block size="large" class="mb-4 py-4">Register</VBtn>
       </VForm>
       <VBtn block variant="outlined" size="large" class="mb-4 py-4" to="/">
