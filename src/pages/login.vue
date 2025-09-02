@@ -1,16 +1,27 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const successMessage = ref('')
 const router = useRouter()
+const route = useRoute()
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+
+onMounted(() => {
+  const msg = typeof route.query.message === 'string' ? route.query.message : ''
+  if (msg) successMessage.value = msg
+  // Clear the query so the message doesn't persist on navigation
+  if (Object.keys(route.query).length) router.replace({ query: {} })
+})
 
 const submit = async () => {
   errorMessage.value = ''
   try {
-    const res = await fetch('/api/login', {
+    const res = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +35,17 @@ const submit = async () => {
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
+      let msg = data.message
+      if (!msg) {
+        if (res.status === 400)
+          msg = 'Missing email or password.'
+        else if (res.status === 401)
+          msg = 'Invalid email or password.'
+        else if (res.status === 404)
+          msg = 'Endpoint not found.'
+        else
+          msg = `Server returned ${res.status} ${res.statusText}`
+      }
       throw new Error(msg)
     }
 
@@ -59,10 +80,16 @@ const forgotPassword = () => {
       />
       <VCardTitle class="text-h4 text-center mb-2">Welcome Back</VCardTitle>
       <VCardSubtitle class="text-center mb-8">Sign in to continue to OSSPREY</VCardSubtitle>
-
       <VForm @submit.prevent="submit">
         <VTextField v-model="email" label="Email" type="email" required class="mb-4" />
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
+        <VAlert
+          v-if="successMessage"
+          type="success"
+          density="compact"
+          class="mb-4"
+          :text="successMessage"
+        />
         <VAlert
           v-if="errorMessage"
           type="error"
@@ -72,17 +99,13 @@ const forgotPassword = () => {
         />
         <VBtn type="submit" block size="large" class="mb-4 py-4">Login</VBtn>
       </VForm>
-
       <VBtn block variant="outlined" size="large" class="mb-4 py-4" to="/register">
         Register
       </VBtn>
-
       <VBtn block variant="text" class="mb-4" @click="forgotPassword">
         Forgot Password?
       </VBtn>
-
       <VDivider class="my-6" />
-
       <VBtn
         block
         color="red-darken-1"
