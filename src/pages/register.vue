@@ -11,7 +11,7 @@ const referral = ref('')
 const errorMessage = ref('')
 const router = useRouter()
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000').replace(/\/$/, '')
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
 const submit = async () => {
   errorMessage.value = ''
