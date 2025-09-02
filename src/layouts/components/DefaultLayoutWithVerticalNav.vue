@@ -1,6 +1,7 @@
 <script setup>
 import Footer from '@/layouts/components/Footer.vue'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
+import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -41,15 +42,17 @@ const logout = async () => {
     <VerticalNavLayout>
       <template #navbar>
         <div class="d-flex align-center ms-auto">
+          <NavbarThemeSwitcher />
+
           <VTooltip v-if="user" :text="userName" location="bottom">
             <template #activator="{ props }">
-              <VBtn v-bind="props" icon>
+              <VBtn v-bind="props" icon class="ms-2">
                 <VIcon icon="bx-user" />
               </VBtn>
             </template>
           </VTooltip>
 
-          <VBtn v-if="user" icon @click="logout">
+          <VBtn v-if="user" icon class="ms-2" @click="logout">
             <VIcon icon="bx-log-out" />
           </VBtn>
         </div>
