@@ -9,6 +9,8 @@ const successMessage = ref('')
 const router = useRouter()
 const route = useRoute()
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000').replace(/\/$/, '')
+
 onMounted(() => {
   const msg = typeof route.query.message === 'string' ? route.query.message : ''
   if (msg)
@@ -22,7 +24,7 @@ onMounted(() => {
 const submit = async () => {
   errorMessage.value = ''
   try {
-    const res = await fetch('/api/login', {
+    const res = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,6 +44,8 @@ const submit = async () => {
           msg = 'Missing email or password.'
         else if (res.status === 401)
           msg = 'Invalid email or password.'
+        else if (res.status === 404)
+          msg = 'Endpoint not found.'
         else
           msg = `Server returned ${res.status} ${res.statusText}`
       }

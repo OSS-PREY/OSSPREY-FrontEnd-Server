@@ -11,6 +11,8 @@ const referral = ref('')
 const errorMessage = ref('')
 const router = useRouter()
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000').replace(/\/$/, '')
+
 const submit = async () => {
   errorMessage.value = ''
 
@@ -20,7 +22,7 @@ const submit = async () => {
   }
 
   try {
-    const res = await fetch('/api/register', {
+    const res = await fetch(`${API_BASE}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,6 +43,8 @@ const submit = async () => {
       if (!msg) {
         if (res.status === 400)
           msg = 'Invalid registration data.'
+        else if (res.status === 404)
+          msg = 'Endpoint not found.'
         else
           msg = `Server returned ${res.status} ${res.statusText}`
       }
