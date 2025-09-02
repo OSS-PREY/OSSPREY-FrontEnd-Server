@@ -12,6 +12,8 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+
 const submit = async () => {
   errorMessage.value = ''
   successMessage.value = ''
@@ -22,7 +24,7 @@ const submit = async () => {
   }
 
   try {
-    const res = await fetch('/api/register', {
+    const res = await fetch(`${API_BASE}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,12 +41,23 @@ const submit = async () => {
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
+      let msg = data.message
+      if (!msg) {
+        if (res.status === 400)
+          msg = 'Invalid registration data.'
+        else if (res.status === 404)
+          msg = 'Endpoint not found.'
+        else
+          msg = `Server returned ${res.status} ${res.statusText}`
+      }
       throw new Error(msg)
     }
 
     successMessage.value = data.message || 'Registration successful. Please log in.'
-    router.push('/')
+    // Optional: redirect after showing success message
+    setTimeout(() => {
+      router.push('/')
+    }, 2000)
   }
   catch (err) {
     const message =
@@ -57,6 +70,7 @@ const submit = async () => {
 </script>
 
 <template>
+  <!-- Keep the template mostly from main, but make referral optional -->
   <VContainer class="d-flex align-center justify-center" style="height: 100vh;">
     <VCard class="pa-12" max-width="600" elevation="8">
       <VImg
