@@ -48,7 +48,8 @@ const submit = async () => {
       }
       throw new Error(msg)
     }
-
+    const userData = data.user || { name: data.name || email.value, email: email.value }
+    localStorage.setItem('user', JSON.stringify(userData))
     router.push('/dashboard')
   }
   catch (err) {

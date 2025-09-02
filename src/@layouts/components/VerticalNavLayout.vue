@@ -13,8 +13,15 @@ export default defineComponent({
 
     return () => {
 
+      // 👉 Navbar
+      const navbar = slots.navbar
+        ? h('nav', { class: 'layout-navbar' },
+          h('div', { class: 'navbar-content-container' }, slots.navbar())
+        )
+        : null
+
       // 👉 Main Content
-      const main = h('main', { class: 'layout-page-content' }, 
+      const main = h('main', { class: 'layout-page-content' },
         h('div', { class: 'page-content-container' }, slots.default?.())
       )
 
@@ -43,6 +50,7 @@ export default defineComponent({
 
         // Content Layer
         h('div', { class: 'layout-content-wrapper' }, [
+          navbar,
           main,
           footer,
         ]),
