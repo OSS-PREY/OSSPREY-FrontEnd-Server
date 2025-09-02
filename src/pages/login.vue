@@ -1,30 +1,17 @@
+
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
-const successMessage = ref('')
 const router = useRouter()
-const route = useRoute()
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
-
-onMounted(() => {
-  const msg = typeof route.query.message === 'string' ? route.query.message : ''
-  if (msg)
-    successMessage.value = msg
-
-  // Clear the query so the message doesn't persist on navigation
-  if (Object.keys(route.query).length)
-    router.replace({ query: {} })
-})
 
 const submit = async () => {
   errorMessage.value = ''
   try {
-    const res = await fetch(`${API_BASE}/api/login`, {
+    const res = await fetch('/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,23 +25,12 @@ const submit = async () => {
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      let msg = data.message
-      if (!msg) {
-        if (res.status === 400)
-          msg = 'Missing email or password.'
-        else if (res.status === 401)
-          msg = 'Invalid email or password.'
-        else if (res.status === 404)
-          msg = 'Endpoint not found.'
-        else
-          msg = `Server returned ${res.status} ${res.statusText}`
-      }
+      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
       throw new Error(msg)
     }
 
     router.push('/dashboard')
-  }
-  catch (err) {
+  } catch (err) {
     const message =
       err instanceof TypeError
         ? `Network error: ${err.message}`
@@ -87,13 +63,6 @@ const forgotPassword = () => {
       <VForm @submit.prevent="submit">
         <VTextField v-model="email" label="Email" type="email" required class="mb-4" />
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
-        <VAlert
-          v-if="successMessage"
-          type="success"
-          density="compact"
-          class="mb-4"
-          :text="successMessage"
-        />
         <VAlert
           v-if="errorMessage"
           type="error"

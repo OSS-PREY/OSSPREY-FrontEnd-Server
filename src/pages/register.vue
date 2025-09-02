@@ -9,12 +9,12 @@ const password = ref('')
 const confirmPassword = ref('')
 const referral = ref('')
 const errorMessage = ref('')
+const successMessage = ref('')
 const router = useRouter()
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
 const submit = async () => {
   errorMessage.value = ''
+  successMessage.value = ''
 
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
@@ -22,7 +22,7 @@ const submit = async () => {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/register`, {
+    const res = await fetch('/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,19 +39,12 @@ const submit = async () => {
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      let msg = data.message
-      if (!msg) {
-        if (res.status === 400)
-          msg = 'Invalid registration data.'
-        else if (res.status === 404)
-          msg = 'Endpoint not found.'
-        else
-          msg = `Server returned ${res.status} ${res.statusText}`
-      }
+      const msg = data.message || `Server returned ${res.status} ${res.statusText}`
       throw new Error(msg)
     }
 
-    router.push({ path: '/', query: { message: data.message || 'User registered successfully. Please log in.' } })
+    successMessage.value = data.message || 'Registration successful. Please log in.'
+    router.push('/')
   }
   catch (err) {
     const message =
@@ -80,13 +73,20 @@ const submit = async () => {
         <VTextField v-model="affiliation" label="Affiliation" required class="mb-4" />
         <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
         <VTextField v-model="confirmPassword" label="Confirm Password" type="password" required class="mb-4" />
-        <VTextField v-model="referral" label="How did you hear about this app?" required class="mb-4" />
+        <VTextField v-model="referral" label="How did you hear about this app?" class="mb-4" />
         <VAlert
           v-if="errorMessage"
           type="error"
           density="compact"
           class="mb-4"
           :text="errorMessage"
+        />
+        <VAlert
+          v-if="successMessage"
+          type="success"
+          density="compact"
+          class="mb-4"
+          :text="successMessage"
         />
         <VBtn type="submit" block size="large" class="mb-4 py-4">Register</VBtn>
       </VForm>
