@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -30,7 +29,8 @@ const submit = async () => {
     }
 
     router.push('/dashboard')
-  } catch (err) {
+  }
+  catch (err) {
     const message =
       err instanceof TypeError
         ? `Network error: ${err.message}`
