@@ -17,6 +17,7 @@ const referralOptions = [
   'Blog or article',
   'Other',
 ]
+const agreeToTerms = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
@@ -49,6 +50,11 @@ const submit = async () => {
 
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  if (!agreeToTerms.value) {
+    errorMessage.value = 'You must agree to the Terms of Service.'
     return
   }
 
@@ -158,6 +164,18 @@ const submit = async () => {
             </li>
           </ul>
         </div>
+        <VCheckbox v-model="agreeToTerms" class="mb-4">
+          <template #label>
+            <span>
+              By registering, I agree to the
+              <a
+                href="https://oss-prey.github.io/OSSPREY-Website/terms-of-service.html"
+                target="_blank"
+                rel="noopener"
+              >Terms of Service</a>.
+            </span>
+          </template>
+        </VCheckbox>
         <VAlert
           v-if="errorMessage"
           type="error"
