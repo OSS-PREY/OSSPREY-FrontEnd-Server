@@ -7,6 +7,7 @@ const email = ref('')
 const affiliation = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const agreeToTerms = ref(false)
 const referral = ref('')
 const referralOptions = [
   'Search engine',
@@ -63,6 +64,11 @@ const submit = async () => {
 
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  if (!agreeToTerms.value) {
+    errorMessage.value = 'You must agree to the Terms of Service.'
     return
   }
 
@@ -147,6 +153,9 @@ const submit = async () => {
           <template #label>Confirm Password <span class="text-error">*</span></template>
         </VTextField>
         <VSelect v-model="referral" :items="referralOptions" label="How did you hear about this app?" class="mb-4" />
+        <VCheckbox v-model="agreeToTerms" class="mb-4">
+          <template #label>I agree to the Terms of Service <span class="text-error">*</span></template>
+        </VCheckbox>
         <VTextField v-model="captchaInput" type="number" required class="mb-4">
           <template #label>{{ captchaQuestion }} <span class="text-error">*</span></template>
         </VTextField>
