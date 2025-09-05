@@ -108,6 +108,14 @@
               <div v-else-if="repoUploading" class="d-flex justify-center align-center">
                 <VProgressCircular indeterminate color="primary" />
               </div>
+              <div v-if="userRepos.length" class="mt-4">
+                <strong>Your Processed Repositories:</strong>
+                <VList density="compact">
+                  <VListItem v-for="repo in userRepos" :key="repo">
+                    <a :href="repo" target="_blank">{{ repo }}</a>
+                  </VListItem>
+                </VList>
+              </div>
               <!-- <div v-else class="coming-soon">Coming Soon</div> -->
             </div>
           </div>
@@ -120,10 +128,7 @@
 <script setup>
 import { onMounted, watch, computed, ref } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
-import { useRouter } from 'vue-router';
-
 const projectStore = useProjectStore();
-const router = useRouter();
 
 // Data source: GitHub only (foundation option hidden for now)
 const selectedDataSource = ref('local');
@@ -137,6 +142,33 @@ const selectedLocalProject = ref(null);
 const githubRepoLink = ref('');
 const fileInput = ref(null);
 const repoUploading = ref(false);
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
+const userRepos = ref([]);
+
+const fetchUserRepos = async () => {
+  const stored = localStorage.getItem('user');
+  if (!stored) return;
+
+  let email;
+  try {
+    email = JSON.parse(stored).email;
+  }
+  catch {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user_repositories?email=${encodeURIComponent(email)}`);
+    if (!res.ok)
+      throw new Error(`Request failed with ${res.status}`);
+    const data = await res.json();
+    userRepos.value = Array.isArray(data.repositories) ? data.repositories : [];
+  }
+  catch (err) {
+    console.error('Failed to fetch user repositories:', err);
+  }
+};
 
 // STATIC LISTS
 const foundations = ['Apache'];
@@ -331,6 +363,7 @@ const uploadRepoLink = async () => {
         project_name: repoName,
         github_url: repoLink
       };
+      fetchUserRepos();
     }
   } catch (error) {
     console.error("Error uploading repository link:", error);
@@ -369,6 +402,7 @@ onMounted(() => {
   fetchData();
   // Ensure local mode is active so GitHub uploads show the slider correctly
   switchDataSource('local');
+  fetchUserRepos();
 });
 </script>
 
