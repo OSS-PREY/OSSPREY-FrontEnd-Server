@@ -80,10 +80,32 @@
               <div class="promo-text mb-4">
                 <p class="promo-title">🌱 Is Your GitHub Project Built to Last?</p>
                 <p>Explore how your project has evolved, how it stands today, and where it's headed next.</p>
-                <p class="promo-instruction">Just paste your GitHub repository URL below and let <strong>OSSPREY</strong> generate instant insights and actionable forecasts.</p>
+                <p class="promo-instruction">Select or paste your GitHub repository URL below and let <strong>OSSPREY</strong> generate instant insights and actionable forecasts.</p>
               </div>
-              <VTextField v-model="githubRepoLink" label="GitHub Repository URL" outlined dense class="mb-3"
-                placeholder="https://github.com/username/repository" />
+              <VSelect
+                v-model="selectedRepoOption"
+                :items="repoOptions"
+                item-title="title"
+                item-value="value"
+                label="GitHub Repository URL"
+                outlined
+                dense
+                class="mb-3"
+                @update:modelValue="handleRepoSelection"
+              >
+                <template #item="{ props, item }">
+                  <VListItem v-bind="props" :class="item.raw.value === 'custom' ? 'custom-repo-option' : ''" />
+                </template>
+              </VSelect>
+              <VTextField
+                v-if="selectedRepoOption === 'custom'"
+                v-model="githubRepoLink"
+                label="GitHub Repository URL"
+                outlined
+                dense
+                class="mb-3"
+                placeholder="https://github.com/username/repository"
+              />
               <VBtn color="primary" class="mb-2" :disabled="buttonDisabled" @click="uploadRepoLink" block>
                 Process Repository
               </VBtn>
@@ -142,6 +164,21 @@ const selectedLocalProject = ref(null);
 const githubRepoLink = ref('');
 const fileInput = ref(null);
 const repoUploading = ref(false);
+
+const repoOptions = [
+  { title: 'https://github.com/Nafiz43/EvidenceBot', value: 'https://github.com/Nafiz43/EvidenceBot' },
+  { title: 'https://github.com/Nafiz43/ReACTive', value: 'https://github.com/Nafiz43/ReACTive' },
+  { title: 'https://github.com/ossustain/APEX', value: 'https://github.com/ossustain/APEX' },
+  { title: 'Try a Different GitHub Repo', value: 'custom' }
+];
+const selectedRepoOption = ref(null);
+
+const handleRepoSelection = (val) => {
+  if (val !== 'custom')
+    githubRepoLink.value = val;
+  else
+    githubRepoLink.value = '';
+};
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
 const userRepos = ref([]);
@@ -494,5 +531,9 @@ onMounted(() => {
 .promo-instruction {
   color: #1976d2;
   font-weight: 500;
+}
+
+.custom-repo-option {
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 </style>
