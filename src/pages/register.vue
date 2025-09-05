@@ -174,14 +174,14 @@ const submit = async () => {
         />
         <VBtn type="submit" block size="large" class="mb-4 py-4">
           <template #prepend>
-            <VIcon icon="mdi-account-plus" class="mr-2" />
+            <VIcon icon="bx-user-plus" class="mr-2" />
           </template>
           Register
         </VBtn>
       </VForm>
       <VBtn block variant="outlined" size="large" class="mb-4 py-4" to="/">
         <template #prepend>
-          <VIcon icon="mdi-login" class="mr-2" />
+          <VIcon icon="bx-log-in" class="mr-2" />
         </template>
         Back to Login
       </VBtn>

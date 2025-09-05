@@ -100,14 +100,14 @@ const forgotPassword = () => {
         />
         <VBtn type="submit" block size="large" class="mb-4 py-4">
           <template #prepend>
-            <VIcon icon="mdi-login" class="mr-2" />
+            <VIcon icon="bx-log-in" class="mr-2" />
           </template>
           Login
         </VBtn>
       </VForm>
       <VBtn block variant="outlined" size="large" class="mb-4 py-4" to="/register">
         <template #prepend>
-          <VIcon icon="mdi-account-plus" class="mr-2" />
+          <VIcon icon="bx-user-plus" class="mr-2" />
         </template>
         Register
       </VBtn>
