@@ -50,6 +50,17 @@ const submit = async () => {
     }
     const userData = data.user || { name: data.name || email.value, email: email.value }
     localStorage.setItem('user', JSON.stringify(userData))
+
+    fetch(`${API_BASE}/api/track_login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_email: userData.email }),
+    }).catch(err => {
+      console.error('Failed to track login:', err)
+    })
+
     router.push('/dashboard')
   }
   catch (err) {
