@@ -18,6 +18,7 @@ const referralOptions = [
   'Blog or article',
   'Other',
 ]
+const agreeToTerms = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
@@ -46,6 +47,10 @@ const passwordHasSpecial = computed(() => /[^A-Za-z0-9]/.test(password.value))
 const passwordCategoriesValid = computed(() =>
   [passwordHasLower.value, passwordHasUpper.value, passwordHasNumber.value, passwordHasSpecial.value].filter(Boolean).length >= 3,
 )
+const requiredFieldsFilled = computed(() =>
+  [fullName, email, affiliation, password, confirmPassword].every(field => field.value.trim().length > 0),
+)
+const canRegister = computed(() => requiredFieldsFilled.value && agreeToTerms.value)
 
 const submit = async () => {
   errorMessage.value = ''
@@ -77,6 +82,7 @@ const submit = async () => {
     generateCaptcha()
     return
   }
+
 
   try {
     const res = await fetch(`${API_BASE}/api/register`, {
@@ -190,6 +196,19 @@ const submit = async () => {
             </li>
           </ul>
         </div>
+        <VCheckbox v-model="agreeToTerms" required class="mb-4">
+          <template #label>
+            <span>
+              By registering, I agree to the
+              <a
+                href="https://oss-prey.github.io/OSSPREY-Website/terms-of-service.html"
+                target="_blank"
+                rel="noopener"
+              >Terms of Service</a>
+              <span class="text-error">*</span>.
+            </span>
+          </template>
+        </VCheckbox>
         <VAlert
           v-if="errorMessage"
           type="error"
@@ -204,7 +223,13 @@ const submit = async () => {
           class="mb-4"
           :text="successMessage"
         />
-        <VBtn type="submit" block size="large" class="mb-4 py-4">
+        <VBtn
+          type="submit"
+          block
+          size="large"
+          class="mb-4 py-4"
+          :disabled="!canRegister"
+        >
           <template #prepend>
           <VIcon icon="bx-user-plus" />
           </template>
