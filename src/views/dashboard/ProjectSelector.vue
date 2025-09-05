@@ -535,5 +535,6 @@ onMounted(() => {
 
 .custom-repo-option {
   color: rgba(var(--v-theme-on-surface), 0.6);
+  font-weight: bold;
 }
 </style>
