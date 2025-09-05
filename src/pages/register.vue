@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const fullName = ref('')
@@ -20,6 +20,20 @@ const referralOptions = [
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
+
+const captchaQuestion = ref('')
+const captchaAnswer = ref(0)
+const captchaInput = ref('')
+
+const generateCaptcha = () => {
+  const a = Math.floor(Math.random() * 10) + 1
+  const b = Math.floor(Math.random() * 10) + 1
+  captchaQuestion.value = `What is ${a} + ${b}?`
+  captchaAnswer.value = a + b
+  captchaInput.value = ''
+}
+
+onMounted(generateCaptcha)
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
@@ -49,6 +63,12 @@ const submit = async () => {
 
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  if (parseInt(captchaInput.value, 10) !== captchaAnswer.value) {
+    errorMessage.value = 'Captcha answer is incorrect.'
+    generateCaptcha()
     return
   }
 
@@ -127,6 +147,9 @@ const submit = async () => {
           <template #label>Confirm Password <span class="text-error">*</span></template>
         </VTextField>
         <VSelect v-model="referral" :items="referralOptions" label="How did you hear about this app?" class="mb-4" />
+        <VTextField v-model="captchaInput" type="number" required class="mb-4">
+          <template #label>{{ captchaQuestion }} <span class="text-error">*</span></template>
+        </VTextField>
         <div class="mb-4">
           <p>Your password must contain:</p>
           <ul class="pl-4">
