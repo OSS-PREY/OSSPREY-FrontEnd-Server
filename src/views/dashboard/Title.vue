@@ -36,12 +36,26 @@ onUnmounted(() => {
 const userName = computed(() => user.value?.name || user.value?.email || '');
 
 const logout = async () => {
+  const email = user.value?.email;
   try {
     await fetch(`${API_BASE}/api/logout`, { method: 'POST' });
   }
   catch {
     // ignore errors
   }
+
+  if (email) {
+    fetch(`${API_BASE}/api/track_logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_email: email }),
+    }).catch(err => {
+      console.error('Failed to track logout:', err);
+    });
+  }
+
   localStorage.removeItem('user');
   user.value = null;
   router.push('/login');
