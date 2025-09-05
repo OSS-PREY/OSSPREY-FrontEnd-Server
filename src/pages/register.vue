@@ -22,6 +22,20 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
 
+// Naive math captcha variables
+const captchaA = ref(0)
+const captchaB = ref(0)
+const captchaInput = ref('')
+
+const generateCaptcha = () => {
+  captchaA.value = Math.floor(Math.random() * 10) + 1
+  captchaB.value = Math.floor(Math.random() * 10) + 1
+  captchaInput.value = ''
+}
+
+// Initialize captcha on component setup
+generateCaptcha()
+
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
 const passwordLengthValid = computed(() => password.value.length >= 8)
@@ -35,7 +49,9 @@ const passwordCategoriesValid = computed(() =>
 const requiredFieldsFilled = computed(() =>
   [fullName, email, affiliation, password, confirmPassword].every(field => field.value.trim().length > 0),
 )
-const canRegister = computed(() => requiredFieldsFilled.value && agreeToTerms.value)
+const canRegister = computed(() =>
+  requiredFieldsFilled.value && agreeToTerms.value && captchaInput.value.trim().length > 0,
+)
 
 const submit = async () => {
   errorMessage.value = ''
@@ -59,6 +75,12 @@ const submit = async () => {
 
   if (!agreeToTerms.value) {
     errorMessage.value = 'You must agree to the Terms of Service.'
+    return
+  }
+
+  if (Number.parseInt(captchaInput.value, 10) !== captchaA.value + captchaB.value) {
+    errorMessage.value = 'Captcha answer is incorrect.'
+    generateCaptcha()
     return
   }
 
@@ -97,6 +119,7 @@ const submit = async () => {
     setTimeout(() => {
       router.push('/')
     }, 2000)
+    generateCaptcha()
   }
   catch (err) {
     const message =
@@ -168,6 +191,11 @@ const submit = async () => {
             </li>
           </ul>
         </div>
+        <VTextField v-model="captchaInput" type="number" required class="mb-4">
+          <template #label>
+            What is {{ captchaA }} + {{ captchaB }}? <span class="text-error">*</span>
+          </template>
+        </VTextField>
         <VCheckbox v-model="agreeToTerms" required class="mb-4">
           <template #label>
             <span>
