@@ -32,6 +32,10 @@ const passwordHasSpecial = computed(() => /[^A-Za-z0-9]/.test(password.value))
 const passwordCategoriesValid = computed(() =>
   [passwordHasLower.value, passwordHasUpper.value, passwordHasNumber.value, passwordHasSpecial.value].filter(Boolean).length >= 3,
 )
+const requiredFieldsFilled = computed(() =>
+  [fullName, email, affiliation, password, confirmPassword].every(field => field.value.trim().length > 0),
+)
+const canRegister = computed(() => requiredFieldsFilled.value && agreeToTerms.value)
 
 const submit = async () => {
   errorMessage.value = ''
@@ -196,7 +200,7 @@ const submit = async () => {
           block
           size="large"
           class="mb-4 py-4"
-          :disabled="!agreeToTerms"
+          :disabled="!canRegister"
         >
           <template #prepend>
           <VIcon icon="bx-user-plus" />
