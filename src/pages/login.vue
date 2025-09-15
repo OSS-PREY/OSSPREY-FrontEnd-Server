@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
@@ -94,7 +95,15 @@ const forgotPassword = () => {
       <VCardSubtitle class="text-center mb-8">Sign in to continue to OSSPREY</VCardSubtitle>
       <VForm @submit.prevent="submit">
         <VTextField v-model="email" label="Email" type="email" required class="mb-4" />
-        <VTextField v-model="password" label="Password" type="password" required class="mb-4" />
+        <VTextField
+          v-model="password"
+          label="Password"
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+          @click:append-inner="showPassword = !showPassword"
+          required
+          class="mb-4"
+        />
         <VAlert
           v-if="successMessage"
           type="success"
