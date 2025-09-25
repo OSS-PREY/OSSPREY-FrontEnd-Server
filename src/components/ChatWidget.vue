@@ -72,7 +72,7 @@ const handleSubmit = () => {
       variant="flat"
       @click="toggleChat"
     >
-      <VAvatar class="chat-toggle-avatar" size="44">
+      <VAvatar class="chat-toggle-avatar" size="52">
         <VImg :src="chatButtonImage" alt="OSSPREY chat" cover />
       </VAvatar>
     </VBtn>
@@ -164,8 +164,8 @@ const handleSubmit = () => {
 }
 
 .chat-toggle-btn {
-  width: 4rem;
-  height: 4rem;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: 50%;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
@@ -293,8 +293,8 @@ const handleSubmit = () => {
   }
 
   .chat-toggle-btn {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 3.75rem;
+    height: 3.75rem;
   }
 }
 </style>
