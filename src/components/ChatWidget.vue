@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, ref, watch } from 'vue';
-import logo from '@/assets/images/logo.svg';
+const chatButtonImage =
+  'https://raw.githubusercontent.com/OSS-PREY/OSSPREY-Website/refs/heads/main/static/images/favicon.ico';
 
 const isOpen = ref(false);
 const newMessage = ref('');
@@ -72,7 +73,7 @@ const handleSubmit = () => {
       @click="toggleChat"
     >
       <VAvatar class="chat-toggle-avatar" size="44">
-        <VImg :src="logo" alt="OSSPREY chat" cover />
+        <VImg :src="chatButtonImage" alt="OSSPREY chat" cover />
       </VAvatar>
     </VBtn>
 
