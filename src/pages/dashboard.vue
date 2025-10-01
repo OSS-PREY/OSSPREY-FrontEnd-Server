@@ -16,6 +16,8 @@ import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue';
 import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue';
 import Committers from '@/views/dashboard/Committers.vue';
 import Title from '@/views/dashboard/Title.vue';
+import ChatBot from '@/views/dashboard/ChatBot.vue'; 
+
 const isCollapsed = ref(true); // Manage collapse state here
 
 // Function to toggle the collapse state for all cards
@@ -147,4 +149,7 @@ const toggleCollapse = () => {
       </VRow>
     </div>
   </transition>
+
+  <!-- ChatBot Component -->
+  <ChatBot />
 </template>
