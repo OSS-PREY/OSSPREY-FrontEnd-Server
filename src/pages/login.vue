@@ -53,6 +53,7 @@ const submit = async () => {
     }
     const userData = data.user || { name: data.name || email.value, email: email.value }
     localStorage.setItem('user', JSON.stringify(userData))
+    window.dispatchEvent(new Event('user-auth-changed'))
 
     fetch(`${API_BASE}/api/track_login`, {
       method: 'POST',
