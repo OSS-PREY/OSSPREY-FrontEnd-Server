@@ -58,7 +58,7 @@ const logout = async () => {
 
   localStorage.removeItem('user');
   user.value = null;
-  router.push('/login');
+  router.push('/');
 };
 </script>
 
