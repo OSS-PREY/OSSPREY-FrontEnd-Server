@@ -1,5 +1,6 @@
 <script setup>
 import NavbarActions from '@/layouts/components/NavbarActions.vue';
+import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 import ReposTable from '@/views/repos/ReposTable.vue';
 
 const pendingRepos = [
@@ -7,18 +8,21 @@ const pendingRepos = [
     repoName: 'ossprey/metrics-pipeline',
     startTime: '2025-10-02 10:12',
     completionTime: null,
+    estimatedProcessingTime: '17 minutes 45 seconds',
     status: 'pending',
   },
   {
     repoName: 'apache/incubator-ex',
     startTime: '2025-10-02 09:55',
     completionTime: null,
+    estimatedProcessingTime: '22 minutes 5 seconds',
     status: 'pending',
   },
   {
     repoName: 'eclipse/foundation-tools',
     startTime: '2025-10-01 21:18',
     completionTime: null,
+    estimatedProcessingTime: '31 minutes 12 seconds',
     status: 'pending',
   },
 ];
@@ -47,30 +51,39 @@ const processedRepos = [
 
 <template>
   <VContainer fluid class="py-6 repos-page">
-    <div class="repos-header">
-      <h1 class="text-h4 font-weight-bold mb-0">All Repos</h1>
+    <header class="repos-topbar" role="banner">
+      <NavbarBranding />
       <NavbarActions />
-    </div>
+    </header>
 
-    <ReposTable title="Pending Repos" :rows="pendingRepos" class="mt-8" />
-    <ReposTable title="Processed Repos" :rows="processedRepos" class="mt-8" />
+    <h1 class="text-h4 font-weight-bold mt-8">All Repos</h1>
+
+    <ReposTable
+      title="Pending Repos"
+      :rows="pendingRepos"
+      time-column-label="Estimated Processing Time"
+      time-field="estimatedProcessingTime"
+      class="mt-8"
+    />
+    <ReposTable
+      title="Processed Repos"
+      :rows="processedRepos"
+      class="mt-8"
+    />
   </VContainer>
 </template>
 
 <style scoped>
 .repos-page {
-  max-width: 1200px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
-.repos-header {
+.repos-topbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-}
-
-.repos-header h1 {
-  flex: 1 1 auto;
+  gap: 1.5rem;
 }
 </style>

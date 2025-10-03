@@ -1,23 +1,6 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
 import NavbarActions from '@/layouts/components/NavbarActions.vue';
-
-// Reactive variable to track viewport width
-const isMobileView = ref(window.innerWidth < 768);
-
-// Function to update viewport state
-const updateViewport = () => {
-  isMobileView.value = window.innerWidth < 768;
-};
-
-// Add and remove event listener on component lifecycle
-onMounted(() => {
-  window.addEventListener('resize', updateViewport);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateViewport);
-});
+import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 </script>
 
 <template>
@@ -26,15 +9,8 @@ onUnmounted(() => {
       
       <!-- Logo + Title -->
       <div class="title-container">
-        <VCardTitle class="text-primary font-weight-bold d-flex align-center mb-0">
-          <img
-            src="/ospex-logo.png"
-            alt="OSPEx Logo"
-            style="height: 32px; width: auto; margin-right: 10px;"
-          />
-
-          <span v-if="isMobileView">OSSPREY</span>
-          <span v-else>OSSPREY (Open Source Software PRojEct sustainabilitY tracker)</span>
+        <VCardTitle class="d-flex align-center mb-0">
+          <NavbarBranding />
         </VCardTitle>
       </div>
 

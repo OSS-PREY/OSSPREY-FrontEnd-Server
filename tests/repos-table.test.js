@@ -45,10 +45,12 @@ test('ReposTable sorts rows by most recent start time', async () => {
 test('ReposTable template includes headers, empty state, and pending dash copy', async () => {
   const { descriptor } = await loadComponent('src/views/repos/ReposTable.vue');
   const template = descriptor.template?.content ?? '';
+  const script = descriptor.scriptSetup?.content ?? '';
 
   assert.ok(template.includes('Repo Name'), 'Repo Name header should be present');
   assert.ok(template.includes('Task Initiation Time'), 'Task Initiation Time header should be present');
-  assert.ok(template.includes('Completion Time'), 'Completion Time header should be present');
+  assert.ok(template.includes('{{ timeColumnLabel }}'), 'Dynamic time column label should be present');
   assert.ok(template.includes('No items to show.'), 'Empty state copy should be present');
-  assert.ok(template.includes("completionTime ?? '—'"), 'Pending completion should render as an em dash');
+  assert.ok(template.includes('resolveTimeValue(row)'), 'Resolver helper should be wired into the template');
+  assert.ok(script.includes("return '—'"), 'Pending completion should render as an em dash');
 });
