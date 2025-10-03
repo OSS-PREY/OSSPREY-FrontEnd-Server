@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port 5050",
     "lint": "eslint . -c .eslintrc.cjs --ext .ts,.js,.cjs,.vue,.tsx,.jsx",
+    "test": "node --test",
     "build:icons": "tsx src/plugins/iconify/build-icons.js",
     "postinstall": "npm run build:icons"
   },

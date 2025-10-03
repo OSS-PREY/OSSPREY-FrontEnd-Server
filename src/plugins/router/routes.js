@@ -26,4 +26,15 @@ export const routes = [
       },
     ],
   },
+  {
+    path: '/repos',
+    component: () => import('@/layouts/default.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Repos',
+        component: () => import('@/pages/repos.vue'),
+      },
+    ],
+  },
 ];
