@@ -59,7 +59,7 @@ const logout = async () => {
   localStorage.removeItem('user');
   window.dispatchEvent(new Event('user-auth-changed'));
   user.value = null;
-  router.push('/');
+  router.replace({ path: '/', query: { message: 'You have been logged out.' } });
 };
 </script>
 
