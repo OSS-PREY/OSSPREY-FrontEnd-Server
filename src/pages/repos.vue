@@ -56,7 +56,10 @@ const processedRepos = [
       <NavbarActions />
     </header>
 
-    <h1 class="text-h4 font-weight-bold mt-8">All Repos</h1>
+    <div class="repos-heading mt-8">
+      <h1 class="text-h4 font-weight-bold mb-0">All Repos</h1>
+      <p class="repos-heading__note">This page is currently under development.</p>
+    </div>
 
     <ReposTable
       title="Pending Repos"
@@ -85,5 +88,18 @@ const processedRepos = [
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
+}
+
+.repos-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.repos-heading__note {
+  font-size: 1.1rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin: 0;
 }
 </style>
