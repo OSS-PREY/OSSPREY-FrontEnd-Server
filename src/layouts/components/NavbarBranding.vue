@@ -49,5 +49,7 @@ onUnmounted(() => {
   font-weight: 600;
   color: rgb(var(--v-theme-primary));
   line-height: 1.25;
+  font-size: 1.25rem;
+  text-align: center;
 }
 </style>
