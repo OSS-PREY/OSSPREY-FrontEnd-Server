@@ -99,7 +99,7 @@ const processedRepos = [
 
 .repos-heading__note {
   font-size: 1.1rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: rgb(var(--v-theme-error));
   margin: 0;
 }
 </style>
