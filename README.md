@@ -1,6 +1,6 @@
 # OSSPREY Dashboard
 
-The **Open Source Sustainability Explorer (OSPEX)** dashboard is a Vue.js-based application that provides visual insights into open-source projects, offering metrics and recommendations to improve project health. This guide will help you set up and use the dashboard effectively.
+The **Open Source Software PRojEct sustainabilitY tracker (OSSPREY)** dashboard is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve longterm viability. 
 
 ## Key Functionalities
 
@@ -50,8 +50,8 @@ TypeScript shims `.vue` imports to a generic Vue component type. For enhanced pr
 2. Clone the repository:
 
    ```sh
-   git clone https://github.com/priyalsoni15/OSS-Project-Explorer.git
-   cd OSS-Project-Explorer
+   git clone https://github.com/OSS-PREY/OSSPREY-FrontEnd-Server.git
+   cd OSSPREY-FrontEnd-Server
    ```
 
 3. **Install Dependencies**:
