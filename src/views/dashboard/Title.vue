@@ -1,6 +1,6 @@
 <script setup>
-import NavbarActions from '@/layouts/components/NavbarActions.vue'
-import NavbarBranding from '@/layouts/components/NavbarBranding.vue'
+import NavbarActions from '@/layouts/components/NavbarActions.vue';
+import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 </script>
 
 <template>
