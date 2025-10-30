@@ -1,44 +1,52 @@
 <script setup>
-import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
-import AllReposButton from '@/layouts/components/AllReposButton.vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
+import AllReposButton from '@/layouts/components/AllReposButton.vue'
 
-const user = ref(null);
-const router = useRouter();
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
+const router = useRouter()
+const user = ref(null)
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
 const loadUserFromStorage = () => {
+  if (typeof window === 'undefined') return
+
   try {
-    const stored = localStorage.getItem('user');
-    user.value = stored ? JSON.parse(stored) : null;
+    const stored = window.localStorage.getItem('user')
+    user.value = stored ? JSON.parse(stored) : null
   }
   catch {
-    user.value = null;
+    user.value = null
   }
-};
+}
 
 const handleStorage = event => {
   if (!event || event.key === 'user')
-    loadUserFromStorage();
-};
+    loadUserFromStorage()
+}
 
 onMounted(() => {
-  loadUserFromStorage();
-  window.addEventListener('storage', handleStorage);
-  window.addEventListener('user-auth-changed', loadUserFromStorage);
-});
+  if (typeof window === 'undefined') return
+
+  loadUserFromStorage()
+  window.addEventListener('storage', handleStorage)
+  window.addEventListener('user-auth-changed', loadUserFromStorage)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('storage', handleStorage);
-  window.removeEventListener('user-auth-changed', loadUserFromStorage);
-});
+  if (typeof window === 'undefined') return
 
-const userName = computed(() => user.value?.name || user.value?.email || '');
+  window.removeEventListener('storage', handleStorage)
+  window.removeEventListener('user-auth-changed', loadUserFromStorage)
+})
+
+const userName = computed(() => user.value?.name || user.value?.email || '')
 
 const logout = async () => {
-  const email = user.value?.email;
+  const email = user.value?.email
 
   try {
-    await fetch(`${API_BASE}/api/logout`, { method: 'POST' });
+    await fetch(`${API_BASE}/api/logout`, { method: 'POST' })
   }
   catch {
     // ignore errors
@@ -52,15 +60,19 @@ const logout = async () => {
       },
       body: JSON.stringify({ user_email: email }),
     }).catch(err => {
-      console.error('Failed to track logout:', err);
-    });
+      console.error('Failed to track logout:', err)
+    })
   }
 
-  localStorage.removeItem('user');
-  window.dispatchEvent(new Event('user-auth-changed'));
-  user.value = null;
-  router.push('/');
-};
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem('user')
+    window.dispatchEvent(new Event('user-auth-changed'))
+  }
+
+  user.value = null
+  // Use replace instead of push to prevent back button from showing logged-in page
+  router.replace({ path: '/', query: { message: 'You have been logged out.' } })
+}
 </script>
 
 <template>

@@ -1,23 +1,25 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue'
 
-const isMobileView = ref(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+const isMobileView = ref(typeof window !== 'undefined' ? window.innerWidth < 768 : false)
 
 const updateViewport = () => {
   if (typeof window === 'undefined')
-    return;
+    return
 
-  isMobileView.value = window.innerWidth < 768;
-};
+  isMobileView.value = window.innerWidth < 768
+}
 
 onMounted(() => {
-  updateViewport();
-  window.addEventListener('resize', updateViewport);
-});
+  updateViewport()
+  if (typeof window !== 'undefined')
+    window.addEventListener('resize', updateViewport)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateViewport);
-});
+  if (typeof window !== 'undefined')
+    window.removeEventListener('resize', updateViewport)
+})
 </script>
 
 <template>

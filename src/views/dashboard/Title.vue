@@ -6,15 +6,12 @@ import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 <template>
   <VCard class="statistics-card">
     <VCardText class="header-container" style="height: 80px;">
-      
-      <!-- Logo + Title -->
       <div class="title-container">
         <VCardTitle class="d-flex align-center mb-0">
           <NavbarBranding />
         </VCardTitle>
       </div>
 
-      <!-- Action Icons -->
       <div class="actions-container">
         <NavbarActions />
       </div>
