@@ -17,6 +17,7 @@
     "@fortawesome/fontawesome-free": "^6.7.1",
     "@mdi/font": "^7.4.47",
     "@mdi/js": "^7.4.47",
+    "@react-oauth/google": "^0.12.2",
     "@vueuse/core": "^10.5.0",
     "@vueuse/math": "^10.5.0",
     "apexcharts": "^3.49.2",
@@ -33,6 +34,7 @@
     "vue-prism-component": "^2.0.0",
     "vue-router": "^4.3.0",
     "vue3-apexcharts": "^1.5.3",
+    "vue3-google-login": "^2.0.34",
     "vue3-perfect-scrollbar": "^1.6.1",
     "vuetify": "3.6.1",
     "webfontloader": "^1.6.28"
