@@ -7,6 +7,7 @@ export const routes = [
         path: '',
         name: 'Login',
         component: () => import('@/pages/login.vue'),
+        alias: '/login',
       },
       {
         path: 'register',
