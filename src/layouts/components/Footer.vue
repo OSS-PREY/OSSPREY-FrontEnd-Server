@@ -57,7 +57,7 @@ onBeforeUnmount(() => {
     </span>
 
     <span class="footer-text">
-      OSSPREY Views: {{ viewCountText }}
+      <strong>OSSPREY Views</strong>: {{ viewCountText }}
     </span>
   </div>
 </template>
