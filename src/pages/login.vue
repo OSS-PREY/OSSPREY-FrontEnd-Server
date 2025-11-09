@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { recordView } from '@/utils/viewTracking'
 
 const email = ref('')
 const password = ref('')
@@ -15,6 +16,8 @@ const route = useRoute()
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
 
 onMounted(() => {
+  recordView()
+
   const msg = typeof route.query.message === 'string' ? route.query.message : ''
   if (msg) successMessage.value = msg
   // Clear the query so the message doesn't persist on navigation

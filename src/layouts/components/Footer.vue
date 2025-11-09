@@ -1,7 +1,32 @@
+<script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { VIEW_RECORDED_EVENT, fetchViewCount } from '@/utils/viewTracking'
+
+const viewCountText = ref('Loading...')
+
+const loadViewCount = async () => {
+  const count = await fetchViewCount()
+  viewCountText.value = typeof count === 'number' ? count.toLocaleString() : 'N/A'
+}
+
+const handleViewRecorded = () => {
+  loadViewCount()
+}
+
+onMounted(() => {
+  loadViewCount()
+  window.addEventListener(VIEW_RECORDED_EVENT, handleViewRecorded)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(VIEW_RECORDED_EVENT, handleViewRecorded)
+})
+</script>
+
 <template>
   <div class="footer-container">
     <span class="footer-text">
-      Developed at the 
+      Developed at the
       <a href="https://decallab.cs.ucdavis.edu/join/" target="_blank" rel="noopener noreferrer" class="footer-link">DECAL Lab</a>, 
       in the CS Department, UC Davis, by 
       <strong>
@@ -29,6 +54,10 @@
 
     <span class="footer-text">
       OSSPREY is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability. [<a href="https://oss-prey.github.io/OSSPREY-Website/" target="_blank" rel="noopener noreferrer" class="footer-link">Website</a>] [<a href="https://github.com/orgs/OSS-PREY/repositories" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>]
+    </span>
+
+    <span class="footer-text">
+      OSSPREY Views: {{ viewCountText }}
     </span>
   </div>
 </template>
