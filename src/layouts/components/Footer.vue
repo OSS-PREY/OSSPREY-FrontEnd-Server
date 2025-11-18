@@ -1,12 +1,18 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { VIEW_RECORDED_EVENT, fetchViewCount } from '@/utils/viewTracking'
+import { VIEW_RECORDED_EVENT, fetchUserCount, fetchViewCount } from '@/utils/viewTracking'
 
 const viewCountText = ref('Loading...')
+const userCountText = ref('Loading...')
 
 const loadViewCount = async () => {
   const count = await fetchViewCount()
   viewCountText.value = typeof count === 'number' ? count.toLocaleString() : 'N/A'
+}
+
+const loadUserCount = async () => {
+  const count = await fetchUserCount()
+  userCountText.value = typeof count === 'number' ? count.toLocaleString() : 'N/A'
 }
 
 const handleViewRecorded = () => {
@@ -15,6 +21,7 @@ const handleViewRecorded = () => {
 
 onMounted(() => {
   loadViewCount()
+  loadUserCount()
   window.addEventListener(VIEW_RECORDED_EVENT, handleViewRecorded)
 })
 
@@ -56,8 +63,10 @@ onBeforeUnmount(() => {
       OSSPREY is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability. [<a href="https://oss-prey.github.io/OSSPREY-Website/" target="_blank" rel="noopener noreferrer" class="footer-link">Website</a>] [<a href="https://github.com/orgs/OSS-PREY/repositories" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>]
     </span>
 
-    <span class="footer-text">
+    <span class="footer-text footer-metrics">
       <strong>OSSPREY Views</strong>: {{ viewCountText }}
+      <span aria-hidden="true" class="footer-metrics__separator">|</span>
+      <strong>Users</strong>: {{ userCountText }}
     </span>
   </div>
 </template>
@@ -91,5 +100,17 @@ onBeforeUnmount(() => {
 
 .footer-link:hover {
   text-decoration: underline;
+}
+
+.footer-metrics {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.footer-metrics__separator {
+  opacity: 0.5;
 }
 </style>

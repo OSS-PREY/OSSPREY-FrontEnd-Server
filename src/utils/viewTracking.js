@@ -49,3 +49,31 @@ export const fetchViewCount = async () => {
     return null
   }
 }
+
+export const fetchUserCount = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/users`)
+
+    if (!response.ok) {
+      console.error(`Failed to fetch user count: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json().catch(() => null)
+
+    if (!data || !Array.isArray(data.users))
+      return null
+
+    const uniqueEmails = new Set(
+      data.users
+        .map((user) => (user && typeof user.email === 'string' ? user.email.trim().toLowerCase() : null))
+        .filter(Boolean),
+    )
+
+    return uniqueEmails.size
+  }
+  catch (error) {
+    console.error('Failed to fetch user count:', error)
+    return null
+  }
+}
