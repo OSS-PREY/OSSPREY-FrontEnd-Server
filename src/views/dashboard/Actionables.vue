@@ -34,7 +34,7 @@
 
     <!-- Table for Actionables -->
     <VCardText>
-      <div class="table-container">
+      <div v-if="hasActionables" class="table-container">
         <table class="table table-bordered">
           <tbody>
             <template v-for="(actionable, index) in sortedActionables" :key="index">
@@ -57,6 +57,9 @@
             </template>
           </tbody>
         </table>
+      </div>
+      <div v-else-if="shouldShowActionableEmptyState" class="empty-state">
+        No data available for this month.
       </div>
     </VCardText>
   </VCard>
@@ -124,6 +127,13 @@ const sortedActionables = computed(() => {
 
 });
 // ---------------------------------------------------------------------------
+
+const hasActionables = computed(() => Array.isArray(sortedActionables.value) && sortedActionables.value.length > 0);
+
+const shouldShowActionableEmptyState = computed(() => {
+  const hasMonth = projectStore.selectedMonth !== null && projectStore.selectedMonth !== undefined;
+  return hasMonth && !hasActionables.value;
+});
 </script>
 
 <style scoped>
@@ -226,5 +236,15 @@ const sortedActionables = computed(() => {
 .table-container {
   overflow-x: auto;
   padding-bottom: 10px;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  font-weight: 500;
+  color: #6b6b6b;
+  text-align: center;
 }
 </style>

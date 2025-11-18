@@ -13,13 +13,8 @@
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
       <!-- No Data Message -->
-      <div
-        v-if="!projectStore.socialNetLoading && !projectStore.socialNetError &&
-             (!projectStore.socialNetData || projectStore.socialNetData.length === 0) &&
-             projectStore.selectedProject && projectStore.selectedMonth"
-        class="overlay"
-      >
-        No social network data available for the selected month.
+      <div v-if="shouldShowSocialNoData" class="overlay">
+        No data available for this month.
       </div>
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
@@ -55,6 +50,15 @@ const currentSocialData = computed(() => {
     }
   }
   return [];
+});
+
+const shouldShowSocialNoData = computed(() => {
+  const hasProject = !!projectStore.selectedProject;
+  const hasMonth = projectStore.selectedMonth !== null && projectStore.selectedMonth !== undefined;
+  if (!hasProject || !hasMonth) return false;
+  if (projectStore.socialNetLoading || projectStore.socialNetError) return false;
+  const data = currentSocialData.value;
+  return !data || data.length === 0;
 });
 
 function reduceTheEmails(inputArray) {

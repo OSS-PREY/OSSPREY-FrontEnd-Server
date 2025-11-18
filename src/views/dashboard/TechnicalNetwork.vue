@@ -13,13 +13,8 @@
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
       <!-- No Data Message -->
-      <div
-        v-if="!projectStore.techNetLoading && !projectStore.techNetError &&
-             (!projectStore.techNetData || projectStore.techNetData.length === 0) &&
-             projectStore.selectedProject && projectStore.selectedMonth"
-        class="overlay"
-      >
-        No technical network data available for the selected month.
+      <div v-if="shouldShowTechNoData" class="overlay">
+        No data available for this month.
       </div>
       <!-- Prompt to Select a Project -->
       <div v-if="!projectStore.selectedProject" class="overlay">
@@ -30,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import * as d3 from 'd3';
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import { useProjectStore } from '@/stores/projectStore';
@@ -55,6 +50,15 @@ const currentTechData = computed(() => {
     }
   }
   return [];
+});
+
+const shouldShowTechNoData = computed(() => {
+  const hasProject = !!projectStore.selectedProject;
+  const hasMonth = projectStore.selectedMonth !== null && projectStore.selectedMonth !== undefined;
+  if (!hasProject || !hasMonth) return false;
+  if (projectStore.techNetLoading || projectStore.techNetError) return false;
+  const data = currentTechData.value;
+  return !data || data.length === 0;
 });
 
 /**
