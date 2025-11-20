@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 const fullName = ref('')
 const email = ref('')
@@ -36,7 +37,7 @@ const generateCaptcha = () => {
 // Initialize captcha on component setup
 generateCaptcha()
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+const API_BASE = getApiBaseUrl()
 
 const passwordLengthValid = computed(() => password.value.length >= 8)
 const passwordHasLower = computed(() => /[a-z]/.test(password.value))

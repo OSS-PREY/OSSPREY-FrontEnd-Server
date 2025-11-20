@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { recordView } from '@/utils/viewTracking'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 const email = ref('')
 const password = ref('')
@@ -13,7 +14,7 @@ const successMessage = ref('')
 const router = useRouter()
 const route = useRoute()
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+const API_BASE = getApiBaseUrl()
 
 // ------------------ MOUNT ------------------
 onMounted(() => {

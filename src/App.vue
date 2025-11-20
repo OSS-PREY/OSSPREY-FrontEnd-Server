@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import ChatWidget from '@/components/ChatWidget.vue';
+import { getApiBaseUrl } from '@/utils/apiBase';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,7 +18,7 @@ let warningTimeoutId = null;
 let inactivityTimeoutId = null;
 let warningIntervalId = null;
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
+const API_BASE = getApiBaseUrl();
 
 const updateAuthenticationState = () => {
   try {

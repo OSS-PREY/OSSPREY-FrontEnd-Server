@@ -1,10 +1,11 @@
 <script setup>
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
 import AllReposButton from '@/layouts/components/AllReposButton.vue';
+import { getApiBaseUrl } from '@/utils/apiBase';
 
 const user = ref(null);
 const router = useRouter();
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
+const API_BASE = getApiBaseUrl();
 
 const loadUserFromStorage = () => {
   try {

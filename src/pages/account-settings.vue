@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { recordView } from '@/utils/viewTracking'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+const API_BASE = getApiBaseUrl()
 
 const user = ref(null)
 const editDialog = ref(false)
