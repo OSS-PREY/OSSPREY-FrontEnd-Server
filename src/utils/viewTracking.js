@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '')
+import { getApiBaseUrl } from '@/utils/apiBase'
+
+const API_BASE = getApiBaseUrl()
 
 export const VIEW_RECORDED_EVENT = 'ossprey-view-recorded'
 

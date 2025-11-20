@@ -1,10 +1,11 @@
 // src/stores/projectStore.js
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
+import { getApiBaseUrl } from '@/utils/apiBase';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
-  const baseUrl = ref('https://ossprey.ngrok.app/');  
+  const baseUrl = ref(getApiBaseUrl());
 
   const ngrokFetch = async (url, options = {}) => {
     const headers = {

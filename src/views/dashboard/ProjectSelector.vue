@@ -145,6 +145,7 @@
 <script setup>
 import { onMounted, watch, computed, ref } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
+import { getApiBaseUrl } from '@/utils/apiBase';
 const projectStore = useProjectStore();
 
 // Data source: GitHub only (foundation option hidden for now)
@@ -175,7 +176,7 @@ const handleRepoSelection = (val) => {
     githubRepoLink.value = '';
 };
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://ossprey.ngrok.app').replace(/\/$/, '');
+const API_BASE = getApiBaseUrl();
 const userRepos = ref([]);
 
 const fetchUserRepos = async () => {
