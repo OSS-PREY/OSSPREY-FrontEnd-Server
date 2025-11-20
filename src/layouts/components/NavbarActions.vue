@@ -70,7 +70,13 @@ const logout = async () => {
 
     <VTooltip v-if="user" :text="userName" location="bottom">
       <template #activator="{ props }">
-        <VBtn v-bind="props" icon class="ms-2" aria-label="User account">
+        <VBtn
+          v-bind="props"
+          icon
+          class="ms-2"
+          aria-label="User account"
+          @click="router.push('/profile')"
+        >
           <VIcon icon="bx-user" />
         </VBtn>
       </template>

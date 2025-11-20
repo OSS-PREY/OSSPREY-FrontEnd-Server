@@ -49,4 +49,15 @@ export const routes = [
       },
     ],
   },
+  {
+    path: '/profile',
+    component: () => import('@/layouts/default.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Profile',
+        component: () => import('@/pages/profile.vue'),
+      },
+    ],
+  },
 ];
