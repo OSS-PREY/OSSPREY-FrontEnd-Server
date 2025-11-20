@@ -67,3 +67,43 @@
     border-radius: 0.375rem !important;
   }
 }
+
+// 👉 Hover glow for rectangular tabs
+.v-tabs {
+  .v-tab.v-btn {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.25s ease, color 0.2s ease;
+
+    // Halo effect that expands on hover
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(var(--v-theme-primary), 0.14), transparent 55%),
+        radial-gradient(circle at 80% 70%, rgba(var(--v-theme-secondary), 0.12), transparent 50%);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .v-btn__content {
+      position: relative;
+      z-index: 1;
+    }
+
+    &:hover {
+      color: rgb(var(--v-theme-primary));
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(var(--v-theme-primary), 0.18);
+
+      &::before {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  }
+}
