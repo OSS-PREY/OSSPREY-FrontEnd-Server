@@ -77,11 +77,6 @@
               </VBtn>
               <input type="file" ref="fileInput" @change="handleFileSelect" webkitdirectory style="display: none;" />
               -->
-              <div class="promo-text mb-4">
-                <p class="promo-title">🌱 Is Your GitHub Project Built to Last?</p>
-                <p>Explore how your project has evolved, how it stands today, and where it's headed next.</p>
-                <p class="promo-instruction">Select or paste your GitHub repository URL below and let <strong>OSSPREY</strong> generate instant insights and actionable forecasts.</p>
-              </div>
               <VSelect
                 v-model="selectedRepoOption"
                 :items="repoOptions"
@@ -514,23 +509,6 @@ onMounted(() => {
   margin-top: 20px;
   font-style: italic;
   color: grey;
-}
-
-.promo-text {
-  text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.9);
-}
-
-.promo-title {
-  color: #4caf50;
-  font-weight: 600;
-  font-size: 1.2rem;
-  margin-bottom: 4px;
-}
-
-.promo-instruction {
-  color: #1976d2;
-  font-weight: 500;
 }
 
 .custom-repo-option {
