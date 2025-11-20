@@ -38,4 +38,15 @@ export const routes = [
       },
     ],
   },
+  {
+    path: '/account-settings',
+    component: () => import('@/layouts/default.vue'),
+    children: [
+      {
+        path: '',
+        name: 'AccountSettings',
+        component: () => import('@/pages/account-settings.vue'),
+      },
+    ],
+  },
 ];
