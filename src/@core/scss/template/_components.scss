@@ -68,26 +68,46 @@
   }
 }
 
-// 👉 Hover glow for rectangular tabs
+// 👉 Hover accent for rectangular tabs
 .v-tabs {
   .v-tab.v-btn {
     position: relative;
     overflow: hidden;
     border-radius: 0.5rem;
-    transition: transform 0.2s ease, box-shadow 0.25s ease, color 0.2s ease;
+    background-color: rgba(var(--v-theme-surface), 0.35);
+    transition: transform 0.22s ease, box-shadow 0.26s ease, background-color 0.2s ease, color 0.18s ease;
 
-    // Halo effect that expands on hover
+    // Floating sheen that sweeps upward on hover
     &::before {
       content: "";
       position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(var(--v-theme-primary), 0.14), transparent 55%),
-        radial-gradient(circle at 80% 70%, rgba(var(--v-theme-secondary), 0.12), transparent 50%);
+      inset: 10% 8% 14%;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.14), rgba(var(--v-theme-secondary), 0.12));
+      filter: blur(8px);
       opacity: 0;
-      transform: scale(0.9);
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      transform: translateY(14px) scale(0.9);
+      transition: opacity 0.3s ease, transform 0.3s ease;
       pointer-events: none;
       z-index: 0;
+    }
+
+    // Underline ribbon that stretches out on hover
+    &::after {
+      content: "";
+      position: absolute;
+      left: 14%;
+      right: 14%;
+      bottom: 0.35rem;
+      height: 0.14rem;
+      background: linear-gradient(90deg, transparent, rgba(var(--v-theme-primary), 0.65), rgba(var(--v-theme-secondary), 0.55), transparent);
+      border-radius: 99px;
+      opacity: 0;
+      transform: scaleX(0.65);
+      transition: opacity 0.26s ease, transform 0.26s ease;
+      pointer-events: none;
+      z-index: 0;
+      box-shadow: 0 0.5rem 1.25rem rgba(var(--v-theme-primary), 0.18);
     }
 
     .v-btn__content {
@@ -97,12 +117,18 @@
 
     &:hover {
       color: rgb(var(--v-theme-primary));
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(var(--v-theme-primary), 0.18);
+      background-color: rgba(var(--v-theme-surface), 0.58);
+      transform: translateY(-3px);
+      box-shadow: 0 14px 34px rgba(var(--v-theme-primary), 0.16);
 
       &::before {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0) scale(1);
+      }
+
+      &::after {
+        opacity: 1;
+        transform: scaleX(1);
       }
     }
   }
