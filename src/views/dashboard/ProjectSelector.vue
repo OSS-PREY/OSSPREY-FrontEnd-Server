@@ -1,5 +1,5 @@
 <template>
-  <VCard class="text-center text-sm-start" style="height: 450px;">
+  <VCard class="text-center text-sm-start hover-elevate" style="height: 450px;">
     <VRow no-gutters>
       <VCol cols="12" sm="12">
         <!-- Header -->

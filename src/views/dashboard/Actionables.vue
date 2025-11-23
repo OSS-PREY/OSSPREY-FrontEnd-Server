@@ -1,6 +1,6 @@
 <!-- src/components/Actionables.vue -->
 <template>
-  <VCard class="text-center text-sm-start project-actionables-card">
+  <VCard class="text-center text-sm-start project-actionables-card hover-elevate">
     <VCardText>
       <div class="section-header">
         <h2>Actionable Recommendations</h2>

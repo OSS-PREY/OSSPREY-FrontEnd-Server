@@ -1,7 +1,7 @@
 <!-- src/components/NumberOfEmails.vue -->
 
 <template>
-  <VCard class="mx-auto" style="box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); height: 150px;">
+  <VCard class="mx-auto hover-elevate" style="box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); height: 150px;">
     <VCardText>
       <VRow>
         <VCol cols="auto">

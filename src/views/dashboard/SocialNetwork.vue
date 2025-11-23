@@ -1,5 +1,5 @@
 <template>
-  <VCard class="text-center text-sm-start social-net-card">
+  <VCard class="text-center text-sm-start social-net-card hover-elevate">
     <!-- Header -->
     <VCardItem class="pb-3">
       <h2 class="section-header">Social Network</h2>

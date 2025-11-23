@@ -20,7 +20,7 @@ const toggleCollapse = () => {
 </script>
 
 <template>
-  <VCard class="statistics-card">
+  <VCard class="statistics-card hover-elevate">
     <!-- Card Header with Collapse Button -->
     <VCardText class="text-center d-flex align-center justify-center" style="height: 100%;">
       <VRow class="w-100 align-center justify-center">

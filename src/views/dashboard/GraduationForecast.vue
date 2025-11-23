@@ -1,6 +1,6 @@
 <!-- src/components/Graduationforecast.vue projectStore.selectedProject.start_date-->
 <template>
-  <VCard>
+  <VCard class="hover-elevate">
     <!-- Tabs Section -->
     <VCardText>
       <div class="section-header">
