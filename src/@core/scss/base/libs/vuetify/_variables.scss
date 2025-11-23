@@ -42,7 +42,7 @@ $card-transition-property-custom: box-shadow, opacity;
   // 👉 Tooltip
   $tooltip-background-color: rgba(59, 55, 68, 0.9) !default,
   $tooltip-text-color: rgb(var(--v-theme-on-primary)) !default,
-  $tooltip-font-size: 0.75rem !default,
+  $tooltip-font-size: 0.9375rem !default,
 
   $button-icon-density: ("default": 2, "comfortable": 0, "compact": -1 ) !default,
 
