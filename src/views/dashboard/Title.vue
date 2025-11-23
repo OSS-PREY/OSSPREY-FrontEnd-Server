@@ -4,7 +4,7 @@ import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 </script>
 
 <template>
-  <VCard class="statistics-card">
+  <VCard class="statistics-card hover-elevate">
     <VCardText class="header-container" style="height: 80px;">
       
       <!-- Logo + Title -->

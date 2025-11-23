@@ -1,6 +1,6 @@
 <!-- src/components/TechnicalNetworkNode.vue -->
 <template>
-  <VCard class="text-center text-sm-start" style="height: 120px;">
+  <VCard class="text-center text-sm-start hover-elevate" style="height: 120px;">
     <VRow no-gutters style="height: 100%;">
       <VCol cols="12" sm="12" order="2" order-sm="1">
         <!-- Header -->

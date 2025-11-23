@@ -1,1 +1,26 @@
-// Write your overrides
+// Global interaction polish
+
+.hover-elevate {
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  border: 1px solid transparent;
+}
+
+.hover-elevate:hover {
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
+  border-color: color-mix(in srgb, var(--v-theme-primary) 30%, transparent);
+  background-color: color-mix(in srgb, var(--v-theme-surface) 88%, var(--v-theme-primary) 12%);
+  transform: translateY(-2px);
+}
+
+.hover-tab,
+.v-tab {
+  transition: background-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
+  border-radius: 999px;
+}
+
+.hover-tab:hover,
+.v-tab:hover {
+  background-color: color-mix(in srgb, var(--v-theme-surface) 86%, var(--v-theme-primary) 14%);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  color: var(--v-theme-primary);
+}
