@@ -4,7 +4,10 @@
       <VCol cols="12" sm="12">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <h2 class="section-header">Project Details</h2>
+          <DashboardPanelHeader
+            title="Project Details"
+            tooltip="Displays project metadata such as name, sponsoring organization, GitHub URL, and popularity metrics (stars, forks, watchers). Provides contextual grounding for interpreting the project’s sustainability and activity patterns."
+          />
         </VCardItem>
 
         <VCardText class="h-100">
@@ -190,6 +193,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 
 const projectStore = useProjectStore();

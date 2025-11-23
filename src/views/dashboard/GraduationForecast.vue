@@ -3,9 +3,10 @@
   <VCard class="hover-elevate">
     <!-- Tabs Section -->
     <VCardText>
-      <div class="section-header">
-        <h2>Probability of Sustainability</h2>
-      </div>
+      <DashboardPanelHeader
+        title="Probability of Sustainability"
+        tooltip="Shows OSSPREY’s transformer-based month-by-month sustainability predictions for the selected project. Includes historical values and three forward-looking forecast scenarios—positive, neutral, and negative—based on socio-technical dynamics."
+      />
     </VCardText>
 
     <!-- Tab Information Section -->
@@ -82,6 +83,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { VDataTable, VAvatar, VCard, VCardText, VCardTitle, VRow, VCol, VTabs, VTab } from 'vuetify/components';
 import { useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';

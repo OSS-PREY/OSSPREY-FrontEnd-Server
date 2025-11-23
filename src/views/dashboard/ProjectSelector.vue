@@ -4,7 +4,10 @@
       <VCol cols="12" sm="12">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <h2 class="section-header">Project Selector</h2>
+          <DashboardPanelHeader
+            title="Project Selector"
+            tooltip="Select any public GitHub repository to load its socio-technical activity, sustainability forecasts, and evidence-based interventions. All dashboard components update automatically based on the chosen repository and month."
+          />
         </VCardItem>
 
         <!-- Data Source Buttons -->
@@ -144,6 +147,7 @@
 
 <script setup>
 import { onMounted, watch, computed, ref } from 'vue';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { getApiBaseUrl } from '@/utils/apiBase';
 const projectStore = useProjectStore();
