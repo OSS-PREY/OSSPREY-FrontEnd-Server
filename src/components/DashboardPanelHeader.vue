@@ -1,25 +1,23 @@
 <template>
   <div class="section-header d-flex align-center">
     <h2 class="section-title mb-0">{{ title }}</h2>
-    <VTooltip
-      :text="tooltip"
-      location="top"
-      open-delay="150"
-      transition="fade-transition"
+    <VBtn
+      class="tooltip-btn"
+      variant="text"
+      size="small"
+      icon
+      :title="tooltip"
+      :aria-label="`${title} info`"
     >
-      <template #activator="{ props }">
-        <VBtn
-          v-bind="props"
-          variant="text"
-          size="small"
-          icon
-          class="tooltip-btn"
-          :aria-label="`${title} info`"
-        >
-          <VIcon icon="mdi-information-outline" />
-        </VBtn>
-      </template>
-    </VTooltip>
+      <VIcon icon="mdi-information-outline" />
+      <VTooltip
+        activator="parent"
+        :text="tooltip"
+        location="top"
+        open-delay="150"
+        transition="fade-transition"
+      />
+    </VBtn>
   </div>
 </template>
 
@@ -46,6 +44,7 @@ defineProps({
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
+  color: rgb(var(--v-theme-primary));
 }
 
 .tooltip-btn {
