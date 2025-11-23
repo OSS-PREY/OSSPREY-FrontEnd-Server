@@ -4,7 +4,10 @@
       <VCol cols="12" sm="12" order="2" order-sm="1">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <h2 class="section-header">Email Links</h2>
+          <DashboardPanelHeader
+            title="Email Links"
+            tooltip="Summarizes communication activity for the selected developer: number of messages, senders involved, and interaction frequency. Useful for understanding individual participation trends over time."
+          />
         </VCardItem>
 
         <VCardText>
@@ -64,6 +67,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardText, VCol, VRow, VBtn, VDialog, VDataTable, VSpacer, VCardTitle, VCardItem, VCardActions } from 'vuetify/components';
 

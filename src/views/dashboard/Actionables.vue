@@ -2,9 +2,10 @@
 <template>
   <VCard class="text-center text-sm-start project-actionables-card hover-elevate">
     <VCardText>
-      <div class="section-header">
-        <h2>Actionable Recommendations</h2>
-      </div>
+      <DashboardPanelHeader
+        title="Researched Actionables (ReACTs)"
+        tooltip="Presents evidence-based interventions recommended when socio-technical metrics fall below historical baselines. Drawn from 186 peer-reviewed SE studies and mapped to project-specific needs."
+      />
     </VCardText>
 
     <VCardText class="d-flex align-center gap-3">
@@ -67,6 +68,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';
 import statsVerticalWallet from '@images/cards/wallet-primary.png';

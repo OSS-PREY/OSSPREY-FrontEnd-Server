@@ -2,7 +2,10 @@
   <VCard class="text-center text-sm-start social-net-card hover-elevate">
     <!-- Header -->
     <VCardItem class="pb-3">
-      <h2 class="section-header">Social Network</h2>
+      <DashboardPanelHeader
+        title="Social Network"
+        tooltip="Visualizes communication patterns among contributors using a directed socio-technical graph. Edge directions represent reply flows in issues or discussions, helping identify collaboration bottlenecks and central communicators."
+      />
     </VCardItem>
     <VCardText class="sankey-wrapper">
       <!-- Sankey Diagram Container -->
@@ -28,6 +31,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import * as d3 from 'd3';
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 

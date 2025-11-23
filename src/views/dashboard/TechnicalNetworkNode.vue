@@ -5,7 +5,10 @@
       <VCol cols="12" sm="12" order="2" order-sm="1">
         <!-- Header -->
         <VCardItem class="pb-3">
-          <h2 class="section-header">Commit Links</h2>
+          <DashboardPanelHeader
+            title="Commit Links"
+            tooltip="Shows commit-level activity for the selected developer, including number of commits and affected file types. Supports analysis of workload, ownership, and contribution intensity."
+          />
         </VCardItem>
 
         <VCardText> 
@@ -65,6 +68,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue';
+import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { VCard, VCardText, VCol, VRow, VBtn, VDialog, VDataTable, VSpacer, VCardTitle, VCardItem, VCardActions } from 'vuetify/components';
 
