@@ -1,28 +1,22 @@
 <template>
   <div class="section-header d-flex align-center">
-    <h2 class="section-title mb-0">{{ title }}</h2>
-    <VBtn
-      class="tooltip-btn"
-      variant="text"
-      size="small"
-      icon
-      :title="tooltip"
-      :aria-label="`${title} info`"
+    <VTooltip
+      :text="tooltip"
+      location="top"
+      open-delay="150"
+      transition="fade-transition"
     >
-      <VIcon icon="mdi-information-outline" />
-      <VTooltip
-        activator="parent"
-        :text="tooltip"
-        location="top"
-        open-delay="150"
-        transition="fade-transition"
-      />
-    </VBtn>
+      <template #activator="{ props }">
+        <h2 class="section-title mb-0" v-bind="props" :title="tooltip">
+          {{ title }}
+        </h2>
+      </template>
+    </VTooltip>
   </div>
 </template>
 
 <script setup>
-import { VBtn, VIcon, VTooltip } from 'vuetify/components';
+import { VTooltip } from 'vuetify/components';
 
 defineProps({
   title: {
@@ -45,10 +39,5 @@ defineProps({
   font-size: 1.25rem;
   font-weight: 600;
   color: rgb(var(--v-theme-primary));
-}
-
-.tooltip-btn {
-  color: rgb(var(--v-theme-primary));
-  min-width: 0;
 }
 </style>
