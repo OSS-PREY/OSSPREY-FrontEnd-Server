@@ -63,6 +63,17 @@ onBeforeUnmount(() => {
       OSSPREY is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve long-term viability. [<a href="https://oss-prey.github.io/OSSPREY-Website/" target="_blank" rel="noopener noreferrer" class="footer-link">Website</a>] [<a href="https://github.com/orgs/OSS-PREY/repositories" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>]
     </span>
 
+    <span class="footer-text">
+      We’d really appreciate your thoughts on this tool. Please share your feedback here:
+      <a
+        href="https://forms.gle/GUQyYY6SijDbtUVe9"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+        >https://forms.gle/GUQyYY6SijDbtUVe9</a
+      >
+    </span>
+
     <span class="footer-text footer-metrics">
       <strong>OSSPREY Views</strong>: {{ viewCountText }}
       <span aria-hidden="true" class="footer-metrics__separator">|</span>
