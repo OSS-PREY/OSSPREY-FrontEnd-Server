@@ -75,12 +75,9 @@ onBeforeUnmount(() => {
     </span>
 
     <span class="footer-text footer-metrics">
-      <span class="footer-metrics__item">
-        <strong>OSSPREY Views</strong>: {{ viewCountText }}
-      </span>
-      <span class="footer-metrics__item">
-        <strong>Users</strong>: {{ userCountText }}
-      </span>
+      <strong>OSSPREY Views</strong>: {{ viewCountText }}
+      <span aria-hidden="true" class="footer-metrics__separator">|</span>
+      <strong>Users</strong>: {{ userCountText }}
     </span>
   </div>
 </template>
@@ -118,13 +115,13 @@ onBeforeUnmount(() => {
 
 .footer-metrics {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
-.footer-metrics__item {
-  display: block;
+.footer-metrics__separator {
+  opacity: 0.5;
 }
 </style>
