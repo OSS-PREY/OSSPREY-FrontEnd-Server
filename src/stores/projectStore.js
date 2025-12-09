@@ -617,7 +617,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       gradForecastData.value = sortedData.map(item => item.y);
       xAxisCategories.value = sortedData.map(item => item.x);
   
-      const reactJson = await (await ngrokFetch('/react_set.json')).json();
+      const reactJson = await (await ngrokFetch('/updated_react_set.json')).json();
       const rawData = await (await ngrokFetch('/foundation.json')).json();
   
       const projected = projectId;
