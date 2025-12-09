@@ -642,6 +642,12 @@ export const useProjectStore = defineStore('projectStore', () => {
         const values = filteredByProject.map(row => parseFloat(row[feature]) || 0);
         avgFeatureValues[feature] = values.reduce((a, b) => a + b, 0) / values.length;
       }
+
+      const activeMonth = selectedMonth.value;
+      const shouldLogSelectedMonth = activeMonth !== null && activeMonth !== undefined;
+      if (shouldLogSelectedMonth) {
+        console.log('🌐 Global feature averages across all months:', avgFeatureValues);
+      }
   
       // Get all unique sorted months
       const allMonths = [...new Set(filteredByProject.map(row => row.month))].sort((a, b) => a - b);
@@ -653,10 +659,17 @@ export const useProjectStore = defineStore('projectStore', () => {
         );
   
         const differences = {};
+        const monthlyAverages = {};
         for (const feature of featureList) {
           const values = windowData.map(row => parseFloat(row[feature]) || 0);
           const monthlySum = values.reduce((a, b) => a + b, 0);
+          const divisor = windowData.length || 1;
+          monthlyAverages[feature] = monthlySum / divisor;
           differences[feature] = monthlySum - avgFeatureValues[feature];
+        }
+
+        if (shouldLogSelectedMonth && Number(month) === Number(activeMonth)) {
+          console.log(`📅 Feature averages for Month ${month}:`, monthlyAverages);
         }
   
         const degradedFeatures = Object.entries(differences)
