@@ -84,7 +84,7 @@ const tabData = computed(() => {
       avatar: statsVerticalWallet,
       title: '',
       stats: 'How do you stay on track? With these steps below:',
-      monthDetail: `Current month: ${projectStore.selectedMonth || ''}`,
+      monthDetail: `Current month: ${projectStore.selectedMonth ?? ''}`,
     },
   }[currentTab.value];
 });
@@ -98,24 +98,26 @@ const getBulletColor = (importance) => {
 
 // ------------------ CHANGED: handle multi-month ReACT data ------------------
 const sortedActionables = computed(() => {
-  const rd = projectStore.reactData;  // can be array or object
-  // console.log('ReACT data PRINTING:', rd);
+  const rd = projectStore.reactData || {}; // can be array or object
   let dataArray = [];
 
   if (Array.isArray(rd)) {
     // Old single-month style
     dataArray = rd;
   } else if (rd && typeof rd === 'object') {
-    // Multi-month style: pick the array for the selected month
     const selMonth = projectStore.selectedMonth;
-    if (selMonth != null && rd[selMonth]) {
+    const monthKey = selMonth != null ? selMonth.toString() : null;
+
+    if (selMonth == null) {
+      const firstKey = Object.keys(rd)[0];
+      dataArray = firstKey ? rd[firstKey] : [];
+    } else if (monthKey && Object.prototype.hasOwnProperty.call(rd, monthKey)) {
+      dataArray = rd[monthKey];
+    } else if (Object.prototype.hasOwnProperty.call(rd, selMonth)) {
       dataArray = rd[selMonth];
-    } else {
-      dataArray = [];
     }
   }
-  // console.log('DATA Array:', rd);
-  
+
   if(dataArray.length>=10){
     return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
   }
