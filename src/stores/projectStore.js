@@ -618,93 +618,126 @@ export const useProjectStore = defineStore('projectStore', () => {
       xAxisCategories.value = sortedData.map(item => item.x);
   
       const reactJson = await (await ngrokFetch('/updated_react_set.json')).json();
-      const rawData = await (await ngrokFetch('/foundation.json')).json();
-  
-      const projected = projectId;
-      const filteredByProject = rawData.filter(row => row.proj_name === projected);
-      if (filteredByProject.length === 0) {
-        console.warn(`No data for project ${projected}`);
-        return;
-      }
-  
-      const featureList = [
-        's_avg_clustering_coef',
-        't_num_dev_nodes',
-        't_num_dev_per_file',
-        't_graph_density',
-        'st_num_dev',
-        't_net_overlap'
-      ];
-  
-      // Compute global averages across all months
-      const avgFeatureValues = {};
-      for (const feature of featureList) {
-        const values = filteredByProject.map(row => parseFloat(row[feature]) || 0);
-        avgFeatureValues[feature] = values.reduce((a, b) => a + b, 0) / values.length;
-      }
 
-      const activeMonth = selectedMonth.value;
-      const shouldLogSelectedMonth = activeMonth !== null && activeMonth !== undefined;
-      if (shouldLogSelectedMonth) {
-        console.log('🌐 Global feature averages across all months:', avgFeatureValues);
-      }
-  
-      // Get all unique sorted months
-      const allMonths = [...new Set(filteredByProject.map(row => row.month))].sort((a, b) => a - b);
-      const reactResultsByMonth = {};
-  
-      for (const month of allMonths) {
-        const windowData = filteredByProject.filter(row =>
-          row.month >= month - 2 && row.month <= month
-        );
-  
-        const differences = {};
-        const monthlyAverages = {};
-        for (const feature of featureList) {
-          const values = windowData.map(row => parseFloat(row[feature]) || 0);
-          const monthlySum = values.reduce((a, b) => a + b, 0);
-          const divisor = windowData.length || 1;
-          monthlyAverages[feature] = monthlySum / divisor;
-          // Compare monthly averages against the project's global averages to flag regressions
-          differences[feature] = monthlyAverages[feature] - avgFeatureValues[feature];
+      const normalizeRefs = (refs) => {
+        if (Array.isArray(refs)) {
+          return refs.map(ref => {
+            const cleanedRef = {};
+            if (ref.link) cleanedRef.link = ref.link;
+            if (ref.text && !ref.link) cleanedRef.text = ref.text;
+            return cleanedRef;
+          });
         }
 
-        if (shouldLogSelectedMonth && Number(month) === Number(activeMonth)) {
-          console.log(`📅 Feature averages for Month ${month}:`, monthlyAverages);
+        if (refs && typeof refs === 'object') {
+          const links = Array.isArray(refs.link) ? refs.link : [];
+
+          if (typeof refs.link === 'string') {
+            const matches = refs.link.match(/https?:\/\/[^',\s]+/g);
+            if (matches) links.push(...matches);
+          }
+
+          return links.map(link => ({ link }));
         }
-  
-        const degradedFeatures = Object.entries(differences)
-          .filter(([_, diff]) => diff <= 0)
-          .map(([feature]) => feature);
-  
-        const relevantReact = reactJson
-          .filter(entry => {
-            const entryFeatures = (entry.Features || "").split(',').map(f => f.trim());
-            return degradedFeatures.some(feature => entryFeatures.includes(feature));
-          })
-          .sort((a, b) => (b.Importance || 0) - (a.Importance || 0))
-          .map(entry => ({
-            title: entry.title,
-            importance: entry.importance || entry.Importance || 0,
-            refs: (entry.refs || []).map(ref => {
-              const cleanedRef = {};
-              if (ref.link) cleanedRef.link = ref.link;
-              if (ref.text && !ref.link) cleanedRef.text = ref.text;
-              return cleanedRef;
-            })
-          }));
-  
-        // reactResultsByMonth[month.toString()] = relevantReact;
-        reactResultsByMonth[month.toString()] = relevantReact
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 10);
 
-      }
-  
-      // ✅ Store all month-wise actionables
-      reactData.value = reactResultsByMonth;
-      // console.log('✅ All-month ReACT results:', reactData.value);
+        return [];
+      };
 
+      const normalizedActionables = (Array.isArray(reactJson) ? reactJson : [])
+        .map(entry => ({
+          title: entry.title,
+          importance: entry.importance || entry.Importance || 0,
+          refs: normalizeRefs(entry.refs)
+        }));
+
+      // Select any 10 random actionables without filtering
+      reactData.value = normalizedActionables
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+
+      /*
+       * Previous actionable filtering logic (kept for reference):
+       *
+       * const rawData = await (await ngrokFetch('/foundation.json')).json();
+       * const projected = projectId;
+       * const filteredByProject = rawData.filter(row => row.proj_name === projected);
+       * if (filteredByProject.length === 0) {
+       *   console.warn(`No data for project ${projected}`);
+       *   return;
+       * }
+       *
+       * const featureList = [
+       *   's_avg_clustering_coef',
+       *   't_num_dev_nodes',
+       *   't_num_dev_per_file',
+       *   't_graph_density',
+       *   'st_num_dev',
+       *   't_net_overlap'
+       * ];
+       *
+       * const avgFeatureValues = {};
+       * for (const feature of featureList) {
+       *   const values = filteredByProject.map(row => parseFloat(row[feature]) || 0);
+       *   avgFeatureValues[feature] = values.reduce((a, b) => a + b, 0) / values.length;
+       * }
+       *
+       * const activeMonth = selectedMonth.value;
+       * const shouldLogSelectedMonth = activeMonth !== null && activeMonth !== undefined;
+       * if (shouldLogSelectedMonth) {
+       *   console.log('🌐 Global feature averages across all months:', avgFeatureValues);
+       * }
+       *
+       * const allMonths = [...new Set(filteredByProject.map(row => row.month))].sort((a, b) => a - b);
+       * const reactResultsByMonth = {};
+       *
+       * for (const month of allMonths) {
+       *   const windowData = filteredByProject.filter(row =>
+       *     row.month >= month - 2 && row.month <= month
+       *   );
+       *
+       *   const differences = {};
+       *   const monthlyAverages = {};
+       *   for (const feature of featureList) {
+       *     const values = windowData.map(row => parseFloat(row[feature]) || 0);
+       *     const monthlySum = values.reduce((a, b) => a + b, 0);
+       *     const divisor = windowData.length || 1;
+       *     monthlyAverages[feature] = monthlySum / divisor;
+       *     differences[feature] = monthlyAverages[feature] - avgFeatureValues[feature];
+       *   }
+       *
+       *   if (shouldLogSelectedMonth && Number(month) === Number(activeMonth)) {
+       *     console.log(`📅 Feature averages for Month ${month}:`, monthlyAverages);
+       *   }
+       *
+       *   const degradedFeatures = Object.entries(differences)
+       *     .filter(([_, diff]) => diff <= 0)
+       *     .map(([feature]) => feature);
+       *
+       *   const relevantReact = reactJson
+       *     .filter(entry => {
+       *       const entryFeatures = (entry.Features || "").split(',').map(f => f.trim());
+       *       return degradedFeatures.some(feature => entryFeatures.includes(feature));
+       *     })
+       *     .sort((a, b) => (b.Importance || 0) - (a.Importance || 0))
+       *     .map(entry => ({
+       *       title: entry.title,
+       *       importance: entry.importance || entry.Importance || 0,
+       *       refs: (entry.refs || []).map(ref => {
+       *         const cleanedRef = {};
+       *         if (ref.link) cleanedRef.link = ref.link;
+       *         if (ref.text && !ref.link) cleanedRef.text = ref.text;
+       *         return cleanedRef;
+       *       })
+       *     }));
+       *
+       *   reactResultsByMonth[month.toString()] = relevantReact
+       *     .sort(() => Math.random() - 0.5)
+       *     .slice(0, 10);
+       * }
+       *
+       * reactData.value = reactResultsByMonth;
+       */
+      
       }
   
       

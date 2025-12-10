@@ -96,39 +96,13 @@ const getBulletColor = (importance) => {
   else return 'green';                 // Low
 };
 
-// ------------------ CHANGED: handle multi-month ReACT data ------------------
+// ------------------ Simplified: show 10 random actionables ------------------
 const sortedActionables = computed(() => {
-  const rd = projectStore.reactData || {}; // can be array or object
-  let dataArray = [];
+  const actionables = Array.isArray(projectStore.reactData)
+    ? projectStore.reactData
+    : [];
 
-  if (Array.isArray(rd)) {
-    // Old single-month style
-    dataArray = rd;
-  } else if (rd && typeof rd === 'object') {
-    const selMonth = projectStore.selectedMonth;
-    const monthKey = selMonth != null ? selMonth.toString() : null;
-
-    if (selMonth == null) {
-      const firstKey = Object.keys(rd)[0];
-      dataArray = firstKey ? rd[firstKey] : [];
-    } else if (monthKey && Object.prototype.hasOwnProperty.call(rd, monthKey)) {
-      dataArray = rd[monthKey];
-    } else if (Object.prototype.hasOwnProperty.call(rd, selMonth)) {
-      dataArray = rd[selMonth];
-    }
-  }
-
-  if(dataArray.length>=10){
-    return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
-  }
-  else{
-    return dataArray.sort((a, b) => b.importance - a.importance)
-  }
-
-  // Sort descending by importance
-  // return dataArray.slice().sort((a, b) => b.importance - a.importance).slice(0, 10);
-  // return dataArray.slice().sort(() => Math.random() - 0.5).slice(0, 10).sort((a, b) => b.importance - a.importance)
-
+  return actionables.slice(0, 10);
 });
 // ---------------------------------------------------------------------------
 
