@@ -96,15 +96,29 @@ const getBulletColor = (importance) => {
   else return 'green';                 // Low
 };
 
-// ------------------ Simplified: show 10 random actionables ------------------
+// ------------------ Show up to 10 actionables for the selected month ------------------
 const sortedActionables = computed(() => {
-  const actionables = Array.isArray(projectStore.reactData)
-    ? projectStore.reactData
-    : [];
+  const reactData = projectStore.reactData;
+  const monthKey = projectStore.selectedMonth !== null && projectStore.selectedMonth !== undefined
+    ? String(projectStore.selectedMonth)
+    : null;
 
-  return actionables.slice(0, 10);
+  let actionables = [];
+
+  if (Array.isArray(reactData)) {
+    actionables = reactData;
+  } else if (reactData && typeof reactData === 'object') {
+    if (monthKey && Array.isArray(reactData[monthKey])) {
+      actionables = reactData[monthKey];
+    } else {
+      const firstMonthEntries = Object.values(reactData).find(entry => Array.isArray(entry));
+      if (firstMonthEntries) actionables = firstMonthEntries;
+    }
+  }
+
+  return Array.isArray(actionables) ? actionables.slice(0, 10) : [];
 });
-// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 const hasActionables = computed(() => Array.isArray(sortedActionables.value) && sortedActionables.value.length > 0);
 

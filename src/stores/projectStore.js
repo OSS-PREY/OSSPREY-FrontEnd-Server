@@ -643,17 +643,30 @@ export const useProjectStore = defineStore('projectStore', () => {
         return [];
       };
 
-      const normalizedActionables = (Array.isArray(reactJson) ? reactJson : [])
-        .map(entry => ({
-          title: entry.title,
-          importance: entry.importance || entry.Importance || 0,
-          refs: normalizeRefs(entry.refs)
-        }));
+      const normalizeEntry = (entry) => ({
+        title: entry.title,
+        importance: entry.importance || entry.Importance || 0,
+        refs: normalizeRefs(entry.refs)
+      });
 
-      // Select any 10 random actionables without filtering
-      reactData.value = normalizedActionables
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 10);
+      const normalizeReactData = (reactPayload) => {
+        if (Array.isArray(reactPayload)) {
+          return reactPayload.map(normalizeEntry);
+        }
+
+        if (reactPayload && typeof reactPayload === 'object') {
+          return Object.entries(reactPayload).reduce((acc, [month, list]) => {
+            if (Array.isArray(list)) {
+              acc[month] = list.map(normalizeEntry);
+            }
+            return acc;
+          }, {});
+        }
+
+        return [];
+      };
+
+      reactData.value = normalizeReactData(reactJson);
 
       /*
        * Previous actionable filtering logic (kept for reference):
