@@ -665,7 +665,8 @@ export const useProjectStore = defineStore('projectStore', () => {
           const monthlySum = values.reduce((a, b) => a + b, 0);
           const divisor = windowData.length || 1;
           monthlyAverages[feature] = monthlySum / divisor;
-          differences[feature] = monthlySum - avgFeatureValues[feature];
+          // Compare monthly averages against the project's global averages to flag regressions
+          differences[feature] = monthlyAverages[feature] - avgFeatureValues[feature];
         }
 
         if (shouldLogSelectedMonth && Number(month) === Number(activeMonth)) {
