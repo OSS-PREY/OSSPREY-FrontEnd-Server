@@ -16,54 +16,6 @@ export const useProjectStore = defineStore('projectStore', () => {
     return fetch(url, { ...options, headers });
   };
 
-  // -------------------- Helpers --------------------
-  const normalizeRefs = (refs) => {
-    if (Array.isArray(refs)) {
-      return refs.map(ref => {
-        const cleanedRef = {};
-        if (ref.link) cleanedRef.link = ref.link;
-        if (ref.text && !ref.link) cleanedRef.text = ref.text;
-        return cleanedRef;
-      });
-    }
-
-    if (refs && typeof refs === 'object') {
-      const links = Array.isArray(refs.link) ? refs.link : [];
-
-      if (typeof refs.link === 'string') {
-        const matches = refs.link.match(/https?:\/\/[^',\s]+/g);
-        if (matches) links.push(...matches);
-      }
-
-      return links.map(link => ({ link }));
-    }
-
-    return [];
-  };
-
-  const normalizeReactEntry = (entry) => ({
-    title: entry.title,
-    importance: entry.importance || entry.Importance || 0,
-    refs: normalizeRefs(entry.refs)
-  });
-
-  const normalizeReactPayload = (reactPayload) => {
-    if (Array.isArray(reactPayload)) {
-      return reactPayload.map(normalizeReactEntry);
-    }
-
-    if (reactPayload && typeof reactPayload === 'object') {
-      return Object.entries(reactPayload).reduce((acc, [month, list]) => {
-        if (Array.isArray(list)) {
-          acc[month] = list.map(normalizeReactEntry);
-        }
-        return acc;
-      }, {});
-    }
-
-    return [];
-  };
-
 
   // Graduation Forecast State
   const gradForecastData = ref([]);
@@ -131,7 +83,9 @@ export const useProjectStore = defineStore('projectStore', () => {
 
       // ReACT data handling
       if (data.react) {
-        reactData.value = normalizeReactPayload(data.react);
+        reactData.value = Array.isArray(data.react)
+          ? data.react
+          : (typeof data.react === 'object' ? data.react : []);
         // console.log('ReACT Data:', reactData.value);
       } else {
         reactData.value = [];
@@ -665,7 +619,54 @@ export const useProjectStore = defineStore('projectStore', () => {
   
       const reactJson = await (await ngrokFetch('/updated_react_set.json')).json();
 
-      reactData.value = normalizeReactPayload(reactJson);
+      const normalizeRefs = (refs) => {
+        if (Array.isArray(refs)) {
+          return refs.map(ref => {
+            const cleanedRef = {};
+            if (ref.link) cleanedRef.link = ref.link;
+            if (ref.text && !ref.link) cleanedRef.text = ref.text;
+            return cleanedRef;
+          });
+        }
+
+        if (refs && typeof refs === 'object') {
+          const links = Array.isArray(refs.link) ? refs.link : [];
+
+          if (typeof refs.link === 'string') {
+            const matches = refs.link.match(/https?:\/\/[^',\s]+/g);
+            if (matches) links.push(...matches);
+          }
+
+          return links.map(link => ({ link }));
+        }
+
+        return [];
+      };
+
+      const normalizeEntry = (entry) => ({
+        title: entry.title,
+        importance: entry.importance || entry.Importance || 0,
+        refs: normalizeRefs(entry.refs)
+      });
+
+      const normalizeReactData = (reactPayload) => {
+        if (Array.isArray(reactPayload)) {
+          return reactPayload.map(normalizeEntry);
+        }
+
+        if (reactPayload && typeof reactPayload === 'object') {
+          return Object.entries(reactPayload).reduce((acc, [month, list]) => {
+            if (Array.isArray(list)) {
+              acc[month] = list.map(normalizeEntry);
+            }
+            return acc;
+          }, {});
+        }
+
+        return [];
+      };
+
+      reactData.value = normalizeReactData(reactJson);
 
       /*
        * Previous actionable filtering logic (kept for reference):
