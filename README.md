@@ -1,9 +1,7 @@
 # OSSPREY Dashboard
-
 The **Open Source Software PRojEct sustainabilitY tracker (OSSPREY)** dashboard is a tool to support sustainable open-source development. It provides direct analytics of project metrics, temporal AI-based sustainability forecasts, and evidence-based recommendations to improve longterm viability. 
 
 ## Key Functionalities
-
 - **Project Information**: Explore detailed metrics for open-source projects from the Apache and Eclipse Foundations, for instance, project description, social networks, technical networks, and github repositories to name a few.
 - **Project Health Metric**: The graduation forecast for each project gives you an insight of how the project is performing over that month, or a selected range of months. (The values range from 0 to 1) 
 - **Recommendations**: The dashboard will provide actionable steps to address performance issues. For instance, if a project's score is below 0.5 for a specific month, it will analyze historical data and suggest targeted improvements to help the project achieve or surpass the 0.5 threshold.
