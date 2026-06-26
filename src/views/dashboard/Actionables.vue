@@ -41,7 +41,13 @@
             <template v-for="(actionable, index) in sortedActionables" :key="index">
               <tr>
                 <td>
-                  <div class="actionable-cell">
+                  <div
+                    class="actionable-cell clickable"
+                    role="button"
+                    tabindex="0"
+                    @click="openActionable(actionable)"
+                    @keydown.enter="openActionable(actionable)"
+                  >
                     <span
                       class="bullet"
                       :style="{ backgroundColor: getBulletColor(actionable.importance) }"
@@ -49,7 +55,7 @@
                     <span class="action-text">{{ actionable.title }}</span>
                     <span class="refs">
                       <template v-for="(refItem, rIndex) in actionable.refs" :key="rIndex">
-                        <a :href="refItem.link" target="_blank" class="ref-link">[REF]</a>
+                        <a :href="refItem.link" target="_blank" class="ref-link" @click.stop>[REF]</a>
                       </template>
                     </span>
                   </div>
@@ -63,6 +69,55 @@
         No data available for this month.
       </div>
     </VCardText>
+
+    <!-- Actionable detail dialog -->
+    <VDialog v-model="dialogOpen" max-width="600" scrollable>
+      <VCard v-if="selectedActionable">
+        <VCardItem>
+          <VCardTitle class="dialog-title">{{ selectedActionable.title }}</VCardTitle>
+          <template #append>
+            <VChip :color="getBulletColor(selectedActionable.importance)" size="small" label>
+              {{ priorityLabel(selectedActionable.importance) }}
+            </VChip>
+          </template>
+        </VCardItem>
+
+        <VCardText>
+          <div v-if="selectedActionable.category" class="detail-section">
+            <div class="detail-label">Category</div>
+            <div class="detail-body">{{ selectedActionable.category }}</div>
+          </div>
+
+          <div v-if="selectedActionable.positive_impact" class="detail-section">
+            <div class="detail-label">Impact</div>
+            <div class="detail-body">{{ selectedActionable.positive_impact }}</div>
+          </div>
+
+          <div v-if="selectedActionable.evidence" class="detail-section">
+            <div class="detail-label">Evidence</div>
+            <div class="detail-body">{{ selectedActionable.evidence }}</div>
+          </div>
+
+          <div v-if="selectedActionable.refs && selectedActionable.refs.length" class="detail-section">
+            <div class="detail-label">References</div>
+            <div class="detail-body">
+              <a
+                v-for="(refItem, rIndex) in selectedActionable.refs"
+                :key="rIndex"
+                :href="refItem.link"
+                target="_blank"
+                class="ref-link dialog-ref"
+              >{{ refItem.venue || refItem.link }}</a>
+            </div>
+          </div>
+        </VCardText>
+
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="dialogOpen = false">Close</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </VCard>
 </template>
 
@@ -89,11 +144,27 @@ const tabData = computed(() => {
   }[currentTab.value];
 });
 
-// Helper: Return bullet color based on importance
+// Helper: Return bullet color based on importance (support score, 1-4)
 const getBulletColor = (importance) => {
-  if (importance >= 5) return 'red';   // Critical
-  else if (importance >= 3) return 'yellow'; // Medium
+  if (importance >= 4) return 'red';   // Critical
+  else if (importance >= 2) return 'yellow'; // Medium
   else return 'green';                 // Low
+};
+
+// Helper: Human-readable priority label for the detail dialog
+const priorityLabel = (importance) => {
+  if (importance >= 4) return 'Critical';
+  else if (importance >= 2) return 'Medium';
+  else return 'Low';
+};
+
+// Detail dialog state
+const dialogOpen = ref(false);
+const selectedActionable = ref(null);
+
+const openActionable = (actionable) => {
+  selectedActionable.value = actionable;
+  dialogOpen.value = true;
 };
 
 // ------------------ Show up to 10 actionables for the selected month ------------------
@@ -116,7 +187,9 @@ const sortedActionables = computed(() => {
     }
   }
 
-  return Array.isArray(actionables) ? actionables.slice(0, 10) : [];
+  return Array.isArray(actionables)
+    ? [...actionables].sort((a, b) => (b.importance || 0) - (a.importance || 0)).slice(0, 10)
+    : [];
 });
 // ---------------------------------------------------------------------------------------
 
@@ -238,5 +311,48 @@ const shouldShowActionableEmptyState = computed(() => {
   font-weight: 500;
   color: #6b6b6b;
   text-align: center;
+}
+
+/* Clickable actionable rows */
+.clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.clickable:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
+/* Detail dialog */
+.dialog-title {
+  white-space: normal;
+  word-break: break-word;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(var(--v-theme-primary));
+  margin-bottom: 4px;
+}
+
+.detail-body {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.dialog-ref {
+  display: inline-block;
+  margin-right: 10px;
+  word-break: break-all;
 }
 </style>

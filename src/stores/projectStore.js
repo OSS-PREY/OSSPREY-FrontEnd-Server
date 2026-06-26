@@ -617,139 +617,123 @@ export const useProjectStore = defineStore('projectStore', () => {
       gradForecastData.value = sortedData.map(item => item.y);
       xAxisCategories.value = sortedData.map(item => item.x);
   
-      const reactJson = await (await ngrokFetch('/updated_react_set.json')).json();
+      // ------------------------------------------------------------------
+      // Researched Actionables (ReACTs)
+      // Source: public/updated_react_set2.json (generated from final_set.csv
+      // by scripts/transform_final_set.py).
+      // Logic: only surface an actionable when at least one of the socio-
+      // technical features it targets is "struggling" for the project/month,
+      // i.e. its recent average is at or below the project's historical
+      // baseline. Results are grouped by month so the panel reacts to the
+      // month selector.
+      // ------------------------------------------------------------------
+      const reactJson = await (await ngrokFetch('/updated_react_set2.json')).json();
+
+      const featureList = [
+        // Social features
+        's_num_nodes',
+        's_avg_clustering_coef',
+        's_graph_density',
+        's_num_component',
+        's_weighted_mean_degree',
+        's_net_overlap',
+        // Technical features
+        't_graph_density',
+        't_num_dev_per_file',
+        't_num_dev_nodes',
+        't_num_file_nodes',
+        't_num_file_per_dev',
+        't_net_overlap',
+        // Shared (social + technical)
+        'st_num_dev',
+      ];
 
       const normalizeRefs = (refs) => {
-        if (Array.isArray(refs)) {
-          return refs.map(ref => {
-            const cleanedRef = {};
-            if (ref.link) cleanedRef.link = ref.link;
-            if (ref.text && !ref.link) cleanedRef.text = ref.text;
-            return cleanedRef;
-          });
-        }
-
-        if (refs && typeof refs === 'object') {
-          const links = Array.isArray(refs.link) ? refs.link : [];
-
-          if (typeof refs.link === 'string') {
-            const matches = refs.link.match(/https?:\/\/[^',\s]+/g);
-            if (matches) links.push(...matches);
-          }
-
-          return links.map(link => ({ link }));
-        }
-
-        return [];
+        if (!Array.isArray(refs)) return [];
+        return refs
+          .map(ref => {
+            const cleaned = {};
+            if (ref && ref.link) cleaned.link = ref.link;
+            if (ref && ref.venue) cleaned.venue = ref.venue;
+            return cleaned;
+          })
+          .filter(ref => ref.link);
       };
 
       const normalizeEntry = (entry) => ({
-        title: entry.title,
+        title: entry.title || '',
         importance: entry.importance || entry.Importance || 0,
-        refs: normalizeRefs(entry.refs)
+        category: entry.category || '',
+        features: entry.Features || entry.features || '',
+        positive_impact: entry.positive_impact || entry.impact || '',
+        evidence: entry.evidence || '',
+        confidence_score: entry.confidence_score ?? null,
+        refs: normalizeRefs(entry.refs),
       });
 
-      const normalizeReactData = (reactPayload) => {
-        if (Array.isArray(reactPayload)) {
-          return reactPayload.map(normalizeEntry);
+      const normalizedReact = Array.isArray(reactJson) ? reactJson.map(normalizeEntry) : [];
+      const reactFeatureSets = normalizedReact.map(entry =>
+        String(entry.features).split(',').map(f => f.trim()).filter(Boolean)
+      );
+
+      // Baseline metrics: per-project, per-month socio-technical values.
+      // foundation.json keys rows by `proj_name`, which can match either the
+      // project id or the (full descriptive) project name depending on the
+      // foundation, so we match case-insensitively against both.
+      const foundationRows = await (await ngrokFetch('/foundation.json')).json();
+      const projectKeys = new Set(
+        [projectId, selectedProject.value?.project_name, selectedProject.value?.project_id]
+          .filter(Boolean)
+          .map(value => String(value).trim().toLowerCase())
+      );
+      const projectRows = (Array.isArray(foundationRows) ? foundationRows : [])
+        .filter(row => projectKeys.has(String(row.proj_name).trim().toLowerCase()));
+
+      if (projectRows.length === 0) {
+        console.warn(`No baseline data in foundation.json for project "${projectId}"; cannot match actionables.`);
+        reactData.value = {};
+      } else {
+        // Project-wide historical average per feature = the baseline.
+        const globalAverages = {};
+        for (const feature of featureList) {
+          const values = projectRows.map(row => parseFloat(row[feature]) || 0);
+          globalAverages[feature] = values.length
+            ? values.reduce((a, b) => a + b, 0) / values.length
+            : 0;
         }
 
-        if (reactPayload && typeof reactPayload === 'object') {
-          return Object.entries(reactPayload).reduce((acc, [month, list]) => {
-            if (Array.isArray(list)) {
-              acc[month] = list.map(normalizeEntry);
-            }
-            return acc;
-          }, {});
+        const months = [...new Set(projectRows.map(row => Number(row.month)))].sort((a, b) => a - b);
+        const reactResultsByMonth = {};
+
+        for (const month of months) {
+          // Trailing 3-month window (month-2 .. month).
+          const windowRows = projectRows.filter(row => {
+            const m = Number(row.month);
+            return m >= month - 2 && m <= month;
+          });
+          const divisor = windowRows.length || 1;
+
+          // "Struggling" = recent average at or below the historical baseline.
+          const strugglingFeatures = new Set(
+            featureList.filter(feature => {
+              const windowAvg = windowRows
+                .map(row => parseFloat(row[feature]) || 0)
+                .reduce((a, b) => a + b, 0) / divisor;
+              return windowAvg - globalAverages[feature] <= 0;
+            })
+          );
+
+          const matched = normalizedReact
+            .filter((entry, idx) => reactFeatureSets[idx].some(f => strugglingFeatures.has(f)))
+            .sort((a, b) => (b.importance || 0) - (a.importance || 0))
+            .slice(0, 10);
+
+          reactResultsByMonth[String(month)] = matched;
         }
 
-        return [];
-      };
+        reactData.value = reactResultsByMonth;
+      }
 
-      reactData.value = normalizeReactData(reactJson);
-
-      /*
-       * Previous actionable filtering logic (kept for reference):
-       *
-       * const rawData = await (await ngrokFetch('/foundation.json')).json();
-       * const projected = projectId;
-       * const filteredByProject = rawData.filter(row => row.proj_name === projected);
-       * if (filteredByProject.length === 0) {
-       *   console.warn(`No data for project ${projected}`);
-       *   return;
-       * }
-       *
-       * const featureList = [
-       *   's_avg_clustering_coef',
-       *   't_num_dev_nodes',
-       *   't_num_dev_per_file',
-       *   't_graph_density',
-       *   'st_num_dev',
-       *   't_net_overlap'
-       * ];
-       *
-       * const avgFeatureValues = {};
-       * for (const feature of featureList) {
-       *   const values = filteredByProject.map(row => parseFloat(row[feature]) || 0);
-       *   avgFeatureValues[feature] = values.reduce((a, b) => a + b, 0) / values.length;
-       * }
-       *
-       * const activeMonth = selectedMonth.value;
-       * const shouldLogSelectedMonth = activeMonth !== null && activeMonth !== undefined;
-       * if (shouldLogSelectedMonth) {
-       *   console.log('🌐 Global feature averages across all months:', avgFeatureValues);
-       * }
-       *
-       * const allMonths = [...new Set(filteredByProject.map(row => row.month))].sort((a, b) => a - b);
-       * const reactResultsByMonth = {};
-       *
-       * for (const month of allMonths) {
-       *   const windowData = filteredByProject.filter(row =>
-       *     row.month >= month - 2 && row.month <= month
-       *   );
-       *
-       *   const differences = {};
-       *   const monthlyAverages = {};
-       *   for (const feature of featureList) {
-       *     const values = windowData.map(row => parseFloat(row[feature]) || 0);
-       *     const monthlySum = values.reduce((a, b) => a + b, 0);
-       *     const divisor = windowData.length || 1;
-       *     monthlyAverages[feature] = monthlySum / divisor;
-       *     differences[feature] = monthlyAverages[feature] - avgFeatureValues[feature];
-       *   }
-       *
-       *   if (shouldLogSelectedMonth && Number(month) === Number(activeMonth)) {
-       *     console.log(`📅 Feature averages for Month ${month}:`, monthlyAverages);
-       *   }
-       *
-       *   const degradedFeatures = Object.entries(differences)
-       *     .filter(([_, diff]) => diff <= 0)
-       *     .map(([feature]) => feature);
-       *
-       *   const relevantReact = reactJson
-       *     .filter(entry => {
-       *       const entryFeatures = (entry.Features || "").split(',').map(f => f.trim());
-       *       return degradedFeatures.some(feature => entryFeatures.includes(feature));
-       *     })
-       *     .sort((a, b) => (b.Importance || 0) - (a.Importance || 0))
-       *     .map(entry => ({
-       *       title: entry.title,
-       *       importance: entry.importance || entry.Importance || 0,
-       *       refs: (entry.refs || []).map(ref => {
-       *         const cleanedRef = {};
-       *         if (ref.link) cleanedRef.link = ref.link;
-       *         if (ref.text && !ref.link) cleanedRef.text = ref.text;
-       *         return cleanedRef;
-       *       })
-       *     }));
-       *
-       *   reactResultsByMonth[month.toString()] = relevantReact
-       *     .sort(() => Math.random() - 0.5)
-       *     .slice(0, 10);
-       * }
-       *
-       * reactData.value = reactResultsByMonth;
-       */
       
       }
   
