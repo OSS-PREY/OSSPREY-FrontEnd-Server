@@ -54,8 +54,8 @@
                     ></span>
                     <span class="action-text">{{ actionable.title }}</span>
                     <span class="refs">
-                      <template v-for="(refItem, rIndex) in actionable.refs" :key="rIndex">
-                        <a :href="refItem.link" target="_blank" class="ref-link" @click.stop>[REF]</a>
+                      <template v-for="(refItem, rIndex) in refsFor(actionable)" :key="rIndex">
+                        <a v-if="refItem.link" :href="refItem.link" target="_blank" class="ref-link" @click.stop>[REF]</a>
                       </template>
                     </span>
                   </div>
@@ -74,40 +74,40 @@
     <VDialog v-model="dialogOpen" max-width="600" scrollable>
       <VCard v-if="selectedActionable">
         <VCardItem>
-          <VCardTitle class="dialog-title">{{ selectedActionable.title }}</VCardTitle>
+          <VCardTitle class="dialog-title">{{ displayActionable.title }}</VCardTitle>
           <template #append>
-            <VChip :color="getBulletColor(selectedActionable.importance)" size="small" label>
-              {{ priorityLabel(selectedActionable.importance) }}
+            <VChip :color="getBulletColor(displayActionable.importance)" size="small" label>
+              {{ priorityLabel(displayActionable.importance) }}
             </VChip>
           </template>
         </VCardItem>
 
         <VCardText>
-          <div v-if="selectedActionable.category" class="detail-section">
+          <div v-if="displayActionable.category" class="detail-section">
             <div class="detail-label">Category</div>
-            <div class="detail-body">{{ selectedActionable.category }}</div>
+            <div class="detail-body">{{ displayActionable.category }}</div>
           </div>
 
-          <div v-if="selectedActionable.positive_impact" class="detail-section">
+          <div v-if="displayActionable.positive_impact" class="detail-section">
             <div class="detail-label">Impact</div>
-            <div class="detail-body">{{ selectedActionable.positive_impact }}</div>
+            <div class="detail-body">{{ displayActionable.positive_impact }}</div>
           </div>
 
-          <div v-if="selectedActionable.evidence" class="detail-section">
+          <div v-if="displayActionable.evidence" class="detail-section">
             <div class="detail-label">Evidence</div>
-            <div class="detail-body">{{ selectedActionable.evidence }}</div>
+            <div class="detail-body">{{ displayActionable.evidence }}</div>
           </div>
 
-          <div v-if="selectedActionable.refs && selectedActionable.refs.length" class="detail-section">
+          <div v-if="displayRefs.length" class="detail-section">
             <div class="detail-label">References</div>
             <div class="detail-body">
               <a
-                v-for="(refItem, rIndex) in selectedActionable.refs"
+                v-for="(refItem, rIndex) in displayRefs"
                 :key="rIndex"
-                :href="refItem.link"
+                :href="refItem.link || undefined"
                 target="_blank"
                 class="ref-link dialog-ref"
-              >{{ refItem.venue || refItem.link }}</a>
+              >{{ refItem.label }}</a>
             </div>
           </div>
         </VCardText>
@@ -166,6 +166,59 @@ const openActionable = (actionable) => {
   selectedActionable.value = actionable;
   dialogOpen.value = true;
 };
+
+const extractUrls = (value) => {
+  if (Array.isArray(value)) return value.flatMap(extractUrls);
+  if (value === null || value === undefined) return [];
+  const matches = String(value).match(/https?:\/\/[^\s'"\]\[,]+/g);
+  return matches ? matches : [];
+};
+
+const extractRefs = (refs) => {
+  if (!refs) return [];
+  const items = Array.isArray(refs) ? refs : [refs];
+  const result = [];
+
+  for (const item of items) {
+    if (item === null || item === undefined) continue;
+    if (typeof item === 'string') {
+      for (const url of extractUrls(item)) result.push({ link: url, label: url });
+      continue;
+    }
+    if (typeof item === 'object') {
+      const urls = extractUrls(item.link);
+      const label = item.venue || item.title || '';
+      if (urls.length === 0 && label) {
+        result.push({ link: '', label });
+      } else {
+        for (const url of urls) result.push({ link: url, label: label || url });
+      }
+    }
+  }
+
+  const seen = new Set();
+  return result.filter((ref) => {
+    const key = ref.link || ref.label;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const refsFor = (actionable) => extractRefs(actionable?.refs);
+
+const displayActionable = computed(() => {
+  const a = selectedActionable.value || {};
+  return {
+    title: a.title || a.Title || '',
+    importance: a.importance ?? a.Importance ?? 0,
+    category: a.category || a.Category || '',
+    positive_impact: a.positive_impact || a.impact || a.Positive_Impact || '',
+    evidence: a.evidence || a.Evidence || '',
+  };
+});
+
+const displayRefs = computed(() => extractRefs(selectedActionable.value?.refs));
 
 // ------------------ Show up to 10 actionables for the selected month ------------------
 const sortedActionables = computed(() => {
