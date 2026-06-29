@@ -43,6 +43,24 @@ export const useProjectStore = defineStore('projectStore', () => {
   // Store metadata fetched from the GitHub API for local mode.
   const localMetadata = ref(null);
 
+  // -------------------- Frontend Actionables (local mode) --------------------
+  // Local mode shows the full ReACT catalog loaded directly from the frontend
+  // (public/updated_react_set2.json); the backend's data.react is not used.
+  const loadFrontendActionables = async () => {
+    try {
+      const res = await ngrokFetch('/updated_react_set2.json');
+      if (!res.ok) {
+        console.warn('Failed to load /updated_react_set2.json:', res.status);
+        return [];
+      }
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch (err) {
+      console.warn('Failed to load frontend actionables:', err);
+      return [];
+    }
+  };
+
   // -------------------- Upload Git Repository Link (POST) --------------------
   const uploadGitRepositoryLink = async (inputUrl) => {
     try {
@@ -81,16 +99,9 @@ export const useProjectStore = defineStore('projectStore', () => {
         console.log('X-Axis Categories:', xAxisCategories.value);
       }
 
-      // ReACT data handling
-      if (data.react) {
-        reactData.value = Array.isArray(data.react)
-          ? data.react
-          : (typeof data.react === 'object' ? data.react : []);
-        // console.log('ReACT Data:', reactData.value);
-      } else {
-        reactData.value = [];
-      }
-      // console.log("ReACT Data PRINTING:", reactData.value);
+      // ReACT data handling — frontend-only: load the full catalog from
+      // updated_react_set2.json; the backend's data.react is intentionally ignored.
+      reactData.value = await loadFrontendActionables();
 
       // Process metadata (store it for display in ProjectDetails)
       if (data.metadata) {
