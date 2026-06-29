@@ -98,6 +98,11 @@
             <div class="detail-body">{{ displayActionable.evidence }}</div>
           </div>
 
+          <div v-if="confidenceLabel" class="detail-section">
+            <div class="detail-label">Confidence</div>
+            <div class="detail-body">{{ confidenceLabel }}</div>
+          </div>
+
           <div v-if="displayRefs.length" class="detail-section">
             <div class="detail-label">References</div>
             <div class="detail-body">
@@ -167,6 +172,31 @@ const openActionable = (actionable) => {
   dialogOpen.value = true;
 };
 
+const ALLOWED_REF_HOSTS = [
+  'doi.org',
+  'ieee.org',
+  'ieeecomputersociety.org',
+  'acm.org',
+  'springer.com',
+  'sciencedirect.com',
+  'elsevier.com',
+  'arxiv.org',
+  'wiley.com',
+  'usenix.org',
+  'researchgate.net',
+];
+
+const MAX_REFS = 3;
+
+const isAllowedPublisherUrl = (url) => {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return ALLOWED_REF_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+};
+
 const extractUrls = (value) => {
   if (Array.isArray(value)) return value.flatMap(extractUrls);
   if (value === null || value === undefined) return [];
@@ -181,28 +211,22 @@ const extractRefs = (refs) => {
 
   for (const item of items) {
     if (item === null || item === undefined) continue;
-    if (typeof item === 'string') {
-      for (const url of extractUrls(item)) result.push({ link: url, label: url });
-      continue;
-    }
-    if (typeof item === 'object') {
-      const urls = extractUrls(item.link);
-      const label = item.venue || item.title || '';
-      if (urls.length === 0 && label) {
-        result.push({ link: '', label });
-      } else {
-        for (const url of urls) result.push({ link: url, label: label || url });
-      }
+    const rawLink = typeof item === 'string' ? item : item.link;
+    const label = typeof item === 'object' && item !== null ? (item.venue || item.title || '') : '';
+    for (const url of extractUrls(rawLink)) {
+      if (!isAllowedPublisherUrl(url)) continue;
+      result.push({ link: url, label: label || url });
     }
   }
 
   const seen = new Set();
-  return result.filter((ref) => {
-    const key = ref.link || ref.label;
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return result
+    .filter((ref) => {
+      if (seen.has(ref.link)) return false;
+      seen.add(ref.link);
+      return true;
+    })
+    .slice(0, MAX_REFS);
 };
 
 const refsFor = (actionable) => extractRefs(actionable?.refs);
@@ -213,9 +237,18 @@ const displayActionable = computed(() => {
     title: a.title || a.Title || '',
     importance: a.importance ?? a.Importance ?? 0,
     category: a.category || a.Category || '',
-    positive_impact: a.positive_impact || a.impact || a.Positive_Impact || '',
+    positive_impact: a.positive_impact || a.impact || a.Positive_Impact || a.Impact || '',
     evidence: a.evidence || a.Evidence || '',
+    confidence_score: a.confidence_score ?? a.confidenceScore ?? null,
   };
+});
+
+const confidenceLabel = computed(() => {
+  const score = displayActionable.value.confidence_score;
+  if (score === null || score === undefined || score === '') return '';
+  const num = Number(score);
+  if (Number.isNaN(num)) return String(score);
+  return num <= 1 ? `${Math.round(num * 100)}%` : String(num);
 });
 
 const displayRefs = computed(() => extractRefs(selectedActionable.value?.refs));
