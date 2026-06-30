@@ -61,113 +61,211 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  // -------------------- Upload Git Repository Link (POST) --------------------
-  const uploadGitRepositoryLink = async (inputUrl) => {
-    try {
-      let git_link = inputUrl.trim();
+  // -------------------- Request Queue State --------------------
+  // The backend processes repositories through a bounded FIFO queue. The
+  // frontend submits a job, then polls for its status until it finishes.
+  const queueJobId = ref(null);
+  const queueStatus = ref(null);        // queued | running | completed | failed | cancelled
+  const queuePosition = ref(0);         // 1-based position while queued (0 otherwise)
+  const queueEtaSeconds = ref(0);       // estimated seconds until the job finishes
+  const queueLength = ref(0);           // total jobs currently waiting
+  const queueProcessing = ref(false);   // true from submission until a terminal state
+  const queueError = ref(null);         // populated when a job fails
 
+  const QUEUE_POLL_INTERVAL_MS = 2000;
+  let queuePollTimer = null;
+
+  const resetQueueState = () => {
+    if (queuePollTimer) {
+      clearTimeout(queuePollTimer);
+      queuePollTimer = null;
+    }
+    queueJobId.value = null;
+    queueStatus.value = null;
+    queuePosition.value = 0;
+    queueEtaSeconds.value = 0;
+    queueLength.value = 0;
+    queueError.value = null;
+    queueProcessing.value = false;
+  };
+
+  const updateQueueState = (job) => {
+    if (!job) return;
+    queueStatus.value = job.status ?? queueStatus.value;
+    queuePosition.value = job.position ?? 0;
+    queueEtaSeconds.value = job.estimated_wait_seconds ?? 0;
+    queueLength.value = job.queue_length ?? 0;
+  };
+
+  // Poll the backend until the job reaches a terminal state.
+  const pollQueueUntilDone = (jobId) => new Promise((resolve) => {
+    const tick = async () => {
+      try {
+        const res = await ngrokFetch(`${baseUrl.value}/api/queue_status/${jobId}`, {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!res.ok) {
+          resolve({ status: 'failed', error: `Status request failed (${res.status})` });
+          return;
+        }
+        const job = await res.json();
+        updateQueueState(job);
+        if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+          resolve(job);
+          return;
+        }
+        queuePollTimer = setTimeout(tick, QUEUE_POLL_INTERVAL_MS);
+      } catch (err) {
+        console.warn('Queue status poll failed, retrying:', err);
+        queuePollTimer = setTimeout(tick, QUEUE_POLL_INTERVAL_MS);
+      }
+    };
+    tick();
+  });
+
+  // Apply a finished pipeline result to the dashboard state. This is the same
+  // post-processing the previous synchronous flow performed inline.
+  const applyPipelineResult = async (data, git_link) => {
+    // Graduation Forecast
+    if (data.forecast_json) {
+      const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
+      gradForecastData.value = keys.map(k => data.forecast_json[k]);
+      xAxisCategories.value = [];
+      xAxisCategories.value = keys.map(k => `Month ${k}`);
+    }
+
+    // ReACT data handling — frontend-only: load the full catalog from
+    // updated_react_set2.json; the backend's data.react is intentionally ignored.
+    reactData.value = await loadFrontendActionables();
+
+    // Process metadata (store it for display in ProjectDetails)
+    if (data.metadata) {
+      localMetadata.value = data.metadata;
+    }
+
+    // Social & Technical Network Data (for Local mode)
+    if (data.social_net) {
+      socialNetData.value = data.social_net;
+    }
+    if (data.tech_net) {
+      techNetData.value = data.tech_net;
+    }
+
+    // In Local mode, store the full raw email/commit data.
+    if (data.issue_data) {
+      rawLocalEmailData.value = data.issue_data;
+    }
+    if (data.commit_data) {
+      rawLocalCommitData.value = data.commit_data;
+    }
+
+    // Local Mode Specific Logic: Set the project details based solely on the repo URL.
+    if (isLocalMode.value) {
+      const repoNameMatch = git_link.match(/\/([^\/]+)\.git$/);
+      const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
+      selectedProject.value = {
+        project_id: `local_${repoName}`,
+        project_name: repoName,
+        github_url: git_link,
+      };
+      if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
+        const lastMonthIndex = xAxisCategories.value.length - 1;
+        selectedMonth.value = lastMonthIndex;
+        singleValue.value = lastMonthIndex;
+      }
+    }
+
+    return data;
+  };
+
+  // -------------------- Upload Git Repository Link (POST + poll) --------------------
+  const uploadGitRepositoryLink = async (inputUrl) => {
+    resetQueueState();
+    queueProcessing.value = true;   // show the status panel immediately
+    queueStatus.value = 'queued';   // optimistic label until the server responds
+
+    let git_link = inputUrl.trim();
     // 1) Remove any trailing slash
     if (git_link.endsWith('/')) {
       git_link = git_link.slice(0, -1);
     }
-
     // 2) If it starts with https://github.com/, ensure it ends with .git
-    //    (This covers both https://github.com/owner/repo and https://github.com/owner/repo.git)
     if (git_link.toLowerCase().startsWith('https://github.com/') && !git_link.toLowerCase().endsWith('.git')) {
       git_link += '.git';
     }
-
     console.log('Normalized GitHub URL:', git_link);
 
+    try {
+      // Step 1: submit the job to the queue (returns immediately with a handle).
       const response = await ngrokFetch(`${baseUrl.value}/api/upload_git_link`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ git_link })
       });
-      const data = await response.json();
+      const job = await response.json();
 
-      // Graduation Forecast
-      if (data.forecast_json) {
-        const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
-        gradForecastData.value = keys.map(k => data.forecast_json[k]);
-        console.log('Graduation Forecast Data:', gradForecastData.value);
-        xAxisCategories.value = [];  
-        xAxisCategories.value = keys.map(k => `Month ${k}`);
-        console.log('X-Axis Categories:', xAxisCategories.value);
+      if (!response.ok || job.error) {
+        queueStatus.value = 'failed';
+        queueError.value = job.error || `Failed to queue request (${response.status}).`;
+        queueProcessing.value = false;
+        return { error: queueError.value };
       }
 
-      // ReACT data handling — frontend-only: load the full catalog from
-      // updated_react_set2.json; the backend's data.react is intentionally ignored.
-      reactData.value = await loadFrontendActionables();
+      queueJobId.value = job.job_id;
+      queueProcessing.value = true;
+      updateQueueState(job);
+      console.log('Queued job:', job);
 
-      // Process metadata (store it for display in ProjectDetails)
-      if (data.metadata) {
-        localMetadata.value = data.metadata;
-        console.log('Metadata received:', localMetadata.value);
-      }
+      // Step 2: poll until the job reaches a terminal state.
+      const finalJob = await pollQueueUntilDone(job.job_id);
 
-      // Social & Technical Network Data (for Local mode)
-      if (data.social_net) {
-        socialNetData.value = data.social_net;
-        console.log('Social Network Data:', socialNetData.value);
-      }
-      if (data.tech_net) {
-        techNetData.value = data.tech_net;
-        console.log('Technical Network Data:', techNetData.value);
+      if (finalJob.status === 'completed') {
+        const result = finalJob.result || {};
+        await applyPipelineResult(result, git_link);
+        queueProcessing.value = false;
+        return result;
       }
 
-      // In Local mode, store the full raw email/commit data.
-      if (data.issue_data) {
-        rawLocalEmailData.value = data.issue_data;
-        console.log('Raw Local Email (issue) Data:', rawLocalEmailData.value);
-      }
-      if (data.commit_data) {
-        rawLocalCommitData.value = data.commit_data;
-        console.log('Raw Local Commit Data:', rawLocalCommitData.value);
+      if (finalJob.status === 'cancelled') {
+        queueProcessing.value = false;
+        return { cancelled: true };
       }
 
-      // Local Mode Specific Logic: Set the project details based solely on the repo URL.
-      if (isLocalMode.value) {
-        const repoNameMatch = git_link.match(/\/([^\/]+)\.git$/);
-        const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
-        selectedProject.value = {
-          project_id: `local_${repoName}`, 
-          project_name: repoName,
-          github_url: git_link,
-        };
-        console.log(`Local mode: Set selectedProject to local_${repoName}`);
-        // Use it only to set a default when data is first loaded
-        if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
-          const lastMonthIndex = xAxisCategories.value.length - 1;
-          selectedMonth.value = lastMonthIndex;
-          singleValue.value = lastMonthIndex;
-          console.log(`Set default selectedMonth to ${lastMonthIndex} on initialization.`);
-        }
- 
-        // if (xAxisCategories.value && xAxisCategories.value.length > 0) {
-        //   const months = xAxisCategories.value
-        //     .filter(str => typeof str === 'string')
-        //     .map(str => {
-        //       const parts = str.split(" ");
-        //       return parts[1] ? Number(parts[1]) : 0;
-        //     })
-        //     .sort((a, b) => a - b);
-        //   selectedMonth.value = months[0];
-        //   console.log(`Local mode: Set selectedMonth to ${selectedMonth.value} based on forecast data.`);
-        // } else {
-        //   selectedMonth.value = 0;
-        //   console.log("Local mode: No forecast data available. Defaulting selectedMonth to 0.");
-        // }
-      }
-
-      return data;
+      // failed
+      queueStatus.value = 'failed';
+      queueError.value =
+        (finalJob.result && finalJob.result.error) || finalJob.error || 'Processing failed.';
+      queueProcessing.value = false;
+      return { error: queueError.value };
     } catch (error) {
-      console.error("Error uploading git repository link:", error);
-      throw error;
+      console.error('Error uploading git repository link:', error);
+      queueStatus.value = 'failed';
+      queueError.value = error?.message || 'Unexpected error while processing the request.';
+      queueProcessing.value = false;
+      return { error: queueError.value };
     }
+  };
+
+  // Cancel the active job if it is still waiting in the queue.
+  const cancelQueuedJob = async () => {
+    if (!queueJobId.value) return;
+    try {
+      await ngrokFetch(`${baseUrl.value}/api/cancel_job/${queueJobId.value}`, {
+        method: 'POST',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+    } catch (err) {
+      console.warn('Failed to cancel job:', err);
+    }
+    if (queuePollTimer) {
+      clearTimeout(queuePollTimer);
+      queuePollTimer = null;
+    }
+    queueStatus.value = 'cancelled';
+    queueProcessing.value = false;
   };
 
   // -------------------- Foundation Selection --------------------
@@ -1094,6 +1192,15 @@ export const useProjectStore = defineStore('projectStore', () => {
     apiPrefix,
     // Upload Git Repository Link
     uploadGitRepositoryLink,
+    // Request Queue State & Actions
+    queueJobId,
+    queueStatus,
+    queuePosition,
+    queueEtaSeconds,
+    queueLength,
+    queueProcessing,
+    queueError,
+    cancelQueuedJob,
     // React Data
     reactData,
     // [Testing] Technical Network local mode stats

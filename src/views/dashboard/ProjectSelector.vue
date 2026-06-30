@@ -107,6 +107,41 @@
               <VBtn color="primary" class="mb-2" :disabled="buttonDisabled" @click="uploadRepoLink" block>
                 Process Repository
               </VBtn>
+
+              <!-- Request Queue Status -->
+              <VCard v-if="projectStore.queueProcessing || projectStore.queueStatus" class="queue-panel mt-3 mb-3" outlined>
+                <div class="d-flex align-center mb-1">
+                  <VProgressCircular
+                    v-if="['queued', 'running'].includes(projectStore.queueStatus)"
+                    indeterminate size="18" width="2" color="primary" class="me-2" />
+                  <VIcon v-else-if="projectStore.queueStatus === 'completed'" size="18" color="success" class="me-2">fa-solid fa-circle-check</VIcon>
+                  <VIcon v-else size="18" color="error" class="me-2">fa-solid fa-circle-exclamation</VIcon>
+                  <strong>Status: {{ queueStatusLabel }}</strong>
+                </div>
+
+                <div v-if="projectStore.queueStatus === 'queued'" class="queue-detail">
+                  <div>Your request has been placed in the queue.</div>
+                  <div>Position: <strong>{{ projectStore.queuePosition }}</strong> of {{ projectStore.queueLength }} waiting</div>
+                  <div>Estimated wait: <strong>{{ etaText }}</strong></div>
+                  <VBtn size="small" variant="text" color="error" class="mt-1 px-0" @click="cancelQueued">Cancel request</VBtn>
+                </div>
+
+                <div v-else-if="projectStore.queueStatus === 'running'" class="queue-detail">
+                  Processing your repository now. This can take a few minutes...
+                </div>
+
+                <div v-else-if="projectStore.queueStatus === 'completed'" class="queue-detail text-success">
+                  Done! Your repository has been processed.
+                </div>
+
+                <div v-else-if="projectStore.queueStatus === 'failed'" class="queue-detail text-error">
+                  {{ projectStore.queueError || 'Processing failed. Please try again.' }}
+                </div>
+
+                <div v-else-if="projectStore.queueStatus === 'cancelled'" class="queue-detail">
+                  Request cancelled.
+                </div>
+              </VCard>
               <!-- LOCAL Mode Slider -->
               <VSlider v-if="localHasValidMonths" v-model="localMonth" :min="localSliderMin" :max="localSliderMax"
                 :step="1" class="mb-3" label="Select Month" :ticks="true" tick-size="4" thumb-label
@@ -124,9 +159,6 @@
                     {{ selectedLocalProject.github_url }}
                   </a>
                 </div>
-              </div>
-              <div v-else-if="repoUploading" class="d-flex justify-center align-center">
-                <VProgressCircular indeterminate color="primary" />
               </div>
               <div v-if="userRepos.length" class="mt-4">
                 <strong>Your Processed Repositories:</strong>
@@ -367,35 +399,58 @@ const handleFileSelect = (event) => {
 
 const buttonDisabled = ref(false)
 
-const uploadRepoLink = async () => {
+// -------------------- Request Queue UI helpers --------------------
+const queueStatusLabel = computed(() => {
+  switch (projectStore.queueStatus) {
+    case 'queued': return 'Queued';
+    case 'running': return 'Running';
+    case 'completed': return 'Completed';
+    case 'failed': return 'Failed';
+    case 'cancelled': return 'Cancelled';
+    default: return '';
+  }
+});
 
+const formatEta = (seconds) => {
+  if (!seconds || seconds <= 0) return 'less than a minute';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 1) return 'less than a minute';
+  return `about ${minutes} minute${minutes > 1 ? 's' : ''}`;
+};
+
+const etaText = computed(() => formatEta(projectStore.queueEtaSeconds));
+
+const cancelQueued = () => projectStore.cancelQueuedJob();
+
+const uploadRepoLink = async () => {
   const repoLink = githubRepoLink.value.trim();
   console.log("Repo link entered:", repoLink);
   if (repoLink === '') {
     alert('Please enter a Git Repository URL.');
     return;
   }
-  else {
-    buttonDisabled.value = true;
-  }
-  // Example (just remove the strict ".git" requirement):
   if (!repoLink.toLowerCase().startsWith('https://github.com/')) {
     alert("Please enter a valid GitHub repository URL, e.g. https://github.com/owner/repo");
     return;
   }
 
+  buttonDisabled.value = true;
   repoUploading.value = true;
+  // Hide any previously selected project while the new request is processed.
+  selectedLocalProject.value = null;
   try {
+    // Resolves only once the job reaches a terminal state; live progress is
+    // reflected through the reactive queue state in the status panel above.
     const response = await projectStore.uploadGitRepositoryLink(repoLink);
-    console.log("POST response:", response);
-    if (response.error) {
-      alert("Error: " + response.error);
+    console.log("Queue response:", response);
+    if (response && response.error) {
+      // Failure details are surfaced through the queue status panel.
+      console.error("Processing failed:", response.error);
+    } else if (response && response.cancelled) {
+      console.log("Request was cancelled.");
     } else {
-      alert("Repository link uploaded successfully!");
-      console.log("Forecast JSON:", response.forecast_json);
-      console.log("Social Network Data:", response.social_net);
       const repoNameMatch = repoLink.match(/\/([^\/]+)\.git$/);
-      const repoName = repoNameMatch ? repoNameMatch[1] : 'Unknown Project';
+      const repoName = repoNameMatch ? repoNameMatch[1] : (repoLink.split('/').pop() || 'Unknown Project');
       selectedLocalProject.value = {
         project_name: repoName,
         github_url: repoLink
@@ -404,9 +459,9 @@ const uploadRepoLink = async () => {
     }
   } catch (error) {
     console.error("Error uploading repository link:", error);
-    alert("Failed to upload repository link.");
   } finally {
     repoUploading.value = false;
+    buttonDisabled.value = false;
   }
 };
 
@@ -519,5 +574,22 @@ onMounted(() => {
 .custom-repo-option {
   color: rgba(var(--v-theme-on-surface), 0.6);
   font-weight: bold;
+}
+
+.queue-panel {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-primary), 0.06);
+  text-align: left;
+}
+
+.queue-detail {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.text-success {
+  color: #2e7d32;
+  font-size: 0.9rem;
 }
 </style>
