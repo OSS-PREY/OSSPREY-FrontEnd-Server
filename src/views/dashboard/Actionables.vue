@@ -6,6 +6,15 @@
         title="Researched Actionables (ReACTs)"
         tooltip="Presents evidence-based interventions recommended when socio-technical metrics fall below historical baselines. Drawn from 186 peer-reviewed SE studies and mapped to project-specific needs."
       />
+      <p class="explore-network mb-0">
+        Explore actionable network here:
+        <a
+          href="https://nafiz43.github.io/ReACT-GPT/"
+          target="_blank"
+          rel="noopener"
+          class="explore-link"
+        >https://nafiz43.github.io/ReACT-GPT/</a>
+      </p>
     </VCardText>
 
     <VCardText class="d-flex align-center gap-3">
@@ -76,7 +85,12 @@
         <VCardItem>
           <VCardTitle class="dialog-title">{{ displayActionable.title }}</VCardTitle>
           <template #append>
-            <VChip :color="getBulletColor(displayActionable.importance)" size="small" label>
+            <VChip
+              size="small"
+              label
+              variant="flat"
+              :style="priorityChipStyle(displayActionable.importance)"
+            >
               {{ priorityLabel(displayActionable.importance) }}
             </VChip>
           </template>
@@ -112,7 +126,7 @@
                 :href="refItem.link || undefined"
                 target="_blank"
                 class="ref-link dialog-ref"
-              >{{ refItem.label }}</a>
+              >{{ refItem.link }}</a>
             </div>
           </div>
         </VCardText>
@@ -161,6 +175,13 @@ const priorityLabel = (importance) => {
   if (importance >= 4) return 'Critical';
   else if (importance >= 2) return 'Medium';
   else return 'Low';
+};
+
+// Helper: Color-coded chip style for the detail dialog priority
+const priorityChipStyle = (importance) => {
+  if (importance >= 4) return { backgroundColor: '#e53935', color: '#ffffff' };
+  else if (importance >= 2) return { backgroundColor: '#f9a825', color: '#000000' };
+  else return { backgroundColor: '#43a047', color: '#ffffff' };
 };
 
 // Detail dialog state
@@ -304,6 +325,24 @@ const shouldShowActionableEmptyState = computed(() => {
   color: rgb(var(--v-theme-primary));
   position: relative;
   margin: 0;
+}
+
+/* Explore network link */
+.explore-network {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.explore-link {
+  color: #1e88e5;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.explore-link:hover {
+  text-decoration: underline;
 }
 
 /* Priority Labels */
