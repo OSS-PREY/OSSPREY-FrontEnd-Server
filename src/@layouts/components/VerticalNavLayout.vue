@@ -21,7 +21,9 @@ export default defineComponent({
         : null
 
       // 👉 Main Content
-      const main = h('main', { class: 'layout-page-content' },
+      // id + tabindex are the skip-to-content target; tabindex -1 lets focus
+      // move here programmatically without adding a tab stop.
+      const main = h('main', { class: 'layout-page-content', id: 'main-content', tabindex: '-1' },
         h('div', { class: 'page-content-container' }, slots.default?.())
       )
 

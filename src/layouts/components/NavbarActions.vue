@@ -92,6 +92,13 @@ const logout = async () => {
         </VBtn>
       </template>
     </VTooltip>
+
+    <!-- Signed out, the profile and log-out controls above are hidden; without
+         this there is no way back to the sign-in page from the navbar. -->
+    <VBtn v-else to="/login" variant="tonal" color="primary" class="ms-2" style="text-transform: none;">
+      <template #prepend><VIcon icon="bx-log-in" /></template>
+      Login
+    </VBtn>
   </div>
 </template>
 

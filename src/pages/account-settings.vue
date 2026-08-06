@@ -178,6 +178,7 @@ const saveProfile = async () => {
             <VAlert
               v-if="errorMessage"
               type="error"
+              role="alert"
               density="comfortable"
               class="mt-4"
               :text="errorMessage"
@@ -185,6 +186,8 @@ const saveProfile = async () => {
             <VAlert
               v-if="successMessage"
               type="success"
+              role="status"
+              aria-live="polite"
               density="comfortable"
               class="mt-4"
               :text="successMessage"

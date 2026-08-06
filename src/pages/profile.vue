@@ -225,7 +225,10 @@ const saveProfile = async () => {
               <VTextField
                 :model-value="displayEmail"
                 label="Email"
-                disabled
+                readonly
+                aria-readonly="true"
+                hint="Your email is your account identifier and cannot be changed."
+                persistent-hint
                 prepend-inner-icon="mdi-email"
                 class="mb-4"
               />
@@ -243,6 +246,7 @@ const saveProfile = async () => {
             <VAlert
               v-if="errorMessage"
               type="error"
+              role="alert"
               class="mt-4"
               density="comfortable"
               :text="errorMessage"
@@ -250,6 +254,8 @@ const saveProfile = async () => {
             <VAlert
               v-if="successMessage"
               type="success"
+              role="status"
+              aria-live="polite"
               class="mt-4"
               density="comfortable"
               :text="successMessage"

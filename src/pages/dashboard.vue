@@ -15,7 +15,6 @@ import NumberOfCommits from '@/views/dashboard/NumberOfCommits.vue';
 import CommitsPerCommitters from '@/views/dashboard/CommitsPerCommitters.vue';
 import SeeAdvancedAnalytics from '@/views/dashboard/SeeAdvancedAnalytics.vue';
 import Committers from '@/views/dashboard/Committers.vue';
-import Title from '@/views/dashboard/Title.vue';
 import { recordView } from '@/utils/viewTracking';
 const isCollapsed = ref(true); // Manage collapse state here
 
@@ -30,13 +29,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12" sm="12">
-      <VCard style="height: 80px;">
-        <Title />
-      </VCard>
-    </VCol>
-  </VRow>
 
 
   <VRow>

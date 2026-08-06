@@ -70,4 +70,17 @@ export const routes = [
       },
     ],
   },
+  // Catch-all: without this an unknown URL rendered a blank page with no way
+  // out. The 404 component already existed but was never routed.
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/layouts/blank.vue'),
+    children: [
+      {
+        path: '',
+        name: 'NotFound',
+        component: () => import('@/pages/[...error].vue'),
+      },
+    ],
+  },
 ];

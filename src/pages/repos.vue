@@ -1,7 +1,5 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
-import NavbarActions from '@/layouts/components/NavbarActions.vue';
-import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 import ReposTable from '@/views/repos/ReposTable.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { apiFetch } from '@/utils/apiFetch';
@@ -89,12 +87,7 @@ onUnmounted(() => {
 
 <template>
   <VContainer fluid class="py-6 repos-page">
-    <header class="repos-topbar" role="banner">
-      <NavbarBranding />
-      <NavbarActions />
-    </header>
-
-    <div class="repos-heading mt-8">
+    <div class="repos-heading">
       <h1 class="text-h4 font-weight-bold mb-0">All Repos</h1>
       <p v-if="loadError" class="repos-heading__note">{{ loadError }}</p>
     </div>
@@ -118,14 +111,6 @@ onUnmounted(() => {
 .repos-page {
   max-width: 1280px;
   margin: 0 auto;
-}
-
-.repos-topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
 }
 
 .repos-heading {
