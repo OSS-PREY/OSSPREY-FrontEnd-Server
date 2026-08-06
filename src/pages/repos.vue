@@ -1,52 +1,89 @@
 <script setup>
+import { onMounted, onUnmounted, ref } from 'vue';
 import NavbarActions from '@/layouts/components/NavbarActions.vue';
 import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 import ReposTable from '@/views/repos/ReposTable.vue';
+import { getApiBaseUrl } from '@/utils/apiBase';
 
-const pendingRepos = [
-  {
-    repoName: 'ossprey/metrics-pipeline',
-    startTime: '2025-10-02 10:12',
-    completionTime: null,
-    estimatedProcessingTime: '17 minutes 45 seconds',
-    status: 'pending',
-  },
-  {
-    repoName: 'apache/incubator-ex',
-    startTime: '2025-10-02 09:55',
-    completionTime: null,
-    estimatedProcessingTime: '22 minutes 5 seconds',
-    status: 'pending',
-  },
-  {
-    repoName: 'eclipse/foundation-tools',
-    startTime: '2025-10-01 21:18',
-    completionTime: null,
-    estimatedProcessingTime: '31 minutes 12 seconds',
-    status: 'pending',
-  },
-];
+const API_BASE = getApiBaseUrl();
+const REFRESH_INTERVAL_MS = 15000;
 
-const processedRepos = [
-  {
-    repoName: 'nafiz/elta-ai-agentic',
-    startTime: '2025-09-30 14:03',
-    completionTime: '2025-09-30 14:29',
-    status: 'processed',
-  },
-  {
-    repoName: 'uc-davis/decal-lab-site',
-    startTime: '2025-09-29 11:47',
-    completionTime: '2025-09-29 12:02',
-    status: 'processed',
-  },
-  {
-    repoName: 'ossprey/frontend',
-    startTime: '2025-09-28 16:20',
-    completionTime: '2025-09-28 16:41',
-    status: 'processed',
-  },
-];
+const pendingRepos = ref([]);
+const processedRepos = ref([]);
+const loadError = ref('');
+
+let refreshTimer = null;
+
+const formatDateTime = iso => {
+  if (!iso)
+    return '—';
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime()))
+    return '—';
+
+  const pad = value => String(value).padStart(2, '0');
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} `
+    + `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const formatDuration = totalSeconds => {
+  if (totalSeconds === null || totalSeconds === undefined)
+    return '—';
+
+  const seconds = Math.max(0, Math.round(totalSeconds));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+
+  if (minutes === 0)
+    return `${remainder} seconds`;
+
+  return `${minutes} minutes ${remainder} seconds`;
+};
+
+const loadRepos = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/repo_jobs`);
+
+    if (!res.ok)
+      throw new Error(`Status request failed (${res.status})`);
+
+    const data = await res.json();
+
+    pendingRepos.value = (data.pending || []).map(job => ({
+      repoName: job.repo_name,
+      startTime: formatDateTime(job.created_at),
+      completionTime: null,
+      estimatedProcessingTime: formatDuration(job.estimated_seconds),
+      status: job.status,
+    }));
+
+    processedRepos.value = (data.processed || []).map(job => ({
+      repoName: job.repo_name,
+      startTime: formatDateTime(job.created_at),
+      completionTime: job.status === 'completed'
+        ? formatDateTime(job.finished_at)
+        : `${formatDateTime(job.finished_at)} (${job.status})`,
+      status: job.status,
+    }));
+
+    loadError.value = '';
+  } catch (err) {
+    loadError.value = err.message || 'Failed to load repositories.';
+  }
+};
+
+onMounted(() => {
+  loadRepos();
+  refreshTimer = setInterval(loadRepos, REFRESH_INTERVAL_MS);
+});
+
+onUnmounted(() => {
+  if (refreshTimer)
+    clearInterval(refreshTimer);
+});
 </script>
 
 <template>
@@ -58,7 +95,7 @@ const processedRepos = [
 
     <div class="repos-heading mt-8">
       <h1 class="text-h4 font-weight-bold mb-0">All Repos</h1>
-      <p class="repos-heading__note">This page is currently under development.</p>
+      <p v-if="loadError" class="repos-heading__note">{{ loadError }}</p>
     </div>
 
     <ReposTable

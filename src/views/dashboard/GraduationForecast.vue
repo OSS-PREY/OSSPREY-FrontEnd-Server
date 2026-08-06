@@ -312,6 +312,9 @@ const yearlyChartConfig = computed(() => {
   const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
   const selected = selectedMonth.value;
   const selectedIndex = selected - 1;
+  // x-axis label of the currently selected month; used to draw a vertical
+  // marker line so selecting a month clearly "jumps" to that point on the line.
+  const selectedCategory = computedXCategories.value[selectedIndex];
 
   return {
     chart: {
@@ -341,23 +344,47 @@ const yearlyChartConfig = computed(() => {
       '#F44336'             // negative
     ],
     markers: {
-      size: 5,
+      // keep the regular points subtle so the selected month stands out
+      size: 4,
       hover: { size: 7 },
       discrete: [
+        // prominent "you are here" dot at the selected month on the observed line
         {
           seriesIndex: 0,
           dataPointIndex: selectedIndex,
-          fillColor: currentTheme.primary,
-          strokeColor: "#4CAF50",
+          fillColor: '#fff',
+          strokeColor: currentTheme.primary,
           strokeWidth: 4,
-          size: 5
+          size: 8
         },
-        {
-          seriesIndex: 1,
-          dataPointIndex: selectedIndex,
-          size: 0
-        }
+        // hide the overlapping forecast-branch markers at the selected month
+        { seriesIndex: 1, dataPointIndex: selectedIndex, size: 0 },
+        { seriesIndex: 2, dataPointIndex: selectedIndex, size: 0 },
+        { seriesIndex: 3, dataPointIndex: selectedIndex, size: 0 }
       ]
+    },
+    // vertical marker line at the selected month, so clicking/sliding to a
+    // month visibly "takes you" to that point on the sustainability line.
+    annotations: {
+      xaxis: selectedCategory != null
+        ? [{
+            x: selectedCategory,
+            borderColor: currentTheme.primary,
+            strokeDashArray: 0,
+            label: {
+              text: `Month ${selected}`,
+              orientation: 'horizontal',
+              position: 'top',
+              offsetY: -2,
+              style: {
+                background: currentTheme.primary,
+                color: '#fff',
+                fontSize: '11px',
+                fontFamily: 'Lora, serif'
+              }
+            }
+          }]
+        : []
     },
     xaxis: {
       type: 'category',
