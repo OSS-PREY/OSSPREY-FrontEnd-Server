@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 
 const API_BASE = getApiBaseUrl()
 
@@ -6,7 +7,7 @@ export const VIEW_RECORDED_EVENT = 'ossprey-view-recorded'
 
 export const recordView = async () => {
   try {
-    const response = await fetch(`${API_BASE}/api/record_view`, {
+    const response = await apiFetch(`${API_BASE}/api/record_view`, {
       method: 'POST',
     })
 
@@ -26,7 +27,7 @@ export const recordView = async () => {
 
 export const fetchViewCount = async () => {
   try {
-    const response = await fetch(`${API_BASE}/api/view_count`)
+    const response = await apiFetch(`${API_BASE}/api/view_count`)
 
     if (!response.ok) {
       console.error(`Failed to fetch view count: ${response.status} ${response.statusText}`)
@@ -54,7 +55,7 @@ export const fetchViewCount = async () => {
 
 export const fetchUserCount = async () => {
   try {
-    const response = await fetch(`${API_BASE}/api/users`)
+    const response = await apiFetch(`${API_BASE}/api/users`)
 
     if (!response.ok) {
       console.error(`Failed to fetch user count: ${response.status} ${response.statusText}`)

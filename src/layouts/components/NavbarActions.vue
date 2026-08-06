@@ -2,6 +2,7 @@
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
 import AllReposButton from '@/layouts/components/AllReposButton.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { apiFetch } from '@/utils/apiFetch';
 
 const user = ref(null);
 const router = useRouter();
@@ -39,14 +40,14 @@ const logout = async () => {
   const email = user.value?.email;
 
   try {
-    await fetch(`${API_BASE}/api/logout`, { method: 'POST' });
+    await apiFetch(`${API_BASE}/api/logout`, { method: 'POST' });
   }
   catch {
     // ignore errors
   }
 
   if (email) {
-    fetch(`${API_BASE}/api/track_logout`, {
+    apiFetch(`${API_BASE}/api/track_logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

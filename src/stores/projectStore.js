@@ -2,20 +2,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { apiFetch as ngrokFetch } from '@/utils/apiFetch';
 
 export const useProjectStore = defineStore('projectStore', () => {
   // -------------------- Configuration --------------------
   const baseUrl = ref(getApiBaseUrl());
-
-  const ngrokFetch = async (url, options = {}) => {
-    const headers = {
-      ...(options.headers || {}),
-      'ngrok-skip-browser-warning': 'true',
-    };
-  
-    return fetch(url, { ...options, headers });
-  };
-
 
   // Graduation Forecast State
   const gradForecastData = ref([]);

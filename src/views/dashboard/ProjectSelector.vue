@@ -182,6 +182,7 @@ import { onMounted, watch, computed, ref } from 'vue';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { apiFetch } from '@/utils/apiFetch';
 const projectStore = useProjectStore();
 
 // Data source: GitHub only (foundation option hidden for now)
@@ -228,7 +229,7 @@ const fetchUserRepos = async () => {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/user_repositories?email=${encodeURIComponent(email)}`);
+    const res = await apiFetch(`${API_BASE}/api/user_repositories?email=${encodeURIComponent(email)}`);
     if (!res.ok)
       throw new Error(`Request failed with ${res.status}`);
     const data = await res.json();

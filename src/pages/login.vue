@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { recordView } from '@/utils/viewTracking'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 
 const email = ref('')
 const password = ref('')
@@ -42,7 +43,7 @@ onMounted(() => {
 const submit = async () => {
   errorMessage.value = ''
   try {
-    const res = await fetch(`${API_BASE}/api/login`, {
+    const res = await apiFetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value, password: password.value }),
@@ -65,7 +66,7 @@ const submit = async () => {
     window.dispatchEvent(new Event('user-auth-changed'))
 
     // Track login event
-    fetch(`${API_BASE}/api/track_login`, {
+    apiFetch(`${API_BASE}/api/track_login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_email: userData.email }),
@@ -84,7 +85,7 @@ const submit = async () => {
 // ------------------ GOOGLE LOGIN ------------------
 const handleGoogleResponse = async (response) => {
   try {
-    const res = await fetch(`${API_BASE}/api/google_login`, {
+    const res = await apiFetch(`${API_BASE}/api/google_login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential: response.credential }),

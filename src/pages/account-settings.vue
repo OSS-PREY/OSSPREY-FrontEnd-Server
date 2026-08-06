@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { recordView } from '@/utils/viewTracking'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 
 const API_BASE = getApiBaseUrl()
 
@@ -77,7 +78,7 @@ const saveProfile = async () => {
   saving.value = true
 
   try {
-    const res = await fetch(`${API_BASE}/api/update_profile`, {
+    const res = await apiFetch(`${API_BASE}/api/update_profile`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

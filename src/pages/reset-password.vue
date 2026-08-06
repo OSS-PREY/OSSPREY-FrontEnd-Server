@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 import { PASSWORD_RULE_TEXT, isPasswordValid } from '@/utils/password'
 
 const password = ref('')
@@ -40,7 +41,7 @@ const submit = async () => {
 
   submitting.value = true
   try {
-    const res = await fetch(`${API_BASE}/api/reset_password`, {
+    const res = await apiFetch(`${API_BASE}/api/reset_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: token.value, password: password.value }),

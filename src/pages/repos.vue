@@ -4,6 +4,7 @@ import NavbarActions from '@/layouts/components/NavbarActions.vue';
 import NavbarBranding from '@/layouts/components/NavbarBranding.vue';
 import ReposTable from '@/views/repos/ReposTable.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { apiFetch } from '@/utils/apiFetch';
 
 const API_BASE = getApiBaseUrl();
 const REFRESH_INTERVAL_MS = 15000;
@@ -45,7 +46,7 @@ const formatDuration = totalSeconds => {
 
 const loadRepos = async () => {
   try {
-    const res = await fetch(`${API_BASE}/api/repo_jobs`);
+    const res = await apiFetch(`${API_BASE}/api/repo_jobs`);
 
     if (!res.ok)
       throw new Error(`Status request failed (${res.status})`);

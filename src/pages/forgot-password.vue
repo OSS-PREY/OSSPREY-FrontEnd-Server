@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 
 const email = ref('')
 const errorMessage = ref('')
@@ -22,7 +23,7 @@ const submit = async () => {
 
   submitting.value = true
   try {
-    const res = await fetch(`${API_BASE}/api/forgot_password`, {
+    const res = await apiFetch(`${API_BASE}/api/forgot_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value }),

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import ChatWidget from '@/components/ChatWidget.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { apiFetch } from '@/utils/apiFetch';
 
 const route = useRoute();
 const router = useRouter();
@@ -72,14 +73,14 @@ const handleAutoLogout = async () => {
   const email = storedUser?.email;
 
   try {
-    await fetch(`${API_BASE}/api/logout`, { method: 'POST' });
+    await apiFetch(`${API_BASE}/api/logout`, { method: 'POST' });
   }
   catch (error) {
     console.error('Failed to log out due to inactivity', error);
   }
 
   if (email) {
-    fetch(`${API_BASE}/api/track_logout`, {
+    apiFetch(`${API_BASE}/api/track_logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { apiFetch } from '@/utils/apiFetch'
 
 const fullName = ref('')
 const email = ref('')
@@ -86,7 +87,7 @@ const submit = async () => {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/register`, {
+    const res = await apiFetch(`${API_BASE}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
