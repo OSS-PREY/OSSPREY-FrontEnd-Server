@@ -92,6 +92,7 @@ const handleAutoLogout = async () => {
   }
 
   localStorage.removeItem('user');
+  localStorage.removeItem('access_token');
   window.dispatchEvent(new Event('user-auth-changed'));
   updateAuthenticationState();
 

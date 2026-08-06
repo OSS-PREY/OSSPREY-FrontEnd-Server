@@ -9,10 +9,17 @@
  * Once the API moves off free ngrok, drop the header and this stays a plain
  * fetch wrapper -- no call site has to change.
  */
-export const apiFetch = (url, options = {}) => fetch(url, {
-  ...options,
-  headers: {
-    ...(options.headers || {}),
-    'ngrok-skip-browser-warning': 'true',
-  },
-})
+export const apiFetch = (url, options = {}) => {
+  // Endpoints that act on the signed-in account (profile updates) identify the
+  // user from this token rather than from anything in the request body.
+  const token = localStorage.getItem('access_token')
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'ngrok-skip-browser-warning': 'true',
+    },
+  })
+}

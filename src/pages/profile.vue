@@ -91,15 +91,17 @@ const saveProfile = async () => {
 
     const data = await res.json().catch(() => ({}))
 
-    if (!res.ok)
-      throw new Error(data.message || `Server returned ${res.status} ${res.statusText}`)
+    if (!res.ok) {
+      if (res.status === 401)
+        throw new Error('Your session has expired. Please sign in again.')
 
-    user.value = {
-      ...user.value,
-      name,
-      affiliation,
-      role,
+      throw new Error(data.message || `Server returned ${res.status} ${res.statusText}`)
     }
+
+    // Prefer the server's copy of the profile over the values typed here.
+    user.value = data.user
+      ? { ...user.value, ...data.user }
+      : { ...user.value, name, affiliation, role }
 
     localStorage.setItem('user', JSON.stringify(user.value))
     window.dispatchEvent(new Event('user-auth-changed'))

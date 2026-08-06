@@ -59,6 +59,7 @@ const logout = async () => {
   }
 
   localStorage.removeItem('user');
+  localStorage.removeItem('access_token');
   window.dispatchEvent(new Event('user-auth-changed'));
   user.value = null;
   router.push('/');

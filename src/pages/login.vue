@@ -63,6 +63,7 @@ const submit = async () => {
 
     const userData = data.user || { name: data.name || email.value, email: email.value }
     localStorage.setItem('user', JSON.stringify(userData))
+    if (data.access_token) localStorage.setItem('access_token', data.access_token)
     window.dispatchEvent(new Event('user-auth-changed'))
 
     // Track login event
@@ -96,6 +97,7 @@ const handleGoogleResponse = async (response) => {
 
     const userData = data.user || { name: data.name, email: data.email }
     localStorage.setItem('user', JSON.stringify(userData))
+    if (data.access_token) localStorage.setItem('access_token', data.access_token)
     window.dispatchEvent(new Event('user-auth-changed'))
     router.push('/dashboard')
   } catch (err) {
