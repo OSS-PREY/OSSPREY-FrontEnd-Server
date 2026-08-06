@@ -102,10 +102,6 @@ const handleGoogleResponse = async (response) => {
   }
 }
 
-const forgotPassword = () => {
-  alert('Password reset is currently under development')
-}
-
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
@@ -149,7 +145,7 @@ const togglePasswordVisibility = () => {
         Register
       </VBtn>
 
-      <VBtn block variant="text" class="mb-4" @click="forgotPassword">
+      <VBtn block variant="text" class="mb-4" to="/forgot-password">
         Forgot Password?
       </VBtn>
 
