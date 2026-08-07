@@ -48,8 +48,8 @@
             class="elevation-1"
           >
             <template v-slot:item.commit="{ item }">
-              <a :href="item.link" target="_blank" rel="noopener noreferrer">
-                Commit
+              <a :href="item.link" target="_blank" rel="noopener noreferrer" class="commit-hash">
+                {{ shortHash(item.link) }}
               </a>
             </template>
             <template v-slot:item.date="{ item }">
@@ -85,6 +85,18 @@ const headers = [
 
 // Use the dedicated technical developer state
 const selectedNodeName = computed(() => projectStore.selectedTechnicalDeveloper);
+
+/**
+ * Short commit hash for the link text, so the rows are distinguishable.
+ * Apache projects link to mail-archive pages instead of a commit, and those
+ * have no hash to show -- they keep the generic label.
+ * @param {string} link - The commit URL.
+ * @returns {string} - A 7-character hash, or 'Commit'.
+ */
+const shortHash = link => {
+  const tail = String(link || '').replace(/\/+$/, '').split('/').pop().split('?')[0];
+  return /^[0-9a-f]{7,40}$/i.test(tail) ? tail.slice(0, 7) : 'Commit';
+};
 
 /**
  * Formats the date string to a more readable format.
@@ -142,5 +154,7 @@ watch(
 </script>
 
 <style scoped lang="scss">
-/* Add any component-specific styles here */
+.commit-hash {
+  font-family: monospace;
+}
 </style>
