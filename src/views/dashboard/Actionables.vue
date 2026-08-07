@@ -286,8 +286,11 @@ const sortedActionables = computed(() => {
   if (Array.isArray(reactData)) {
     actionables = reactData;
   } else if (reactData && typeof reactData === 'object') {
-    if (monthKey && Array.isArray(reactData[monthKey])) {
-      actionables = reactData[monthKey];
+    if (monthKey) {
+      // A month is selected: show its actionables, or honestly show none.
+      // Falling back to some *other* month's entries would mislabel them as
+      // the current month's.
+      actionables = Array.isArray(reactData[monthKey]) ? reactData[monthKey] : [];
     } else {
       const firstMonthEntries = Object.values(reactData).find(entry => Array.isArray(entry));
       if (firstMonthEntries) actionables = firstMonthEntries;

@@ -15,11 +15,6 @@ export const routes = [
         component: () => import('@/pages/register.vue'),
       },
       {
-        path: 'forgot-password',
-        name: 'ForgotPassword',
-        component: () => import('@/pages/forgot-password.vue'),
-      },
-      {
         path: 'reset-password',
         name: 'ResetPassword',
         component: () => import('@/pages/reset-password.vue'),
@@ -59,19 +54,8 @@ export const routes = [
       },
     ],
   },
-  {
-    path: '/profile',
-    component: () => import('@/layouts/default.vue'),
-    children: [
-      {
-        path: '',
-        name: 'Profile',
-        component: () => import('@/pages/profile.vue'),
-      },
-    ],
-  },
-  // Catch-all: without this an unknown URL rendered a blank page with no way
-  // out. The 404 component already existed but was never routed.
+  // Without this an unknown URL renders a blank page; the 404 component
+  // already exists but is otherwise never routed.
   {
     path: '/:pathMatch(.*)*',
     component: () => import('@/layouts/blank.vue'),
@@ -80,6 +64,17 @@ export const routes = [
         path: '',
         name: 'NotFound',
         component: () => import('@/pages/[...error].vue'),
+      },
+    ],
+  },
+  {
+    path: '/profile',
+    component: () => import('@/layouts/default.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Profile',
+        component: () => import('@/pages/profile.vue'),
       },
     ],
   },

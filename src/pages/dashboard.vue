@@ -74,9 +74,12 @@ onMounted(() => {
 
   
 
-  <!-- Fourth and Fifth Rows that collapse based on isCollapsed -->
+  <!-- Fourth and Fifth Rows that collapse based on isCollapsed.
+       v-if (not v-show): the Sankey diagrams measure their container width on
+       mount, which is 0 while the section is hidden — remounting on expand
+       guarantees they render at the correct size. -->
   <transition name="fade">
-    <div v-show="!isCollapsed">
+    <div v-if="!isCollapsed">
 
       <!-- [Temporary] Fifth Row: Commit and Email Links --> 
       <!-- <VRow>

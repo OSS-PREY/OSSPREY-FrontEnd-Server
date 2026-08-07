@@ -15,6 +15,10 @@
         <VProgressCircular indeterminate color="primary" size="50" />
         <span class="loading-text">Loading Sankey diagram...</span>
       </div>
+      <!-- Error Message -->
+      <div v-else-if="projectStore.socialNetError" class="overlay error-message">
+        {{ projectStore.socialNetError }}
+      </div>
       <!-- No Data Message -->
       <div v-if="shouldShowSocialNoData" class="overlay">
         No data available for this month.

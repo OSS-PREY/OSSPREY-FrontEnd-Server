@@ -107,6 +107,7 @@
               <VBtn color="primary" class="mb-2" :disabled="buttonDisabled" @click="uploadRepoLink" block>
                 Process Repository
               </VBtn>
+              <div v-if="uploadError" class="text-error">{{ uploadError }}</div>
 
               <!-- Request Queue Status -->
               <VCard v-if="projectStore.queueProcessing || projectStore.queueStatus" class="queue-panel mt-3 mb-3" outlined>
@@ -196,7 +197,7 @@ const selectedCategory = ref(null);
 const selectedLocalProject = ref(null);
 const githubRepoLink = ref('');
 const fileInput = ref(null);
-const repoUploading = ref(false);
+const uploadError = ref('');
 
 const repoOptions = [
   { title: 'https://github.com/Nafiz43/EvidenceBot', value: 'https://github.com/Nafiz43/EvidenceBot' },
@@ -426,17 +427,20 @@ const cancelQueued = () => projectStore.cancelQueuedJob();
 const uploadRepoLink = async () => {
   const repoLink = githubRepoLink.value.trim();
   console.log("Repo link entered:", repoLink);
+  uploadError.value = '';
   if (repoLink === '') {
-    alert('Please enter a Git Repository URL.');
+    uploadError.value = 'Please enter a Git Repository URL.';
     return;
   }
-  if (!repoLink.toLowerCase().startsWith('https://github.com/')) {
-    alert("Please enter a valid GitHub repository URL, e.g. https://github.com/owner/repo");
+  // Exactly one owner/repo. A prefix check alone lets a mangled value through
+  // (e.g. two URLs pasted together), and the backend would then analyse a
+  // different repository than the one asked for.
+  if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?(\.git)?\/?$/i.test(repoLink)) {
+    uploadError.value = 'Please enter a valid GitHub repository URL, e.g. https://github.com/owner/repo';
     return;
   }
 
   buttonDisabled.value = true;
-  repoUploading.value = true;
   // Hide any previously selected project while the new request is processed.
   selectedLocalProject.value = null;
   try {
@@ -450,9 +454,11 @@ const uploadRepoLink = async () => {
     } else if (response && response.cancelled) {
       console.log("Request was cancelled.");
     } else {
+      // Prefer the store's normalized project object; fall back to the raw
+      // link only if the store somehow has none.
       const repoNameMatch = repoLink.match(/\/([^\/]+)\.git$/);
       const repoName = repoNameMatch ? repoNameMatch[1] : (repoLink.split('/').pop() || 'Unknown Project');
-      selectedLocalProject.value = {
+      selectedLocalProject.value = projectStore.selectedProject || {
         project_name: repoName,
         github_url: repoLink
       };
@@ -460,8 +466,8 @@ const uploadRepoLink = async () => {
     }
   } catch (error) {
     console.error("Error uploading repository link:", error);
+    uploadError.value = 'Unexpected error while processing the request.';
   } finally {
-    repoUploading.value = false;
     buttonDisabled.value = false;
   }
 };

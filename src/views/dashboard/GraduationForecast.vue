@@ -43,7 +43,7 @@
         <!-- Existing Table (Assuming it's for Predictions) -->
         <VDataTable :headers="predictionsTableHeaders" :items="predictionsTableData" class="mt-5">
           <template #item.close="{ item }">
-            {{ item.close.toFixed(4) }}
+            {{ typeof item.close === 'number' ? item.close.toFixed(4) : 'N/A' }}
           </template>
         </VDataTable>
 
@@ -161,21 +161,32 @@ const computedXCategories = computed(() => {
       projectStore.selectedProject.end_date
     );
   } else if (projectStore.localMetadata?.created_at && projectStore.localMetadata?.updated_at) {
-    const createdAtFormatted = new Date(projectStore.localMetadata.created_at).toISOString().split('T')[0];
-    const updatedAtFormatted = new Date(projectStore.localMetadata.updated_at).toISOString().split('T')[0];
-    categories = generateMonthlyXAxisCategories(createdAtFormatted, updatedAtFormatted);
-  } else {
-    categories = projectStore.xAxisCategories || [];
+    // Parse defensively: malformed metadata dates must not crash the computed.
+    const createdAt = new Date(projectStore.localMetadata.created_at);
+    const updatedAt = new Date(projectStore.localMetadata.updated_at);
+    if (!isNaN(createdAt) && !isNaN(updatedAt)) {
+      categories = generateMonthlyXAxisCategories(
+        createdAt.toISOString().split('T')[0],
+        updatedAt.toISOString().split('T')[0]
+      );
+    }
+  }
+  if (categories.length === 0) {
+    categories = [...(projectStore.xAxisCategories || [])];
   }
 
-  // Always add 4 extra future months
+  // Always add 4 extra future months — but only when the last category is a
+  // real date. Local-mode categories like "Month 12" do not parse, and
+  // pushing "Invalid Date" labels onto the axis is worse than no extras.
   if (categories.length > 0) {
     const lastDate = new Date(categories[categories.length - 1]);
-    for (let i = 0; i < 4; i++) {
-      lastDate.setMonth(lastDate.getMonth() + 1);
-      categories.push(
-        lastDate.toLocaleDateString('default', { month: 'short', year: 'numeric' })
-      );
+    if (!isNaN(lastDate)) {
+      for (let i = 0; i < 4; i++) {
+        lastDate.setMonth(lastDate.getMonth() + 1);
+        categories.push(
+          lastDate.toLocaleDateString('default', { month: 'short', year: 'numeric' })
+        );
+      }
     }
   }
 
@@ -207,6 +218,9 @@ const yearlySeries = computed(() => {
   const normalize = (arr) => {
     const min = Math.min(...arr);
     const max = Math.max(...arr);
+    // A constant series has zero range; map it to the midpoint instead of
+    // dividing by zero and producing NaNs.
+    if (max === min) return { scaled: arr.map(() => 0.5), min, max };
     const scaled = arr.map(v => (v - min) / (max - min));
     return { scaled, min, max };
   };
@@ -215,6 +229,9 @@ const yearlySeries = computed(() => {
 
   const fitAR1 = (data) => {
     const n = data.length;
+    // Need at least two points (and some variance) to fit an AR(1); fall back
+    // to a flat forecast at the last value otherwise.
+    if (n < 2) return { phi: 0, intercept: data[0] ?? 0, stdError: 0 };
     const meanX = data.slice(0, n - 1).reduce((a, b) => a + b, 0) / (n - 1);
     const meanY = data.slice(1).reduce((a, b) => a + b, 0) / (n - 1);
     let cov = 0, varX = 0;
@@ -222,6 +239,7 @@ const yearlySeries = computed(() => {
       cov += (data[i] - meanX) * (data[i + 1] - meanY);
       varX += (data[i] - meanX) ** 2;
     }
+    if (varX === 0) return { phi: 0, intercept: meanY, stdError: 0 };
     const phi = cov / varX;
     const intercept = meanY - phi * meanX;
     const predictions = data.slice(0, n - 1).map(x => intercept + phi * x);
@@ -312,9 +330,6 @@ const yearlyChartConfig = computed(() => {
   const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
   const selected = selectedMonth.value;
   const selectedIndex = selected - 1;
-  // x-axis label of the currently selected month; used to draw a vertical
-  // marker line so selecting a month clearly "jumps" to that point on the line.
-  const selectedCategory = computedXCategories.value[selectedIndex];
 
   return {
     chart: {
@@ -344,47 +359,23 @@ const yearlyChartConfig = computed(() => {
       '#F44336'             // negative
     ],
     markers: {
-      // keep the regular points subtle so the selected month stands out
-      size: 4,
+      size: 5,
       hover: { size: 7 },
       discrete: [
-        // prominent "you are here" dot at the selected month on the observed line
         {
           seriesIndex: 0,
           dataPointIndex: selectedIndex,
-          fillColor: '#fff',
-          strokeColor: currentTheme.primary,
+          fillColor: currentTheme.primary,
+          strokeColor: "#4CAF50",
           strokeWidth: 4,
-          size: 8
+          size: 5
         },
-        // hide the overlapping forecast-branch markers at the selected month
-        { seriesIndex: 1, dataPointIndex: selectedIndex, size: 0 },
-        { seriesIndex: 2, dataPointIndex: selectedIndex, size: 0 },
-        { seriesIndex: 3, dataPointIndex: selectedIndex, size: 0 }
+        {
+          seriesIndex: 1,
+          dataPointIndex: selectedIndex,
+          size: 0
+        }
       ]
-    },
-    // vertical marker line at the selected month, so clicking/sliding to a
-    // month visibly "takes you" to that point on the sustainability line.
-    annotations: {
-      xaxis: selectedCategory != null
-        ? [{
-            x: selectedCategory,
-            borderColor: currentTheme.primary,
-            strokeDashArray: 0,
-            label: {
-              text: `Month ${selected}`,
-              orientation: 'horizontal',
-              position: 'top',
-              offsetY: -2,
-              style: {
-                background: currentTheme.primary,
-                color: '#fff',
-                fontSize: '11px',
-                fontFamily: 'Lora, serif'
-              }
-            }
-          }]
-        : []
     },
     xaxis: {
       type: 'category',
@@ -437,8 +428,11 @@ const yearlyChartConfig = computed(() => {
 });
 
 // -------------------- Month-wise Forecast (Monthly) --------------------
+// NOTE: the monthly tab is currently unreachable (currentTab is fixed to
+// 'yearly') and the store does not populate predictionsData yet. All access
+// below is guarded so wiring the tab up later cannot crash the card.
 const monthlySeries = computed(() => {
-  const adjustedForecast = predictionsData.value.adjusted_forecast || {};
+  const adjustedForecast = predictionsData.value?.adjusted_forecast || {};
   const dataPoints = Object.values(adjustedForecast).map(item => item.close);
   return [
     {
@@ -481,7 +475,7 @@ const monthlyChartConfig = computed(() => {
       hover: { size: 7 }
     },
     xaxis: {
-      categories: Object.values(predictionsData.value.adjusted_forecast).map(item => `Month ${item.date}`),
+      categories: Object.values(predictionsData.value?.adjusted_forecast || {}).map(item => `Month ${item.date}`),
       axisTicks: { show: false },
       axisBorder: { show: false },
       labels: {
@@ -558,7 +552,7 @@ const predictionsTableHeaders = [
 
 // Prepare table data for Predictions
 const predictionsTableData = computed(() => {
-  const adjustedForecast = predictionsData.value.adjusted_forecast;
+  const adjustedForecast = predictionsData.value?.adjusted_forecast;
   if (!adjustedForecast) return [];
   return Object.values(adjustedForecast).map(item => ({
     month: `Month ${item.date}`,

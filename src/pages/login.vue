@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { recordView } from '@/utils/viewTracking'
 import { getApiBaseUrl } from '@/utils/apiBase'
-import { apiFetch } from '@/utils/apiFetch'
+import { apiFetch } from '@/utils/apiFetch';
 
 const email = ref('')
 const password = ref('')
@@ -63,7 +63,6 @@ const submit = async () => {
 
     const userData = data.user || { name: data.name || email.value, email: email.value }
     localStorage.setItem('user', JSON.stringify(userData))
-    if (data.access_token) localStorage.setItem('access_token', data.access_token)
     window.dispatchEvent(new Event('user-auth-changed'))
 
     // Track login event
@@ -97,11 +96,59 @@ const handleGoogleResponse = async (response) => {
 
     const userData = data.user || { name: data.name, email: data.email }
     localStorage.setItem('user', JSON.stringify(userData))
-    if (data.access_token) localStorage.setItem('access_token', data.access_token)
     window.dispatchEvent(new Event('user-auth-changed'))
     router.push('/dashboard')
   } catch (err) {
     errorMessage.value = `Google login failed: ${err.message}`
+  }
+}
+
+// ------------------ FORGOT PASSWORD ------------------
+const forgotDialogOpen = ref(false)
+const forgotEmail = ref('')
+const forgotSubmitting = ref(false)
+const forgotMessage = ref('')
+const forgotError = ref('')
+
+const openForgotDialog = () => {
+  // Prefill with whatever the user already typed into the login form.
+  forgotEmail.value = email.value
+  forgotMessage.value = ''
+  forgotError.value = ''
+  forgotDialogOpen.value = true
+}
+
+const submitForgotPassword = async () => {
+  forgotMessage.value = ''
+  forgotError.value = ''
+
+  if (!forgotEmail.value.trim()) {
+    forgotError.value = 'Please enter your email address.'
+    return
+  }
+
+  forgotSubmitting.value = true
+  try {
+    const res = await apiFetch(`${API_BASE}/api/forgot_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: forgotEmail.value.trim() }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok)
+      throw new Error(data.message || `Server returned ${res.status} ${res.statusText}`)
+
+    // The backend replies with the same generic message whether or not the
+    // address is registered; show it verbatim.
+    forgotMessage.value = data.message || 'If an account exists for that address, a reset link is on its way.'
+  }
+  catch (err) {
+    const message = err instanceof TypeError ? `Network error: ${err.message}` : err.message
+    forgotError.value = message || 'Could not request a password reset.'
+  }
+  finally {
+    forgotSubmitting.value = false
   }
 }
 
@@ -148,7 +195,7 @@ const togglePasswordVisibility = () => {
         Register
       </VBtn>
 
-      <VBtn block variant="text" class="mb-4" to="/forgot-password">
+      <VBtn block variant="text" class="mb-4" @click="openForgotDialog">
         Forgot Password?
       </VBtn>
 
@@ -171,6 +218,40 @@ const togglePasswordVisibility = () => {
         Login with GitHub
       </VBtn>
     </VCard>
+
+    <VDialog v-model="forgotDialogOpen" max-width="420">
+      <VCard class="pa-6">
+        <VCardTitle class="text-h5 mb-2">
+          Reset Password
+        </VCardTitle>
+        <VCardText>
+          <p class="mb-4">
+            Enter the email address of your account and we will send you a password reset link.
+          </p>
+          <VForm @submit.prevent="submitForgotPassword">
+            <VTextField
+              v-model="forgotEmail"
+              label="Email"
+              type="email"
+              required
+              class="mb-4"
+              :disabled="forgotSubmitting"
+            />
+            <VAlert v-if="forgotMessage" type="success" density="compact" class="mb-4" :text="forgotMessage" />
+            <VAlert v-if="forgotError" type="error" density="compact" class="mb-4" :text="forgotError" />
+            <VBtn type="submit" block size="large" :loading="forgotSubmitting" class="mb-2">
+              Send Reset Link
+            </VBtn>
+          </VForm>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="forgotDialogOpen = false">
+            Close
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </VContainer>
 </template>
   

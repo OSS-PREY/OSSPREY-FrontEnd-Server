@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+// Same helper the pages use: adds the ngrok skip header and auth token.
 import { apiFetch as ngrokFetch } from '@/utils/apiFetch';
 
 export const useProjectStore = defineStore('projectStore', () => {
@@ -64,7 +65,11 @@ export const useProjectStore = defineStore('projectStore', () => {
   const queueError = ref(null);         // populated when a job fails
 
   const QUEUE_POLL_INTERVAL_MS = 2000;
+  // Give up polling after this many consecutive network failures (~30 s of
+  // outage) instead of spinning forever with the status panel stuck.
+  const QUEUE_MAX_POLL_FAILURES = 15;
   let queuePollTimer = null;
+  let queuePollFailures = 0;
 
   const resetQueueState = () => {
     if (queuePollTimer) {
@@ -89,8 +94,19 @@ export const useProjectStore = defineStore('projectStore', () => {
   };
 
   // Poll the backend until the job reaches a terminal state.
+  //
+  // The loop is tied to the job id: `resetQueueState`/`cancelQueuedJob` clear
+  // `queueJobId`, and a `clearTimeout` only cancels a *pending* tick — a tick
+  // whose fetch is already in flight would otherwise complete afterwards,
+  // overwrite the newer job's state, and schedule another poll. The guard at
+  // the top of `tick` makes every stale iteration exit immediately instead.
   const pollQueueUntilDone = (jobId) => new Promise((resolve) => {
     const tick = async () => {
+      if (queueJobId.value !== jobId) {
+        // Job was cancelled or superseded by a newer submission.
+        resolve({ status: 'cancelled', superseded: true });
+        return;
+      }
       try {
         const res = await ngrokFetch(`${baseUrl.value}/api/queue_status/${jobId}`, {
           headers: { 'Cache-Control': 'no-cache' }
@@ -100,6 +116,11 @@ export const useProjectStore = defineStore('projectStore', () => {
           return;
         }
         const job = await res.json();
+        if (queueJobId.value !== jobId) {
+          resolve({ status: 'cancelled', superseded: true });
+          return;
+        }
+        queuePollFailures = 0;
         updateQueueState(job);
         if (['completed', 'failed', 'cancelled'].includes(job.status)) {
           resolve(job);
@@ -107,10 +128,16 @@ export const useProjectStore = defineStore('projectStore', () => {
         }
         queuePollTimer = setTimeout(tick, QUEUE_POLL_INTERVAL_MS);
       } catch (err) {
-        console.warn('Queue status poll failed, retrying:', err);
+        queuePollFailures += 1;
+        if (queuePollFailures >= QUEUE_MAX_POLL_FAILURES) {
+          resolve({ status: 'failed', error: 'Lost connection to the server while waiting for the job.' });
+          return;
+        }
+        console.warn(`Queue status poll failed (attempt ${queuePollFailures}/${QUEUE_MAX_POLL_FAILURES}), retrying:`, err);
         queuePollTimer = setTimeout(tick, QUEUE_POLL_INTERVAL_MS);
       }
     };
+    queuePollFailures = 0;
     tick();
   });
 
@@ -160,9 +187,11 @@ export const useProjectStore = defineStore('projectStore', () => {
         github_url: git_link,
       };
       if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
-        const lastMonthIndex = xAxisCategories.value.length - 1;
-        selectedMonth.value = lastMonthIndex;
-        singleValue.value = lastMonthIndex;
+        // Months are 1-based everywhere (slider range, local data keys and the
+        // foundation API all use 1..N), so the default is the count itself.
+        const lastMonth = xAxisCategories.value.length;
+        selectedMonth.value = lastMonth;
+        singleValue.value = lastMonth;
       }
     }
 
@@ -213,6 +242,12 @@ export const useProjectStore = defineStore('projectStore', () => {
       // Step 2: poll until the job reaches a terminal state.
       const finalJob = await pollQueueUntilDone(job.job_id);
 
+      // A newer submission (or a cancel) may have superseded this job while
+      // the final poll was in flight; never apply its result in that case.
+      if (queueJobId.value !== job.job_id) {
+        return { cancelled: true };
+      }
+
       if (finalJob.status === 'completed') {
         const result = finalJob.result || {};
         await applyPipelineResult(result, git_link);
@@ -242,9 +277,10 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // Cancel the active job if it is still waiting in the queue.
   const cancelQueuedJob = async () => {
-    if (!queueJobId.value) return;
+    const jobId = queueJobId.value;
+    if (!jobId) return;
     try {
-      await ngrokFetch(`${baseUrl.value}/api/cancel_job/${queueJobId.value}`, {
+      await ngrokFetch(`${baseUrl.value}/api/cancel_job/${jobId}`, {
         method: 'POST',
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -255,6 +291,9 @@ export const useProjectStore = defineStore('projectStore', () => {
       clearTimeout(queuePollTimer);
       queuePollTimer = null;
     }
+    // Clearing the id makes any in-flight poll iteration bail out (see
+    // pollQueueUntilDone) so the cancelled job's result is never applied.
+    queueJobId.value = null;
     queueStatus.value = 'cancelled';
     queueProcessing.value = false;
   };
@@ -328,6 +367,19 @@ export const useProjectStore = defineStore('projectStore', () => {
   const loading = ref(false);
   const error = ref(null);
 
+  // `loading` backs the "Loading projects..." indicator, which should stay
+  // visible until *all* initial fetches finish — fetchAllProjectData and
+  // fetchEclipseProjects run in parallel and used to race on this flag.
+  let pendingInitialFetches = 0;
+  const beginInitialFetch = () => {
+    pendingInitialFetches += 1;
+    loading.value = true;
+  };
+  const endInitialFetch = () => {
+    pendingInitialFetches = Math.max(0, pendingInitialFetches - 1);
+    if (pendingInitialFetches === 0) loading.value = false;
+  };
+
   // -------------------- Graduation Forecast --------------------
   const gradForecastLoading = ref(false);
   const gradForecastError = ref(null);
@@ -337,6 +389,16 @@ export const useProjectStore = defineStore('projectStore', () => {
   const techNetError = ref(null);
   const socialNetLoading = ref(false);
   const socialNetError = ref(null);
+
+  // Per-resource request sequence counters. Every fetcher increments its
+  // counter on entry and only writes results back if its id is still current,
+  // so a slow response for a previous project/month can never overwrite the
+  // state of the selection the user is actually looking at.
+  let commitMeasuresReq = 0;
+  let emailMeasuresReq = 0;
+  let techNetReq = 0;
+  let socialNetReq = 0;
+  let gradForecastReq = 0;
 
   // -------------------- Range Slider State --------------------
   const showRangeSlider = ref(false);
@@ -369,7 +431,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.warn('Local Email Data not available or invalid:', rawLocalEmailData.value);
       return [];
     }
-    const monthKey = String(month + 1);
+    const monthKey = String(month);
     const emailsForMonth = rawLocalEmailData.value.months[monthKey] || [];
     const devNormalized = normalizeName(developerName);
     const filtered = emailsForMonth.filter(item =>
@@ -387,7 +449,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.warn('Local Commit Data not available or invalid:', rawLocalCommitData.value);
       return [];
     }
-    const monthKey = String(month + 1);
+    const monthKey = String(month);
     const commitsForMonth = rawLocalCommitData.value.months[monthKey] || [];
     const devNormalized = normalizeName(developerName);
     const filtered = commitsForMonth.filter(item =>
@@ -406,16 +468,20 @@ export const useProjectStore = defineStore('projectStore', () => {
     async ([newProject, newMonth]) => {
       console.log(`Project changed to ${newProject?.project_name || 'None'} and month ${newMonth || 'None'}`);
       if (newProject && newMonth !== null && newMonth !== undefined) {
-        await Promise.all([
-          fetchCommitMeasuresData(newProject.project_id, newMonth),
-          fetchEmailMeasuresData(newProject.project_id, newMonth),
-        ]);
         if (!isLocalMode.value) {
+          await Promise.all([
+            fetchCommitMeasuresData(newProject.project_id, newMonth),
+            fetchEmailMeasuresData(newProject.project_id, newMonth),
+          ]);
           await fetchSocialNetData(newProject.project_id, newMonth);
           await fetchTechNetData(newProject.project_id, newMonth);
-          await fetchGradForecast(newProject.project_id);
+          // The graduation forecast is per-project, not per-month; it is
+          // fetched by GraduationForecast.vue on project change instead of
+          // re-fetching here on every month change.
         } else {
-          console.log("Local mode: skipping GET calls for social/tech/forecast on project/month change.");
+          // Local mode has no foundation endpoints: measures/networks come
+          // from the upload response, so no GET calls are made here.
+          console.log("Local mode: skipping GET calls on project/month change.");
         }
       } else {
         if (!isLocalMode.value) {
@@ -462,7 +528,7 @@ export const useProjectStore = defineStore('projectStore', () => {
   // Foundation Mode fetch functions remain unchanged.
 
   const fetchAllProjectData = async () => {
-    loading.value = true;
+    beginInitialFetch();
     error.value = null;
     try {
       console.log('Fetching all Apache project data...');
@@ -512,12 +578,12 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.error('Error fetching Apache project data:', err);
       error.value = 'Failed to fetch project information (Apache).';
     } finally {
-      loading.value = false;
+      endInitialFetch();
     }
   };
 
   const fetchEclipseProjects = async () => {
-    loading.value = true;
+    beginInitialFetch();
     error.value = null;
     try {
       console.log('Fetching all Eclipse project data...');
@@ -547,7 +613,7 @@ export const useProjectStore = defineStore('projectStore', () => {
       console.error('Error fetching Eclipse project data:', err);
       error.value = 'Failed to fetch project information (Eclipse).';
     } finally {
-      loading.value = false;
+      endInitialFetch();
     }
   };
 
@@ -563,6 +629,9 @@ export const useProjectStore = defineStore('projectStore', () => {
     watch_count.value = project.watch_count || 0;
     console.log(`Selected Project: ${project.project_name} (ID: ${project.project_id})`);
     try {
+      // Clear up front: monthly ranges are per-project, and a failed fetch
+      // must not leave the previous project's ranges in place.
+      monthlyRanges.value = {};
       if (selectedFoundation.value === 'Eclipse') {
         monthlyRanges.value =
           project.month_intervals && Object.keys(project.month_intervals).length > 0
@@ -570,6 +639,12 @@ export const useProjectStore = defineStore('projectStore', () => {
             : { "1": true, "2": true, "3": true, "4": true, "5": true, "6": true, "7": true, "8": true, "9": true, "10": true, "11": true, "12": true };
       } else {
         await fetchMonthlyRanges(project.project_id);
+      }
+      // The user may have switched to another project while the monthly
+      // ranges were loading; never apply results for a stale selection.
+      if (selectedProject.value?.project_id !== project.project_id) {
+        console.log(`Skipping stale project details for ${project.project_id}.`);
+        return;
       }
       if (availableMonths.value.length === 0) {
         selectedMonth.value = null;
@@ -655,15 +730,20 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error(`Failed to fetch monthly ranges: ${response.status} ${errorText}`);
       }
       const data = await response.json();
+      // A newer selection may have superseded this request while it was in
+      // flight; the caller performs the authoritative staleness check, so here
+      // we only avoid writing obviously stale state.
+      if (selectedProject.value?.project_id?.toLowerCase() !== project_id.toLowerCase()) return;
       const projectRange = data.project_ranges.find(range => range.project_id.toLowerCase() === project_id.toLowerCase());
       if (!projectRange) throw new Error(`Monthly ranges not found for project ID: ${project_id}`);
       monthlyRanges.value = projectRange.monthly_ranges;
       console.log(`Fetched monthly ranges for project ID ${project_id}:`, monthlyRanges.value);
     } catch (err) {
       console.error('Error fetching monthly ranges:', err);
+      // Do not touch selectedMonth/monthlyRanges here: by the time a slow
+      // request fails, a different project may already own that state. The
+      // caller (setCurrentProjectDetails) handles the empty-ranges case.
       error.value = 'Failed to fetch monthly ranges.';
-      selectedMonth.value = null;
-      monthlyRanges.value = {};
     }
   };
 
@@ -696,12 +776,17 @@ export const useProjectStore = defineStore('projectStore', () => {
     gradForecastData.value = [];
     if (!isLocalMode.value) xAxisCategories.value = [];
     gradForecastError.value = null;
-  
+    // Stale-react guard: never show the previous project's actionables under
+    // a new selection while this request is in flight.
+    reactData.value = [];
+    const reqId = ++gradForecastReq;
+
     try {
       const endpoint = selectedFoundation.value === 'Eclipse'
         ? `${baseUrl.value}/eclipse/grad_forecast/${projectId}`
         : `${baseUrl.value}${apiPrefix.value}/grad_forecast/${projectId}`;
       const response = await ngrokFetch(endpoint);
+      if (reqId !== gradForecastReq) return; // superseded by a newer request
       if (!response.ok) {
         gradForecastError.value = `Failed to fetch Graduation Forecast data: ${response.status}`;
         return;
@@ -726,8 +811,15 @@ export const useProjectStore = defineStore('projectStore', () => {
       // i.e. its recent average is at or below the project's historical
       // baseline. Results are grouped by month so the panel reacts to the
       // month selector.
+      //
+      // This section is best-effort and has its own try/catch: a failure here
+      // must not mark the forecast itself (already loaded above) as failed.
       // ------------------------------------------------------------------
-      const reactJson = await (await ngrokFetch('/updated_react_set2.json')).json();
+      try {
+        const reactRes = await ngrokFetch('/updated_react_set2.json');
+        if (!reactRes.ok) throw new Error(`ReACT catalog request failed: HTTP ${reactRes.status}`);
+        const reactJson = await reactRes.json();
+        if (reqId !== gradForecastReq) return; // superseded while loading
 
       const featureList = [
         // Social features
@@ -780,7 +872,10 @@ export const useProjectStore = defineStore('projectStore', () => {
       // foundation.json keys rows by `proj_name`, which can match either the
       // project id or the (full descriptive) project name depending on the
       // foundation, so we match case-insensitively against both.
-      const foundationRows = await (await ngrokFetch('/foundation.json')).json();
+      const foundationRes = await ngrokFetch('/foundation.json');
+      if (!foundationRes.ok) throw new Error(`foundation.json request failed: HTTP ${foundationRes.status}`);
+      const foundationRows = await foundationRes.json();
+      if (reqId !== gradForecastReq) return; // superseded while loading
       const projectKeys = new Set(
         [projectId, selectedProject.value?.project_name, selectedProject.value?.project_id]
           .filter(Boolean)
@@ -833,17 +928,23 @@ export const useProjectStore = defineStore('projectStore', () => {
 
         reactData.value = reactResultsByMonth;
       }
-
-      
+      } catch (reactErr) {
+        // The forecast itself is fine; only the actionables are unavailable.
+        console.warn('Failed to compute ReACT actionables:', reactErr);
+        if (reqId === gradForecastReq) reactData.value = {};
       }
-  
-      
-  
+
+
+      }
+
+
+
     } catch (error) {
+      if (reqId !== gradForecastReq) return;
       console.error('Error fetching Graduation Forecast data:', error);
       gradForecastError.value = 'Error fetching Graduation Forecast data.';
     } finally {
-      gradForecastLoading.value = false;
+      if (reqId === gradForecastReq) gradForecastLoading.value = false;
     }
   };
   
@@ -858,16 +959,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       return;
     }
     console.log(`Fetching commit measures from ${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}...`);
+    const reqId = ++commitMeasuresReq;
     commitMeasuresLoading.value = true;
     commitMeasuresError.value = null;
     commitMeasuresData.value = null;
     try {
       const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/commit_measure/${projectId}/${month}`);
+      if (reqId !== commitMeasuresReq) return; // superseded by a newer request
       if (!response.ok) {
         commitMeasuresError.value = `Failed to fetch commit measures: ${response.status}`;
         return;
       }
       const data = await response.json();
+      if (reqId !== commitMeasuresReq) return;
       console.log('Fetched Commit Measures Data:', data);
       if (data && data.data) {
         if (Array.isArray(data.data)) {
@@ -885,11 +989,12 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error('Invalid commit measures data format.');
       }
     } catch (error) {
+      if (reqId !== commitMeasuresReq) return;
       console.error('Error fetching Commit Measures data:', error);
       commitMeasuresError.value = 'Failed to load commit measures.';
       commitMeasuresData.value = null;
     } finally {
-      commitMeasuresLoading.value = false;
+      if (reqId === commitMeasuresReq) commitMeasuresLoading.value = false;
     }
   };
 
@@ -902,16 +1007,19 @@ export const useProjectStore = defineStore('projectStore', () => {
       return;
     }
     console.log(`Fetching email measures from ${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}...`);
+    const reqId = ++emailMeasuresReq;
     emailMeasuresLoading.value = true;
     emailMeasuresError.value = null;
     emailMeasuresData.value = null;
     try {
       const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/email_measure/${projectId}/${month}`);
+      if (reqId !== emailMeasuresReq) return; // superseded by a newer request
       if (!response.ok) {
         emailMeasuresError.value = `Failed to fetch email measures: ${response.status}`;
         return;
       }
       const data = await response.json();
+      if (reqId !== emailMeasuresReq) return;
       console.log('Fetched Email Measures Data:', data);
       if (data && data.data) {
         if (Array.isArray(data.data)) {
@@ -929,11 +1037,12 @@ export const useProjectStore = defineStore('projectStore', () => {
         throw new Error('Invalid email measures data format.');
       }
     } catch (error) {
+      if (reqId !== emailMeasuresReq) return;
       console.error('Error fetching Email Measures data:', error);
       emailMeasuresError.value = 'Failed to load email measures.';
       emailMeasuresData.value = null;
     } finally {
-      emailMeasuresLoading.value = false;
+      if (reqId === emailMeasuresReq) emailMeasuresLoading.value = false;
     }
   };
 
@@ -1035,6 +1144,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Technical Network Data --------------------
   const fetchTechNetData = async (projectId, month) => {
+    const reqId = ++techNetReq;
     techNetLoading.value = true;
     techNetError.value = null;
     try {
@@ -1043,18 +1153,25 @@ export const useProjectStore = defineStore('projectStore', () => {
         : `${baseUrl.value}/api/tech_net/${projectId}/${month}`;
       console.log(`Fetching tech network from: ${endpoint}`);
       const response = await ngrokFetch(endpoint);
+      if (reqId !== techNetReq) return; // superseded by a newer request
       if (!response.ok) {
+        // Clear the old month's graph: showing it alongside an error would
+        // silently present stale data as current.
+        techNetData.value = null;
         techNetError.value = `Failed to fetch Tech Network data: ${response.status}`;
         return;
       }
       const data = await response.json();
+      if (reqId !== techNetReq) return;
       techNetData.value = data.data;
       console.log('Fetched Tech Network Data:', data);
     } catch (err) {
+      if (reqId !== techNetReq) return;
       console.error('Error fetching TechNet data:', err);
       techNetData.value = null;
+      techNetError.value = 'Failed to load Tech Network data.';
     } finally {
-      techNetLoading.value = false;
+      if (reqId === techNetReq) techNetLoading.value = false;
     }
   };
 
@@ -1065,6 +1182,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Social Network Data --------------------
   const fetchSocialNetData = async (projectId, month) => {
+    const reqId = ++socialNetReq;
     socialNetLoading.value = true;
     socialNetError.value = null;
     try {
@@ -1073,18 +1191,25 @@ export const useProjectStore = defineStore('projectStore', () => {
         : `${baseUrl.value}/api/social_net/${projectId}/${month}`;
       console.log(`Fetching social network from: ${endpoint}`);
       const response = await ngrokFetch(endpoint);
+      if (reqId !== socialNetReq) return; // superseded by a newer request
       if (!response.ok) {
+        // Clear the old month's graph: showing it alongside an error would
+        // silently present stale data as current.
+        socialNetData.value = null;
         socialNetError.value = `Failed to fetch Social Network data: ${response.status}`;
         return;
       }
       const data = await response.json();
+      if (reqId !== socialNetReq) return;
       socialNetData.value = data.data;
       console.log('Fetched Social Network Data:', data);
     } catch (err) {
+      if (reqId !== socialNetReq) return;
       console.error('Error fetching SocialNet data:', err);
       socialNetData.value = null;
+      socialNetError.value = 'Failed to load Social Network data.';
     } finally {
-      socialNetLoading.value = false;
+      if (reqId === socialNetReq) socialNetLoading.value = false;
     }
   };
 
@@ -1093,8 +1218,6 @@ export const useProjectStore = defineStore('projectStore', () => {
     socialNetError.value = null;
   };
 
-  const sortedActionables = ref([]);
-  
 
   // -------------------- Return Everything --------------------
   return {
@@ -1196,9 +1319,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     reactData,
     // [Testing] Technical Network local mode stats
     reducedCommits,
-    setReducedCommits,  
+    setReducedCommits,
     reducedEmails,
     setReducedEmails,
-    sortedActionables,
   };
 });

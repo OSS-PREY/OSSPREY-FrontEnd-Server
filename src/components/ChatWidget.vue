@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, onUnmounted, ref, watch } from 'vue';
 const chatButtonImage =
   'https://raw.githubusercontent.com/OSS-PREY/OSSPREY-Website/refs/heads/main/static/images/favicon.ico';
 
@@ -33,10 +33,16 @@ const sendMessage = () => {
   messages.value.push({ role: 'user', text: trimmedMessage });
   newMessage.value = '';
 
-  window.setTimeout(() => {
+  echoTimer = window.setTimeout(() => {
     messages.value.push({ role: 'assistant', text: `Echo: ${trimmedMessage}` });
   }, 200);
 };
+
+let echoTimer = null;
+onUnmounted(() => {
+  if (echoTimer)
+    clearTimeout(echoTimer);
+});
 
 watch(messages, async () => {
   await nextTick();
