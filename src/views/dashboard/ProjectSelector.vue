@@ -323,7 +323,12 @@ const localMonth = ref(null);
 watch(localMonths, (newVal) => {
   console.log("Local available months:", newVal);
   if (newVal.length > 0 && (localMonth.value === null || !newVal.includes(localMonth.value))) {
-    localMonth.value = newVal[newVal.length - 1]; // Use last (max) month as default
+    // The store already chose an opening month that has data (see
+    // utils/networkRows.js). Overriding it with the last month here is what put
+    // the slider and the store one month apart and left both cards empty.
+    localMonth.value = newVal.includes(projectStore.selectedMonth)
+      ? projectStore.selectedMonth
+      : newVal[newVal.length - 1];
     projectStore.selectedMonth = localMonth.value;
   }
 });

@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
+import { defaultMonth, renderableRows, rowsForMonth } from '@/utils/networkRows';
 // Same helper the pages use: adds the ngrok skip header and auth token.
 import { apiFetch as ngrokFetch } from '@/utils/apiFetch';
 
@@ -187,14 +188,16 @@ export const useProjectStore = defineStore('projectStore', () => {
         project_name: repoName,
         github_url: git_link,
       };
-      // Local months are 0-based: the forecast, tech_net and social_net are all
-      // keyed 0..N-1. Defaulting to the *count* therefore selected a month one
-      // past the end, so both network cards and all six stat cards came up
-      // empty on first load. Use the forecast's own last key.
+      // Local months are 0-based (forecast, tech_net and social_net are all
+      // keyed 0..N-1), and the newest month is routinely empty -- gem5's has no
+      // commits at all -- so open on the newest month that actually shows
+      // something. See utils/networkRows.js.
       if ((selectedMonth.value === null || selectedMonth.value === undefined) && monthKeys.length > 0) {
-        const lastMonth = monthKeys[monthKeys.length - 1];
-        selectedMonth.value = lastMonth;
-        singleValue.value = lastMonth;
+        const opening = defaultMonth(monthKeys, techNetData.value, socialNetData.value);
+        if (opening !== null) {
+          selectedMonth.value = opening;
+          singleValue.value = opening;
+        }
       }
     }
 
@@ -428,15 +431,10 @@ export const useProjectStore = defineStore('projectStore', () => {
   // reduced* arrays: those carry the Sankey's legibility threshold (drop edges
   // weighing <= sum/100), which under-reported busy months by up to 90%, and
   // they are only populated as a side effect of the chart having rendered.
-  const monthRows = netData => {
-    if (!netData) return [];
-    const rows = Array.isArray(netData)
-      ? netData
-      : netData[String(selectedMonth.value ?? '')] || [];
-    return rows.filter(
+  const monthRows = netData =>
+    rowsForMonth(netData, selectedMonth.value).filter(
       r => Array.isArray(r) && r.length >= 3 && Number.isFinite(parseInt(r[2], 10)),
     );
-  };
   const currentTechRows = computed(() => monthRows(techNetData.value));
   const currentSocialRows = computed(() => monthRows(socialNetData.value));
 

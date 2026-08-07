@@ -37,6 +37,7 @@ import * as d3 from 'd3';
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
+import { renderableRows } from '@/utils/networkRows';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
@@ -75,16 +76,9 @@ const shouldShowTechNoData = computed(() => {
  * Reduces the commits based on threshold logic.
  */
 function reduceTheCommits(inputArray) {
-  if (!Array.isArray(inputArray)) return [];
-  // Rows can arrive malformed (the net-vis data contains bare [] entries for
-  // most months). parseInt(undefined) is NaN, which poisoned the sum and the
-  // threshold, so the filter dropped every row and the card rendered empty.
-  const rows = inputArray.filter(
-    item => Array.isArray(item) && item.length >= 3 && Number.isFinite(parseInt(item[2], 10)),
-  );
-  const currentSum = rows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
-  const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
-  const filteredArray = rows.filter(item => parseInt(item[2], 10) > threshold);
+  // Threshold and malformed-row handling live in utils/networkRows.js so
+  // the cards, the stat boxes and the default month cannot disagree.
+  const filteredArray = renderableRows(inputArray);
   console.log("Filtered Commits Data:", filteredArray);
   console.log("Total Commits:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
   console.log("Number of Committers:", [...new Set(filteredArray.map(item => item[0]))].length);
