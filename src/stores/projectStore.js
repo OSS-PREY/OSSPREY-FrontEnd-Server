@@ -522,15 +522,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     async ([newDeveloper, newProject, newMonth]) => {
       console.log(`Developer changed to ${newDeveloper || 'None'}`);
       if (newDeveloper && newProject && newMonth !== null && newMonth !== undefined) {
-        // For both commit and email links, if in local mode use filtering,
-        // otherwise make GET calls.
-        if (isLocalMode.value) {
-          commitLinksData.value = filterLocalCommitLinks(newProject.project_id, newMonth, newDeveloper);
-          emailLinksData.value = filterLocalEmailLinks(newProject.project_id, newMonth, newDeveloper);
-        } else {
-          await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
-          await fetchEmailLinksData(newProject.project_id, newMonth, newDeveloper);
-        }
+        await fetchCommitLinksData(newProject.project_id, newMonth, newDeveloper);
+        await fetchEmailLinksData(newProject.project_id, newMonth, newDeveloper);
       } else {
         commitLinksData.value = null;
         commitLinksError.value = null;
@@ -1078,19 +1071,18 @@ export const useProjectStore = defineStore('projectStore', () => {
       commitLinksData.value = null;
       return;
     }
-    // NEW: In local mode, do not make a GET call. Filter from raw data.
-    if (isLocalMode.value) {
-      console.log("Local mode: Filtering commit links from raw data.");
-      commitLinksData.value = filterLocalCommitLinks(projectId, month, developerName);
-      commitLinksLoading.value = false;
-      return;
-    }
-    console.log(`Fetching commit links from ${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month} for ${developerName}...`);
+    // Local repos have their own link tables, built by the pipeline from the
+    // same CSVs as the networks; same response shape, so the parsing below is
+    // shared.
+    const commitLinksEndpoint = isLocalMode.value
+      ? `${baseUrl.value}/api/local_commit_links/${projectId}/${month}`
+      : `${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`;
+    console.log(`Fetching commit links from ${commitLinksEndpoint} for ${developerName}...`);
     commitLinksLoading.value = true;
     commitLinksError.value = null;
     commitLinksData.value = null;
     try {
-      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/commit_links/${projectId}/${month}`);
+      const response = await ngrokFetch(commitLinksEndpoint);
       if (!response.ok) {
         commitLinksError.value = `Failed to fetch commit links: ${response.status}`;
         return;
@@ -1126,19 +1118,15 @@ export const useProjectStore = defineStore('projectStore', () => {
       emailLinksData.value = null;
       return;
     }
-    // NEW: In local mode, use the raw filter instead of GET.
-    if (isLocalMode.value) {
-      console.log("Local mode: Filtering email links from raw data.");
-      emailLinksData.value = filterLocalEmailLinks(projectId, month, developerName);
-      emailLinksLoading.value = false;
-      return;
-    }
-    console.log(`Fetching email links from ${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month} for ${developerName}...`);
+    const emailLinksEndpoint = isLocalMode.value
+      ? `${baseUrl.value}/api/local_issue_links/${projectId}/${month}`
+      : `${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`;
+    console.log(`Fetching email links from ${emailLinksEndpoint} for ${developerName}...`);
     emailLinksLoading.value = true;
     emailLinksError.value = null;
     emailLinksData.value = null;
     try {
-      const response = await ngrokFetch(`${baseUrl.value}${apiPrefix.value}/email_links/${projectId}/${month}`);
+      const response = await ngrokFetch(emailLinksEndpoint);
       if (!response.ok) {
         emailLinksError.value = `Failed to fetch email links: ${response.status}`;
         return;
