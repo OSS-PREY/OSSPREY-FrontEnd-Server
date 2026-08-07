@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { apiFetch } from '@/utils/apiFetch';
 import { getApiBaseUrl } from '@/utils/apiBase';
@@ -21,6 +21,46 @@ const repoUrl = computed(() => {
 
 const repoLabel = computed(() =>
   (repoUrl.value || '').replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, ''));
+
+// Answers take several seconds; a static label reads as "stuck", a changing one
+// reads as "working". Words rotate every 3s alongside a live elapsed counter.
+const THINKING_WORDS = [
+  'Cooking', 'Noodling', 'Moonwalking', 'Percolating', 'Simmering', 'Puttering',
+  'Ruminating', 'Doodling', 'Whirring', 'Pondering', 'Marinating', 'Tinkering',
+  'Spelunking', 'Untangling', 'Rummaging', 'Brewing', 'Conjuring', 'Shimmying',
+];
+
+const thinkingWord = ref(THINKING_WORDS[0]);
+const thinkingSeconds = ref(0);
+
+let thinkingTimer = null;
+
+const nextWord = () => {
+  const pool = THINKING_WORDS.filter(w => w !== thinkingWord.value);
+
+  thinkingWord.value = pool[Math.floor(Math.random() * pool.length)];
+};
+
+const startThinking = () => {
+  const startedAt = Date.now();
+
+  thinkingSeconds.value = 0;
+  nextWord();
+  thinkingTimer = window.setInterval(() => {
+    thinkingSeconds.value = Math.round((Date.now() - startedAt) / 1000);
+    if (thinkingSeconds.value % 3 === 0)
+      nextWord();
+  }, 1000);
+};
+
+const stopThinking = () => {
+  if (thinkingTimer) {
+    clearInterval(thinkingTimer);
+    thinkingTimer = null;
+  }
+};
+
+onUnmounted(stopThinking);
 
 const NO_REPO_MESSAGE =
   'Load a repository from a GitHub link first, then I can answer questions about it.';
@@ -109,13 +149,16 @@ const sendMessage = async () => {
 
   // Replace this slot by index when the answer lands. Mutating a pushed object
   // directly would write to the raw object, not the reactive proxy Vue renders
-  // from, so the bubble would sit on "Thinking..." forever.
-  messages.value.push({ role: 'assistant', text: 'Thinking...' });
+  // from, so the bubble would never repaint.
+  messages.value.push({ role: 'assistant', text: '', pending: true });
 
   const pendingIndex = messages.value.length - 1;
   const resolve = text => {
+    stopThinking();
     messages.value[pendingIndex] = { role: 'assistant', text };
   };
+
+  startThinking();
 
   try {
     const res = await apiFetch(`${getApiBaseUrl()}/api/chat/message`, {
@@ -155,6 +198,7 @@ const toggleChat = () => {
 // Switching repos invalidates the whole conversation: new context, new summary.
 watch(repoUrl, () => {
   requestId++;
+  stopThinking();
   busy.value = false;
   projectId.value = null;
   conversationState.value = null;
@@ -259,7 +303,12 @@ const handleSubmit = () => {
                 :class="`chat-message--${message.role}`"
               >
                 <span class="chat-message__author">{{ message.role === 'user' ? 'You' : 'OSSPREY' }}</span>
-                <span class="chat-message__bubble">{{ message.text }}</span>
+                <span v-if="message.pending" class="chat-message__bubble chat-thinking">
+                  <span class="chat-thinking__star">&#10035;</span>
+                  <span class="chat-thinking__word">{{ thinkingWord }}&hellip;</span>
+                  <span class="chat-thinking__meta">({{ thinkingSeconds }}s)</span>
+                </span>
+                <span v-else class="chat-message__bubble">{{ message.text }}</span>
               </div>
             </div>
           </VCardText>
@@ -405,6 +454,47 @@ const handleSubmit = () => {
   border-bottom-left-radius: 0.4rem;
   background-color: rgb(var(--v-theme-surface-variant));
   color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.chat-thinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #d97757;
+  background-color: transparent;
+  box-shadow: none;
+  padding-inline: 0.35rem;
+}
+
+.chat-thinking__star {
+  display: inline-block;
+  animation: chat-thinking-spin 2.4s linear infinite;
+}
+
+.chat-thinking__word {
+  animation: chat-thinking-pulse 1.8s ease-in-out infinite;
+}
+
+.chat-thinking__meta {
+  font-size: 0.8em;
+  opacity: 0.65;
+}
+
+@keyframes chat-thinking-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes chat-thinking-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-thinking__star,
+  .chat-thinking__word {
+    animation: none;
+  }
 }
 
 .chat-card__actions {
