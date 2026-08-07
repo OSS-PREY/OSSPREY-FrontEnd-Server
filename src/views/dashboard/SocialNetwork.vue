@@ -141,7 +141,11 @@ const preparePlotData = () => {
     }
   });
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
-  const containerHeight = containerWidth * 0.45;
+  // Fit the box we are actually given. The card is a fixed height with
+  // overflow:hidden, so a height guessed from the width clips the diagram.
+  const containerHeight = sankeyDiv.value && sankeyDiv.value.clientHeight
+    ? sankeyDiv.value.clientHeight
+    : containerWidth * 0.45;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   clearSankeyDiagram();
   const svg = d3.select(sankeyDiv.value)
@@ -256,13 +260,18 @@ watch(
   { immediate: true }
 );
 
+// Redraw when the container resizes, not just the window: the card also
+// changes size when the sidebar toggles or the layout reflows.
+let resizeObserver = null;
+
 onMounted(() => {
-  window.addEventListener('resize', handleResize);
+  resizeObserver = new ResizeObserver(handleResize);
+  if (sankeyDiv.value) resizeObserver.observe(sankeyDiv.value);
   fetchAndRenderSankey();
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
+  resizeObserver?.disconnect();
 });
 </script>
 
