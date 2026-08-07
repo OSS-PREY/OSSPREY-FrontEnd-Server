@@ -32,8 +32,8 @@ const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const numEmails = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.currentSocialRows || projectStore.currentSocialRows.length === 0) return 0;
-    return projectStore.currentSocialRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+    // Edge weights count messages exchanged, not distinct issues.
+    return projectStore.monthIssueCount;
   }
 
   // Foundation Mode: Use API Data

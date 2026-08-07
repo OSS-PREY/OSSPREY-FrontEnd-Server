@@ -30,16 +30,9 @@ const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const emailsPerSender = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.currentSocialRows || projectStore.currentSocialRows.length === 0) return 0;
+    const senders = projectStore.monthSenderCount;
 
-    // Compute total emails
-    const totalEmails = projectStore.currentSocialRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
-
-    // Compute unique senders
-    const uniqueSenders = new Set(projectStore.currentSocialRows.map(item => item[0]));
-
-    // Avoid division by zero & return an integer
-    return uniqueSenders.size > 0 ? Math.round(totalEmails / uniqueSenders.size) : 0;
+    return senders > 0 ? Math.round(projectStore.monthIssueCount / senders) : 0;
   }
 
   // Foundation Mode: Use API Data

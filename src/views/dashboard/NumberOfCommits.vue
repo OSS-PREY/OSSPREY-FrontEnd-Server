@@ -31,8 +31,9 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 // Compute the total number of commits, adapting for local and foundation modes
 const numCommits = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
-    return projectStore.currentTechRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+    // Not the network edge weights: those count file changes, so a month with
+    // 46 commits across many files reported 1223.
+    return projectStore.monthCommitCount;
   }
 
   // Foundation Mode: Use API Data

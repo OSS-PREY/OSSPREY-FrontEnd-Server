@@ -32,16 +32,11 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const commitsPerCommitter = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
+    // Both halves come from the commit links, so this is commits per person
+    // rather than file changes per network node.
+    const committers = projectStore.monthCommitterCount;
 
-    // Compute total commits
-    const totalCommits = projectStore.currentTechRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
-
-    // Compute unique committers
-    const uniqueCommitters = new Set(projectStore.currentTechRows.map(item => item[0]));
-
-    // Avoid division by zero
-    return uniqueCommitters.size > 0 ? Math.round(totalCommits / uniqueCommitters.size) : '';
+    return committers > 0 ? Math.round(projectStore.monthCommitCount / committers) : 0;
   }
 
   // Foundation Mode: Use API Data

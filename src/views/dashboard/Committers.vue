@@ -32,11 +32,10 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const numCommitters = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
-    
-    // Get unique committers (first column of the tech-net rows)
-    const uniqueCommitters = new Set(projectStore.currentTechRows.map(item => item[0]));
-    return uniqueCommitters.size;
+    // From the commit links, so it agrees with the commit count beside it. The
+    // network only draws contributors whose edges survive the legibility
+    // threshold, which is a different (smaller) set.
+    return projectStore.monthCommitterCount;
   }
 
   // Foundation Mode: Use API Data

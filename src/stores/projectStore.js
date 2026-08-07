@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { defaultMonth, renderableRows, rowsForMonth } from '@/utils/networkRows';
+import { countEntries } from '@/utils/linkCounts';
 // Same helper the pages use: adds the ngrok skip header and auth token.
 import { apiFetch as ngrokFetch } from '@/utils/apiFetch';
 
@@ -442,6 +443,39 @@ export const useProjectStore = defineStore('projectStore', () => {
   const currentTechRows = computed(() => monthRows(techNetData.value));
   const currentSocialRows = computed(() => monthRows(socialNetData.value));
 
+  // True per-month totals for locally processed repos. The network edge weights
+  // count file changes, not commits, so the stat cards read these instead.
+  const monthCommitCount = ref(0);
+  const monthCommitterCount = ref(0);
+  const monthIssueCount = ref(0);
+  const monthSenderCount = ref(0);
+
+  const fetchMonthLinkStats = async (projectId, month) => {
+    if (!projectId || monthMissing(month)) return;
+    const load = async (endpoint) => {
+      try {
+        const response = await ngrokFetch(`${baseUrl.value}${endpoint}`);
+        // 404 is the normal answer for a month with nothing in it.
+        if (!response.ok) return { total: 0, people: 0 };
+        const data = await response.json();
+
+        return countEntries(data?.commits);
+      } catch (error) {
+        console.error(`Failed to load link stats from ${endpoint}:`, error);
+
+        return { total: 0, people: 0 };
+      }
+    };
+    const [commits, issues] = await Promise.all([
+      load(`/api/local_commit_links/${projectId}/${month}`),
+      load(`/api/local_issue_links/${projectId}/${month}`),
+    ]);
+    monthCommitCount.value = commits.total;
+    monthCommitterCount.value = commits.people;
+    monthIssueCount.value = issues.total;
+    monthSenderCount.value = issues.people;
+  };
+
   const setReducedEmails = (data) => {
     reducedEmails.value = data;
     console.log('Updated Reduced Emails Data:', reducedEmails.value);
@@ -501,8 +535,9 @@ export const useProjectStore = defineStore('projectStore', () => {
           // re-fetching here on every month change.
         } else {
           // Local mode has no foundation endpoints: measures/networks come
-          // from the upload response, so no GET calls are made here.
-          console.log("Local mode: skipping GET calls on project/month change.");
+          // from the upload response. The commit/issue totals do need a call,
+          // because the networks alone cannot say how many commits a month had.
+          await fetchMonthLinkStats(newProject.project_id, newMonth);
         }
       } else {
         if (!isLocalMode.value) {
@@ -516,7 +551,10 @@ export const useProjectStore = defineStore('projectStore', () => {
           xAxisCategories.value = [];
           gradForecastError.value = null;
         } else {
-          console.log("Local mode: full reset for project/month change.");
+          monthCommitCount.value = 0;
+          monthCommitterCount.value = 0;
+          monthIssueCount.value = 0;
+          monthSenderCount.value = 0;
         }
       }
     }
@@ -1314,6 +1352,11 @@ export const useProjectStore = defineStore('projectStore', () => {
     localMetadata,
     currentTechRows,
     currentSocialRows,
+    monthCommitCount,
+    monthCommitterCount,
+    monthIssueCount,
+    monthSenderCount,
+    fetchMonthLinkStats,
     // Actions
     fetchAllProjectData,
     fetchEclipseProjects,
