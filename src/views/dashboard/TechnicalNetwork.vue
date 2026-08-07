@@ -41,6 +41,9 @@ import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuet
 
 const projectStore = useProjectStore();
 const sankeyDiv = ref(null);
+// How many links the last render actually drew. The no-data overlay keys off
+// this, so a month that renders nothing always says so instead of going blank.
+const renderedLinks = ref(0);
 
 // currentTechnicalData:
 // • For Foundation mode, techNetData is an array.
@@ -65,8 +68,7 @@ const shouldShowTechNoData = computed(() => {
   const hasMonth = projectStore.selectedMonth !== null && projectStore.selectedMonth !== undefined;
   if (!hasProject || !hasMonth) return false;
   if (projectStore.techNetLoading || projectStore.techNetError) return false;
-  const data = currentTechData.value;
-  return !data || data.length === 0;
+  return renderedLinks.value === 0;
 });
 
 /**
@@ -74,9 +76,15 @@ const shouldShowTechNoData = computed(() => {
  */
 function reduceTheCommits(inputArray) {
   if (!Array.isArray(inputArray)) return [];
-  const currentSum = inputArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+  // Rows can arrive malformed (the net-vis data contains bare [] entries for
+  // most months). parseInt(undefined) is NaN, which poisoned the sum and the
+  // threshold, so the filter dropped every row and the card rendered empty.
+  const rows = inputArray.filter(
+    item => Array.isArray(item) && item.length >= 3 && Number.isFinite(parseInt(item[2], 10)),
+  );
+  const currentSum = rows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   const threshold = currentSum < 100 ? 0 : Math.ceil(currentSum / 100);
-  const filteredArray = inputArray.filter(item => parseInt(item[2], 10) > threshold);
+  const filteredArray = rows.filter(item => parseInt(item[2], 10) > threshold);
   console.log("Filtered Commits Data:", filteredArray);
   console.log("Total Commits:", filteredArray.reduce((sum, item) => sum + parseInt(item[2], 10), 0));
   console.log("Number of Committers:", [...new Set(filteredArray.map(item => item[0]))].length);
@@ -88,6 +96,7 @@ function reduceTheCommits(inputArray) {
  * Removes any previously rendered SVG.
  */
 const clearSankeyDiagram = () => {
+  renderedLinks.value = 0;
   if (sankeyDiv.value) {
     d3.select(sankeyDiv.value).select("svg").remove();
     console.log('TechNet Sankey diagram cleared.');
@@ -249,6 +258,7 @@ const preparePlotData = () => {
     .style("fill", "#424242")
     .style("text-anchor", d => d.side === "target" ? "end" : "start");
 
+  renderedLinks.value = graph.links.length;
   console.log('TechNet Sankey diagram rendered successfully.');
 };
 
