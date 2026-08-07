@@ -205,6 +205,7 @@ const repoOptions = [
   { title: 'https://github.com/Nafiz43/EvidenceBot', value: 'https://github.com/Nafiz43/EvidenceBot' },
   { title: 'https://github.com/Nafiz43/ReACTive', value: 'https://github.com/Nafiz43/ReACTive' },
   { title: 'https://github.com/ossustain/APEX', value: 'https://github.com/ossustain/APEX' },
+  { title: 'https://github.com/gem5/gem5', value: 'https://github.com/gem5/gem5' },
   { title: 'Try a Different GitHub Repo', value: 'custom' }
 ];
 const selectedRepoOption = ref(null);
@@ -344,7 +345,11 @@ const switchDataSource = (source) => {
   console.log("Switched to:", source);
   projectStore.isLocalMode = (source === 'local');
   if (source === 'local') {
-    projectStore.resetLocalProjectDetails();
+    // Full reset, not resetLocalProjectDetails: this runs on every dashboard
+    // mount, and the partial reset left the previous repo's forecast,
+    // actionables and networks on screen with nothing selected.
+    projectStore.resetProjectDetails();
+    projectStore.resetQueueState();
     projectStore.xAxisCategories = [];  // 🔧 Reset here
     projectStore.selectedMonth = null;
   } else {

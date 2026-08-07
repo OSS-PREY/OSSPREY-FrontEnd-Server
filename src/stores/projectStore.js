@@ -695,6 +695,14 @@ export const useProjectStore = defineStore('projectStore', () => {
     showRangeSlider.value = false;
     rangeValue.value = [1, 12];
     singleValue.value = 1;
+    // Local-mode payload too: without this the previous repo's forecast,
+    // actionables and networks keep rendering after the selection is cleared.
+    reactData.value = [];
+    localMetadata.value = null;
+    rawLocalEmailData.value = null;
+    rawLocalCommitData.value = null;
+    reducedCommits.value = null;
+    reducedEmails.value = null;
   };
 
   // Local mode reset (preserving forecast/social data if desired)
@@ -1301,6 +1309,7 @@ export const useProjectStore = defineStore('projectStore', () => {
     setCurrentProjectDetails,
     resetProjectDetails,
     resetLocalProjectDetails,
+    resetQueueState,
     fetchMonthlyRanges,
     // API Prefix
     apiPrefix,
