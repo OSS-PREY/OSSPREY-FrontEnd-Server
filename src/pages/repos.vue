@@ -53,6 +53,7 @@ const loadRepos = async () => {
 
     pendingRepos.value = (data.pending || []).map(job => ({
       repoName: job.repo_name,
+      gitLink: job.git_link,
       startTime: formatDateTime(job.created_at),
       completionTime: null,
       estimatedProcessingTime: formatDuration(job.estimated_seconds),
@@ -61,6 +62,7 @@ const loadRepos = async () => {
 
     processedRepos.value = (data.processed || []).map(job => ({
       repoName: job.repo_name,
+      gitLink: job.git_link,
       startTime: formatDateTime(job.created_at),
       completionTime: job.status === 'completed'
         ? formatDateTime(job.finished_at)

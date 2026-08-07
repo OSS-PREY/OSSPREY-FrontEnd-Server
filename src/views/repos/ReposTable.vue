@@ -43,6 +43,11 @@ const sortedRows = computed(() => {
   return [...props.rows].sort((a, b) => normaliseDateString(b.startTime) - normaliseDateString(a.startTime));
 });
 
+// The dashboard loads a repository from ?repo=<github url> (see
+// ProjectSelector.vue). Rows without a stored link stay plain text.
+const dashboardLink = row =>
+  row?.gitLink ? `/dashboard?repo=${encodeURIComponent(row.gitLink)}` : null;
+
 const resolveTimeValue = row => {
   const value = row?.[props.timeField];
 
@@ -68,7 +73,16 @@ const resolveTimeValue = row => {
         </thead>
         <tbody v-if="sortedRows.length">
           <tr v-for="row in sortedRows" :key="`${row.repoName}-${row.startTime}`">
-            <td>{{ row.repoName }}</td>
+            <td>
+              <a
+                v-if="dashboardLink(row)"
+                :href="dashboardLink(row)"
+                target="_blank"
+                rel="noopener"
+                class="repo-link"
+              >{{ row.repoName }}</a>
+              <template v-else>{{ row.repoName }}</template>
+            </td>
             <td>{{ row.startTime }}</td>
             <td>{{ resolveTimeValue(row) }}</td>
           </tr>
@@ -120,6 +134,16 @@ const resolveTimeValue = row => {
 
 .repos-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.repo-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.repo-link:hover {
+  text-decoration: underline;
 }
 
 .empty-state {

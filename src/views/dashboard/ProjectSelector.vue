@@ -180,11 +180,13 @@
 
 <script setup>
 import { onMounted, watch, computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { apiFetch } from '@/utils/apiFetch';
 const projectStore = useProjectStore();
+const route = useRoute();
 
 // Data source: GitHub only (foundation option hidden for now)
 const selectedDataSource = ref('local');
@@ -502,6 +504,17 @@ onMounted(() => {
   // Ensure local mode is active so GitHub uploads show the slider correctly
   switchDataSource('local');
   fetchUserRepos();
+
+  // Deep link from the All Repos page: /dashboard?repo=<github url>. Processed
+  // repos are cached backend-side, so this normally returns almost immediately;
+  // the queue status panel above covers the case where it does not.
+  const deepLink = route.query.repo;
+  if (typeof deepLink === 'string' && deepLink.trim()) {
+    githubRepoLink.value = deepLink.trim();
+    selectedRepoOption.value =
+      repoOptions.some(o => o.value === githubRepoLink.value) ? githubRepoLink.value : 'custom';
+    uploadRepoLink();
+  }
 });
 </script>
 
