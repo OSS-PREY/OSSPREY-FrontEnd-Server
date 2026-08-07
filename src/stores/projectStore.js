@@ -417,6 +417,10 @@ export const useProjectStore = defineStore('projectStore', () => {
   });
 
   // -------------------- Helpers / Local Filtering --------------------
+  // Month 0 is a real month: local repos key forecasts, networks and link
+  // tables from 0, so `!month` silently dropped every request for it.
+  const monthMissing = (month) => month === null || month === undefined || isNaN(month);
+
   const normalizeName = (name) => {
     return name.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
   };
@@ -970,7 +974,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Commit Measures --------------------
   const fetchCommitMeasuresData = async (projectId, month) => {
-    if (!projectId || !month) {
+    if (!projectId || monthMissing(month)) {
       console.warn('Project ID or month is missing.');
       commitMeasuresError.value = 'Project ID or month is missing.';
       commitMeasuresData.value = null;
@@ -1018,7 +1022,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Email Measures --------------------
   const fetchEmailMeasuresData = async (projectId, month) => {
-    if (!projectId || !month) {
+    if (!projectId || monthMissing(month)) {
       console.warn('Project ID or month is missing.');
       emailMeasuresError.value = 'Project ID or month is missing.';
       emailMeasuresData.value = null;
@@ -1066,7 +1070,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Commit Links Data --------------------
   const fetchCommitLinksData = async (projectId, month, developerName) => {
-    if (!projectId || !month || !developerName) {
+    if (!projectId || monthMissing(month) || !developerName) {
       console.warn('Project ID, month, or developer name missing.');
       commitLinksError.value = 'Project ID, month, or developer name missing.';
       commitLinksData.value = null;
@@ -1113,7 +1117,7 @@ export const useProjectStore = defineStore('projectStore', () => {
 
   // -------------------- Fetch Email Links Data --------------------
   const fetchEmailLinksData = async (projectId, month, developerName) => {
-    if (!projectId || !month || !developerName) {
+    if (!projectId || monthMissing(month) || !developerName) {
       console.warn('Project ID, month, or developer name missing.');
       emailLinksError.value = 'Project ID, month, or developer name missing.';
       emailLinksData.value = null;

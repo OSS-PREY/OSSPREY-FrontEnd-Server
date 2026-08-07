@@ -53,6 +53,10 @@ const themeToken = token => {
   return value ? `rgb(${value})` : null;
 };
 const sankeyDiv = ref(null);
+
+// Vertical room per contributor: d3-sankey's nodePadding plus enough bar to
+// stay clickable and keep its label legible.
+const NODE_SLOT = 22;
 // How many links the last render actually drew. The no-data overlay keys off
 // this, so a month that renders nothing always says so instead of going blank.
 const renderedLinks = ref(0);
@@ -157,9 +161,17 @@ const preparePlotData = () => {
   const containerWidth = sankeyDiv.value ? sankeyDiv.value.offsetWidth : 800;
   // Fit the box we are actually given. The card is a fixed height with
   // overflow:hidden, so a height guessed from the width clips the diagram.
-  const containerHeight = sankeyDiv.value && sankeyDiv.value.clientHeight
+  const visibleHeight = sankeyDiv.value && sankeyDiv.value.clientHeight
     ? sankeyDiv.value.clientHeight
     : containerWidth * 0.45;
+  // A busy month has more contributors than fit the card. Grow the canvas to
+  // suit the taller of the two columns and let the container scroll, rather
+  // than squeezing every node into an unreadable sliver.
+  const columnNodes = Math.max(
+    updatedNodes.filter(n => n.side === 'source').length,
+    updatedNodes.filter(n => n.side === 'target').length,
+  );
+  const containerHeight = Math.max(visibleHeight, columnNodes * NODE_SLOT + 40);
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   clearSankeyDiagram();
   const svg = d3.select(sankeyDiv.value)
@@ -306,10 +318,14 @@ onUnmounted(() => {
 .sankey-container {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  // A scrollbar appearing must not change the width, or the ResizeObserver
+  // that redraws on resize would trigger itself.
+  scrollbar-gutter: stable;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 }
 #sankey {
   width: 100%;

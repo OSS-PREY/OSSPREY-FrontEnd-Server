@@ -16,7 +16,15 @@ export const renderableRows = inputArray => {
     item => Array.isArray(item) && item.length >= 3 && Number.isFinite(parseInt(item[2], 10)),
   );
   const total = rows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
-  const threshold = total < 100 ? 0 : Math.ceil(total / 100);
+  const heaviest = rows.reduce((max, item) => Math.max(max, parseInt(item[2], 10)), 0);
+
+  // A month of many light edges has every edge under its own threshold, so the
+  // filter used to drop all of them and the card claimed the month was empty --
+  // axios month 98 has 1089 edges and drew nothing. Floor the threshold below
+  // the heaviest edge so the busiest months show their strongest links instead.
+  // max(0, ...) keeps a month whose only edges weigh nothing empty, rather
+  // than letting the floor drop the threshold below zero and draw them.
+  const threshold = Math.max(0, Math.min(total < 100 ? 0 : Math.ceil(total / 100), heaviest - 1));
 
   return rows.filter(item => parseInt(item[2], 10) > threshold);
 };
