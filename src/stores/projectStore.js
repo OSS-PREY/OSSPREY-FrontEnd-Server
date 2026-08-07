@@ -145,11 +145,12 @@ export const useProjectStore = defineStore('projectStore', () => {
   // post-processing the previous synchronous flow performed inline.
   const applyPipelineResult = async (data, git_link) => {
     // Graduation Forecast
+    let monthKeys = [];
     if (data.forecast_json) {
-      const keys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
-      gradForecastData.value = keys.map(k => data.forecast_json[k]);
+      monthKeys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
+      gradForecastData.value = monthKeys.map(k => data.forecast_json[k]);
       xAxisCategories.value = [];
-      xAxisCategories.value = keys.map(k => `Month ${k}`);
+      xAxisCategories.value = monthKeys.map(k => `Month ${k}`);
     }
 
     // ReACT data handling — frontend-only: load the full catalog from
@@ -186,10 +187,12 @@ export const useProjectStore = defineStore('projectStore', () => {
         project_name: repoName,
         github_url: git_link,
       };
-      if (!selectedMonth.value && xAxisCategories.value && xAxisCategories.value.length > 0) {
-        // Months are 1-based everywhere (slider range, local data keys and the
-        // foundation API all use 1..N), so the default is the count itself.
-        const lastMonth = xAxisCategories.value.length;
+      // Local months are 0-based: the forecast, tech_net and social_net are all
+      // keyed 0..N-1. Defaulting to the *count* therefore selected a month one
+      // past the end, so both network cards and all six stat cards came up
+      // empty on first load. Use the forecast's own last key.
+      if ((selectedMonth.value === null || selectedMonth.value === undefined) && monthKeys.length > 0) {
+        const lastMonth = monthKeys[monthKeys.length - 1];
         selectedMonth.value = lastMonth;
         singleValue.value = lastMonth;
       }

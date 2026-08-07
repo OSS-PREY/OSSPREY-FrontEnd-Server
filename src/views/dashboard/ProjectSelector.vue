@@ -299,7 +299,15 @@ const hasValidMonths = computed(() => projectStore.availableMonths.length > 0);
 const localMonths = computed(() => {
   const categories = projectStore.xAxisCategories;
   if (selectedDataSource.value === 'local' && Array.isArray(categories)) {
-    return categories.slice(0, 200).map((_, index) => index + 1); // limit to 100 months
+    // The labels carry the real month numbers ("Month 0" ... "Month 274").
+    // Numbering them from the array index instead gave 1..N, which is off by one
+    // against the data everywhere and one past the end at the default -- so the
+    // slider opened on a month that has no network at all. The 200 cap also made
+    // everything beyond month 200 unreachable (gem5 has 275).
+    return categories
+      .map(label => Number(String(label).split(' ')[1]))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
   }
   return [];
 });
