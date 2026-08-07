@@ -1,19 +1,45 @@
 <script setup>
-import { nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+import { useProjectStore } from '@/stores/projectStore';
+import { apiFetch } from '@/utils/apiFetch';
+import { getApiBaseUrl } from '@/utils/apiBase';
+
 const chatButtonImage =
   'https://raw.githubusercontent.com/OSS-PREY/OSSPREY-Website/refs/heads/main/static/images/favicon.ico';
 
+const projectStore = useProjectStore();
+
+// Only GitHub-backed repos can be chatted about. Apache foundation projects
+// store 'N/A' here and Eclipse ones store a projects.eclipse.org page, so the
+// widget has to recognise both as "nothing to chat about" rather than sending
+// them to the backend and getting a bad-URL error back.
+const repoUrl = computed(() => {
+  const url = projectStore.selectedProject?.github_url;
+
+  return /^https?:\/\/github\.com\/[^/]+\/[^/]+/.test(url || '') ? url : null;
+});
+
+const repoLabel = computed(() =>
+  (repoUrl.value || '').replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, ''));
+
+const NO_REPO_MESSAGE =
+  'Load a repository from a GitHub link first, then I can answer questions about it.';
+
 const isOpen = ref(false);
 const newMessage = ref('');
-const messages = ref([
-  {
-    role: 'assistant',
-    text: 'Hi there! This space will soon connect you with the OSSPREY team. For now, I will echo whatever you type.',
-  },
-]);
+const messages = ref([]);
+const projectId = ref(null);
+const conversationState = ref(null);
+const busy = ref(false);
+
+// Answers for the repo the user just switched away from must never render. Same
+// stale-guard pattern the project store uses for its own in-flight requests.
+let requestId = 0;
 
 const messagesContainer = ref(null);
 const messageInput = ref(null);
+
+const say = text => messages.value.push({ role: 'assistant', text });
 
 const scrollMessagesToBottom = () => {
   const container = messagesContainer.value;
@@ -21,28 +47,128 @@ const scrollMessagesToBottom = () => {
     container.scrollTop = container.scrollHeight;
 };
 
-const toggleChat = async () => {
+const startSession = async () => {
+  if (!repoUrl.value || busy.value)
+    return;
+
+  const mine = ++requestId;
+
+  busy.value = true;
+  say(`Preparing context for ${repoLabel.value} — first-time setup can take a few minutes...`);
+
+  try {
+    const res = await apiFetch(`${getApiBaseUrl()}/api/chat/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ github_url: repoUrl.value }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (mine !== requestId)
+      return;
+
+    if (!res.ok)
+      throw new Error(data.message || 'Could not prepare that repository for chat.');
+
+    projectId.value = data.project_id;
+    say(`I've loaded ${repoLabel.value}. Ask me anything about it — governance, commits, issues, or general questions.`);
+  } catch (error) {
+    if (mine !== requestId)
+      return;
+
+    say(`${error.message || 'Something went wrong.'} Send a message to try again.`);
+  } finally {
+    if (mine === requestId)
+      busy.value = false;
+  }
+};
+
+const sendMessage = async () => {
+  const question = newMessage.value.trim();
+  if (!question || busy.value)
+    return;
+
+  if (!repoUrl.value) {
+    say(NO_REPO_MESSAGE);
+
+    return;
+  }
+
+  // The session failed earlier (or never ran) - retry it before the question.
+  if (!projectId.value) {
+    await startSession();
+    if (!projectId.value)
+      return;
+  }
+
+  const mine = ++requestId;
+
+  messages.value.push({ role: 'user', text: question });
+  newMessage.value = '';
+  busy.value = true;
+
+  const pending = { role: 'assistant', text: 'Thinking...' };
+
+  messages.value.push(pending);
+
+  try {
+    const res = await apiFetch(`${getApiBaseUrl()}/api/chat/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: projectId.value,
+        query: question,
+        conversation_state: conversationState.value,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (mine !== requestId)
+      return;
+
+    if (!res.ok)
+      throw new Error(data.message || 'The assistant could not answer that just now.');
+
+    pending.text = data.response || 'No answer came back for that one.';
+    conversationState.value = data.conversation_state ?? null;
+  } catch (error) {
+    if (mine !== requestId)
+      return;
+
+    pending.text = error.message || 'The assistant is temporarily unavailable.';
+  } finally {
+    if (mine === requestId)
+      busy.value = false;
+  }
+};
+
+const toggleChat = () => {
   isOpen.value = !isOpen.value;
 };
 
-const sendMessage = () => {
-  const trimmedMessage = newMessage.value.trim();
-  if (!trimmedMessage)
+// Switching repos invalidates the whole conversation: new context, new summary.
+watch(repoUrl, () => {
+  requestId++;
+  busy.value = false;
+  projectId.value = null;
+  conversationState.value = null;
+  messages.value = [];
+  if (isOpen.value)
+    openConversation();
+});
+
+const openConversation = () => {
+  if (messages.value.length)
     return;
 
-  messages.value.push({ role: 'user', text: trimmedMessage });
-  newMessage.value = '';
+  if (!repoUrl.value) {
+    say(NO_REPO_MESSAGE);
 
-  echoTimer = window.setTimeout(() => {
-    messages.value.push({ role: 'assistant', text: `Echo: ${trimmedMessage}` });
-  }, 200);
+    return;
+  }
+
+  startSession();
 };
-
-let echoTimer = null;
-onUnmounted(() => {
-  if (echoTimer)
-    clearTimeout(echoTimer);
-});
 
 watch(messages, async () => {
   await nextTick();
@@ -52,6 +178,8 @@ watch(messages, async () => {
 watch(isOpen, async value => {
   if (!value)
     return;
+
+  openConversation();
 
   await nextTick();
   scrollMessagesToBottom();
@@ -142,7 +270,8 @@ const handleSubmit = () => {
                 class="chat-input__field"
                 density="comfortable"
                 hide-details
-                placeholder="Type a message and press Enter..."
+                :disabled="busy"
+                :placeholder="busy ? 'Working on it...' : 'Type a message and press Enter...'"
                 variant="solo"
                 clearable
                 append-inner-icon="fa-solid fa-paper-plane"
@@ -249,6 +378,7 @@ const handleSubmit = () => {
   max-width: 100%;
   line-height: 1.35;
   word-break: break-word;
+  white-space: pre-line;
 }
 
 .chat-message--user {
