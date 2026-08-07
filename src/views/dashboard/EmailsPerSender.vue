@@ -30,13 +30,13 @@ const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const emailsPerSender = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.reducedEmails || projectStore.reducedEmails.length === 0) return 0;
+    if (!projectStore.currentSocialRows || projectStore.currentSocialRows.length === 0) return 0;
 
     // Compute total emails
-    const totalEmails = projectStore.reducedEmails.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+    const totalEmails = projectStore.currentSocialRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
 
     // Compute unique senders
-    const uniqueSenders = new Set(projectStore.reducedEmails.map(item => item[0]));
+    const uniqueSenders = new Set(projectStore.currentSocialRows.map(item => item[0]));
 
     // Avoid division by zero & return an integer
     return uniqueSenders.size > 0 ? Math.round(totalEmails / uniqueSenders.size) : 0;

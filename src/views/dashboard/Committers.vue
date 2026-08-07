@@ -32,10 +32,10 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const numCommitters = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.reducedCommits || projectStore.reducedCommits.length === 0) return 0;
+    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
     
-    // Get unique committers (first column in reducedCommits)
-    const uniqueCommitters = new Set(projectStore.reducedCommits.map(item => item[0]));
+    // Get unique committers (first column of the tech-net rows)
+    const uniqueCommitters = new Set(projectStore.currentTechRows.map(item => item[0]));
     return uniqueCommitters.size;
   }
 

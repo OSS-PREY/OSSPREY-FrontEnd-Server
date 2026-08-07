@@ -421,6 +421,22 @@ export const useProjectStore = defineStore('projectStore', () => {
     console.log('Updated Reduced Commits Data:', reducedCommits.value);
   };
   
+  // Month-resolved network rows for the stat cards. Deliberately NOT the
+  // reduced* arrays: those carry the Sankey's legibility threshold (drop edges
+  // weighing <= sum/100), which under-reported busy months by up to 90%, and
+  // they are only populated as a side effect of the chart having rendered.
+  const monthRows = netData => {
+    if (!netData) return [];
+    const rows = Array.isArray(netData)
+      ? netData
+      : netData[String(selectedMonth.value ?? '')] || [];
+    return rows.filter(
+      r => Array.isArray(r) && r.length >= 3 && Number.isFinite(parseInt(r[2], 10)),
+    );
+  };
+  const currentTechRows = computed(() => monthRows(techNetData.value));
+  const currentSocialRows = computed(() => monthRows(socialNetData.value));
+
   const setReducedEmails = (data) => {
     reducedEmails.value = data;
     console.log('Updated Reduced Emails Data:', reducedEmails.value);
@@ -1303,6 +1319,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     rawLocalEmailData,
     rawLocalCommitData,
     localMetadata,
+    currentTechRows,
+    currentSocialRows,
     // Actions
     fetchAllProjectData,
     fetchEclipseProjects,

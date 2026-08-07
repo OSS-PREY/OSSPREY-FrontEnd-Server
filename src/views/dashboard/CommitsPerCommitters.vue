@@ -32,13 +32,13 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 
 const commitsPerCommitter = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.reducedCommits || projectStore.reducedCommits.length === 0) return 0;
+    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
 
     // Compute total commits
-    const totalCommits = projectStore.reducedCommits.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+    const totalCommits = projectStore.currentTechRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
 
     // Compute unique committers
-    const uniqueCommitters = new Set(projectStore.reducedCommits.map(item => item[0]));
+    const uniqueCommitters = new Set(projectStore.currentTechRows.map(item => item[0]));
 
     // Avoid division by zero
     return uniqueCommitters.size > 0 ? Math.round(totalCommits / uniqueCommitters.size) : '';

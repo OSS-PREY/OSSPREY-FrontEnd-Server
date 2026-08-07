@@ -31,8 +31,8 @@ const commitMeasuresError = computed(() => projectStore.commitMeasuresError);
 // Compute the total number of commits, adapting for local and foundation modes
 const numCommits = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.reducedCommits || projectStore.reducedCommits.length === 0) return 0;
-    return projectStore.reducedCommits.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
+    if (!projectStore.currentTechRows || projectStore.currentTechRows.length === 0) return 0;
+    return projectStore.currentTechRows.reduce((sum, item) => sum + parseInt(item[2], 10), 0);
   }
 
   // Foundation Mode: Use API Data

@@ -32,10 +32,10 @@ const emailMeasuresError = computed(() => projectStore.emailMeasuresError);
 
 const numSenders = computed(() => {
   if (projectStore.isLocalMode) {
-    if (!projectStore.reducedEmails || projectStore.reducedEmails.length === 0) return 0;
+    if (!projectStore.currentSocialRows || projectStore.currentSocialRows.length === 0) return 0;
 
-    // Get unique senders (first column in reducedEmails)
-    const uniqueSenders = new Set(projectStore.reducedEmails.map(item => item[0]));
+    // Get unique senders (first column of the social-net rows)
+    const uniqueSenders = new Set(projectStore.currentSocialRows.map(item => item[0]));
     return uniqueSenders.size;
   }
 
