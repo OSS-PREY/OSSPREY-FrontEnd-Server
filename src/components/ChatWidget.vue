@@ -53,6 +53,36 @@ const startThinking = () => {
   }, 1000);
 };
 
+// Answers arrive whole, but revealing them a few characters at a time reads as
+// generation-in-progress. Purely cosmetic: the text is already fully in hand.
+let streamTimer = null;
+
+const stopStreaming = () => {
+  if (streamTimer) {
+    clearInterval(streamTimer);
+    streamTimer = null;
+  }
+};
+
+const streamInto = (index, text) => {
+  stopStreaming();
+
+  // Long answers must not take proportionally long to reveal - cap it at ~3s.
+  const step = Math.max(2, Math.ceil(text.length / 150));
+  let shown = 0;
+
+  streamTimer = window.setInterval(() => {
+    shown = Math.min(text.length, shown + step);
+    messages.value[index] = {
+      role: 'assistant',
+      text: text.slice(0, shown),
+      streaming: shown < text.length,
+    };
+    if (shown >= text.length)
+      stopStreaming();
+  }, 20);
+};
+
 const stopThinking = () => {
   if (thinkingTimer) {
     clearInterval(thinkingTimer);
@@ -60,12 +90,16 @@ const stopThinking = () => {
   }
 };
 
-onUnmounted(stopThinking);
+onUnmounted(() => {
+  stopThinking();
+  stopStreaming();
+});
 
 const NO_REPO_MESSAGE =
   'Load a repository from a GitHub link first, then I can answer questions about it.';
 
 const isOpen = ref(false);
+const isExpanded = ref(false);
 const newMessage = ref('');
 const messages = ref([]);
 const projectId = ref(null);
@@ -153,9 +187,12 @@ const sendMessage = async () => {
   messages.value.push({ role: 'assistant', text: '', pending: true });
 
   const pendingIndex = messages.value.length - 1;
-  const resolve = text => {
+  const resolve = (text, { stream = false } = {}) => {
     stopThinking();
-    messages.value[pendingIndex] = { role: 'assistant', text };
+    if (stream)
+      streamInto(pendingIndex, text);
+    else
+      messages.value[pendingIndex] = { role: 'assistant', text };
   };
 
   startThinking();
@@ -178,7 +215,7 @@ const sendMessage = async () => {
     if (!res.ok)
       throw new Error(data.message || 'The assistant could not answer that just now.');
 
-    resolve(data.response || 'No answer came back for that one.');
+    resolve(data.response || 'No answer came back for that one.', { stream: true });
     conversationState.value = data.conversation_state ?? null;
   } catch (error) {
     if (mine !== requestId)
@@ -199,6 +236,7 @@ const toggleChat = () => {
 watch(repoUrl, () => {
   requestId++;
   stopThinking();
+  stopStreaming();
   busy.value = false;
   projectId.value = null;
   conversationState.value = null;
@@ -265,16 +303,28 @@ const handleSubmit = () => {
       <div
         v-if="isOpen"
         class="chatbox"
+        :class="{ 'chatbox--expanded': isExpanded }"
         role="dialog"
         aria-modal="false"
         aria-label="OSSPREY assistant chat"
       >
-        <VCard class="chat-card" elevation="12">
+        <VCard class="chat-card" :class="{ 'chat-card--expanded': isExpanded }" elevation="12">
           <VCardTitle class="chat-card__title">
             <div class="chat-card__title-text">
               <span class="chat-card__title-primary">Chat with OSSPREY</span>
               <span class="chat-card__title-subtitle">We're here to help.</span>
             </div>
+
+            <VBtn
+              :aria-label="isExpanded ? 'Shrink chat' : 'Expand chat'"
+              class="chat-card__close"
+              icon
+              size="small"
+              variant="text"
+              @click="isExpanded = !isExpanded"
+            >
+              <VIcon :icon="isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand'" />
+            </VBtn>
 
             <VBtn
               aria-label="Close chat"
@@ -308,7 +358,10 @@ const handleSubmit = () => {
                   <span class="chat-thinking__word">{{ thinkingWord }}&hellip;</span>
                   <span class="chat-thinking__meta">({{ thinkingSeconds }}s)</span>
                 </span>
-                <span v-else class="chat-message__bubble">{{ message.text }}</span>
+                <span v-else class="chat-message__bubble">{{ message.text }}<span
+                  v-if="message.streaming"
+                  class="chat-caret"
+                >&#9612;</span></span>
               </div>
             </div>
           </VCardText>
@@ -366,6 +419,11 @@ const handleSubmit = () => {
 
 .chatbox {
   width: min(24.5rem, 88vw);
+  transition: width 0.2s ease;
+}
+
+.chatbox--expanded {
+  width: min(46rem, 94vw);
 }
 
 .chat-card {
@@ -403,6 +461,10 @@ const handleSubmit = () => {
 .chat-card__body {
   padding-block: 1rem;
   padding-inline: 0.75rem;
+}
+
+.chat-card--expanded .chat-messages {
+  max-height: min(60vh, 34rem);
 }
 
 .chat-messages {
@@ -452,8 +514,25 @@ const handleSubmit = () => {
 
 .chat-message--assistant .chat-message__bubble {
   border-bottom-left-radius: 0.4rem;
-  background-color: rgb(var(--v-theme-surface-variant));
-  color: rgb(var(--v-theme-on-surface-variant));
+  background-color: rgba(var(--v-theme-primary), 0.07);
+  border: 1px solid rgba(var(--v-theme-primary), 0.16);
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.chat-caret {
+  color: #d97757;
+  animation: chat-caret-blink 1s step-end infinite;
+}
+
+@keyframes chat-caret-blink {
+  50% { opacity: 0; }
+}
+
+.chat-message--assistant .chat-message__bubble.chat-thinking {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding-inline: 0.15rem;
 }
 
 .chat-thinking {
