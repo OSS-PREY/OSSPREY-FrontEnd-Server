@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 /**
  * @typedef {Object} RepoRow
@@ -43,6 +43,25 @@ const sortedRows = computed(() => {
   return [...props.rows].sort((a, b) => normaliseDateString(b.startTime) - normaliseDateString(a.startTime));
 });
 
+const PAGE_SIZE = 10;
+
+const page = ref(1);
+
+const pageCount = computed(() => Math.max(1, Math.ceil(sortedRows.value.length / PAGE_SIZE)));
+
+// Rows refresh on a poll; a shrinking list must not strand the view on a page
+// that no longer exists.
+watch(pageCount, count => {
+  if (page.value > count)
+    page.value = count;
+});
+
+const rangeStart = computed(() => (page.value - 1) * PAGE_SIZE);
+
+const rangeEnd = computed(() => Math.min(rangeStart.value + PAGE_SIZE, sortedRows.value.length));
+
+const pagedRows = computed(() => sortedRows.value.slice(rangeStart.value, rangeEnd.value));
+
 // The dashboard loads a repository from ?repo=<github url> (see
 // ProjectSelector.vue). Rows without a stored link stay plain text.
 const dashboardLink = row =>
@@ -72,7 +91,7 @@ const resolveTimeValue = row => {
           </tr>
         </thead>
         <tbody v-if="sortedRows.length">
-          <tr v-for="row in sortedRows" :key="`${row.repoName}-${row.startTime}`">
+          <tr v-for="row in pagedRows" :key="`${row.repoName}-${row.startTime}`">
             <td>
               <a
                 v-if="dashboardLink(row)"
@@ -93,6 +112,21 @@ const resolveTimeValue = row => {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div v-if="pageCount > 1" class="table-pagination">
+      <span class="table-pagination__summary">
+        Showing {{ rangeStart + 1 }}-{{ rangeEnd }} of {{ sortedRows.length }}
+      </span>
+
+      <VPagination
+        v-model="page"
+        :length="pageCount"
+        :total-visible="5"
+        density="comfortable"
+        rounded="circle"
+        :aria-label="`${title} pagination`"
+      />
     </div>
   </section>
 </template>
@@ -134,6 +168,21 @@ const resolveTimeValue = row => {
 
 .repos-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  padding-inline: 0.5rem;
+}
+
+.table-pagination__summary {
+  font-size: 0.95rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
 .repo-link {
