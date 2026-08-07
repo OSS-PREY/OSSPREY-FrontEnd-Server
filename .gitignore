@@ -4,3 +4,9 @@ node_modules
 src/.DS_Store
 src/.DS_Store
 /venv/
+# test artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+tests/.repos-table-*/

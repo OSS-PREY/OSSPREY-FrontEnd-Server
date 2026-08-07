@@ -37,7 +37,7 @@ import * as d3 from 'd3';
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useProjectStore } from '@/stores/projectStore';
-import { renderableRows } from '@/utils/networkRows';
+import { renderableRows, rowsForMonth } from '@/utils/networkRows';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
@@ -64,20 +64,11 @@ const renderedLinks = ref(0);
 // currentTechnicalData:
 // • For Foundation mode, techNetData is an array.
 // • For Local mode, it’s an object keyed by month.
-const currentTechData = computed(() => {
-  if (projectStore.techNetData) {
-    if (Array.isArray(projectStore.techNetData)) {
-      console.log("Technical network data (Foundation mode):", projectStore.techNetData);
-      return projectStore.techNetData;
-    } else if (typeof projectStore.techNetData === 'object') {
-      const key = projectStore.selectedMonth ? projectStore.selectedMonth.toString() : "";
-      const dataForMonth = projectStore.techNetData[key] || [];
-      console.log(`Technical network data for month ${key}:`, dataForMonth);
-      return dataForMonth;
-    }
-  }
-  return [];
-});
+const currentTechData = computed(() =>
+  // rowsForMonth handles both shapes and, unlike `month ? ... : ""`, does not
+  // treat month 0 as missing -- local repos are keyed from 0, so that lookup
+  // silently drew an empty network.
+  rowsForMonth(projectStore.techNetData, projectStore.selectedMonth));
 
 const shouldShowTechNoData = computed(() => {
   const hasProject = !!projectStore.selectedProject;

@@ -1,4 +1,4 @@
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -23,10 +23,14 @@ const loadComponent = async relativePath => {
   const moduleCode = `\n${transformedScript}\n${template.code}\n__sfc__.render = render;\nexport default __sfc__;\n`;
   const tempDir = await mkdtemp(join(__dirname, '.repos-table-'));
   const modulePath = join(tempDir, 'component.mjs');
-  await writeFile(modulePath, moduleCode, 'utf8');
-  const module = await import(pathToFileURL(modulePath).href);
-  await rm(tempDir, { recursive: true, force: true });
-  return { component: module.default, descriptor };
+  try {
+    await writeFile(modulePath, moduleCode, 'utf8');
+    const module = await import(pathToFileURL(modulePath).href);
+    return { component: module.default, descriptor };
+  } finally {
+    // Without finally, a failing import leaves the temp dir in tests/.
+    await rm(tempDir, { recursive: true, force: true });
+  }
 };
 
 test('ReposTable sorts rows by most recent start time', async () => {

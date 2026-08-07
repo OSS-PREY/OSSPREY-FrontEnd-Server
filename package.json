@@ -8,9 +8,11 @@
     "build": "vite build",
     "preview": "vite preview --port 5050",
     "lint": "eslint . -c .eslintrc.cjs --ext .ts,.js,.cjs,.vue,.tsx,.jsx",
-    "test": "node --test",
+    "test": "vitest run",
     "build:icons": "tsx src/plugins/iconify/build-icons.js",
-    "postinstall": "npm run build:icons"
+    "postinstall": "npm run build:icons",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@floating-ui/dom": "1.6.3",
@@ -50,8 +52,10 @@
     "@iconify/tools": "^4.0.0",
     "@iconify/utils": "^2.1.13",
     "@iconify/vue": "4.1.1",
-    "@vitejs/plugin-vue": "^5.0.2",
+    "@playwright/test": "^1.61.1",
+    "@vitejs/plugin-vue": "^5.2.4",
     "@vitejs/plugin-vue-jsx": "^3.0.2",
+    "@vue/test-utils": "^2.4.11",
     "boxicons": "^2.1.4",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
@@ -64,6 +68,7 @@
     "eslint-plugin-sonarjs": "^0.24.0",
     "eslint-plugin-unicorn": "^51.0.1",
     "eslint-plugin-vue": "^9.19.2",
+    "happy-dom": "^17.6.1",
     "local-pkg": "^0.5.0",
     "postcss-html": "^1.5.0",
     "postcss-scss": "^4.0.9",
@@ -76,6 +81,7 @@
     "vite-plugin-pages": "^0.32.3",
     "vite-plugin-vue-layouts": "^0.11.0",
     "vite-plugin-vuetify": "2.0.3",
-    "vite-svg-loader": "^5.1.0"
+    "vite-svg-loader": "^5.1.0",
+    "vitest": "^2.1.9"
   }
 }
