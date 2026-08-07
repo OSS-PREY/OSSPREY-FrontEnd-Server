@@ -107,9 +107,15 @@ const sendMessage = async () => {
   newMessage.value = '';
   busy.value = true;
 
-  const pending = { role: 'assistant', text: 'Thinking...' };
+  // Replace this slot by index when the answer lands. Mutating a pushed object
+  // directly would write to the raw object, not the reactive proxy Vue renders
+  // from, so the bubble would sit on "Thinking..." forever.
+  messages.value.push({ role: 'assistant', text: 'Thinking...' });
 
-  messages.value.push(pending);
+  const pendingIndex = messages.value.length - 1;
+  const resolve = text => {
+    messages.value[pendingIndex] = { role: 'assistant', text };
+  };
 
   try {
     const res = await apiFetch(`${getApiBaseUrl()}/api/chat/message`, {
@@ -129,13 +135,13 @@ const sendMessage = async () => {
     if (!res.ok)
       throw new Error(data.message || 'The assistant could not answer that just now.');
 
-    pending.text = data.response || 'No answer came back for that one.';
+    resolve(data.response || 'No answer came back for that one.');
     conversationState.value = data.conversation_state ?? null;
   } catch (error) {
     if (mine !== requestId)
       return;
 
-    pending.text = error.message || 'The assistant is temporarily unavailable.';
+    resolve(error.message || 'The assistant is temporarily unavailable.');
   } finally {
     if (mine === requestId)
       busy.value = false;
