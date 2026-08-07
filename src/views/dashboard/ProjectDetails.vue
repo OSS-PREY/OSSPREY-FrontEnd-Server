@@ -247,23 +247,23 @@ const formatDate = (dateStr) => {
 
 /* Status-specific styles */
 .status-retired {
-  background-color: #e0f7fa;
-  color: #006064;
+  background-color: rgba(var(--v-theme-info), 0.16);
+  color: rgb(var(--v-theme-info));
 }
 
 .status-graduated {
-  background-color: #e8f5e9;
-  color: #1b5e20;
+  background-color: rgba(var(--v-theme-success), 0.16);
+  color: rgb(var(--v-theme-success));
 }
 
 .status-current {
-  background-color: #fffde7;
-  color: #f9a825;
+  background-color: rgba(var(--v-theme-warning), 0.16);
+  color: rgb(var(--v-theme-warning));
 }
 
 .status-default {
-  background-color: #f5f5f5;
-  color: #616161;
+  background-color: rgb(var(--v-theme-chip-surface));
+  color: rgb(var(--v-theme-chip-on-surface));
 }
 
 .mb-3 {
@@ -271,7 +271,7 @@ const formatDate = (dateStr) => {
 }
 
 a {
-  color: #1e88e5;
+  color: rgb(var(--v-theme-link));
   text-decoration: none;
 }
 
@@ -294,12 +294,12 @@ a:hover {
 }
 
 .table-bordered {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .table-bordered th,
 .table-bordered td {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 8px;
   text-align: left;
   word-wrap: break-word;
@@ -307,7 +307,7 @@ a:hover {
 }
 
 .table-primary {
-  background-color: #696cff;
+  background-color: rgb(var(--v-theme-primary));
   color: #fff;
 }
 

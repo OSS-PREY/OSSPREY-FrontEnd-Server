@@ -84,6 +84,12 @@ export default defineComponent({
     background-position: center;
     //z-index: -1; // Ensures it is behind the content
     opacity: 0.3; // Adjust opacity as needed
+
+    // The backdrop is a light line drawing. At 0.3 over a dark page it turned
+    // the whole surface milky and washed out every panel edge.
+    .v-theme--dark & {
+      opacity: 0.05;
+    }
   }
 
   .layout-content-wrapper {

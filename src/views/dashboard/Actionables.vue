@@ -338,7 +338,7 @@ const shouldShowActionableEmptyState = computed(() => {
 }
 
 .explore-link {
-  color: #1e88e5;
+  color: rgb(var(--v-theme-link));
   font-weight: 600;
   text-decoration: none;
   word-break: break-all;
@@ -376,11 +376,11 @@ const shouldShowActionableEmptyState = computed(() => {
 }
 
 .table-bordered {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .table-bordered td {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 10px;
   text-align: left;
   word-wrap: break-word;
@@ -416,7 +416,7 @@ const shouldShowActionableEmptyState = computed(() => {
 
 .ref-link {
   text-decoration: none;
-  color: #1e88e5;
+  color: rgb(var(--v-theme-link));
   font-weight: bold;
   margin-right: 4px;
 }
@@ -437,7 +437,7 @@ const shouldShowActionableEmptyState = computed(() => {
   align-items: center;
   min-height: 200px;
   font-weight: 500;
-  color: #6b6b6b;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   text-align: center;
 }
 

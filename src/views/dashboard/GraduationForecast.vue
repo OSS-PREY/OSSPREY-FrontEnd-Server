@@ -327,7 +327,9 @@ const yearlySeries = computed(() => {
 const yearlyChartConfig = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors;
   const variableTheme = vuetifyTheme.current.value.variables;
-  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
+  // Axis labels are content, not disabled chrome: at disabled-opacity (0.4)
+  // they fell under 3:1 on the dark surface.
+  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['medium-emphasis-opacity']})`;
   const selected = selectedMonth.value;
   const selectedIndex = selected - 1;
 
@@ -445,7 +447,9 @@ const monthlySeries = computed(() => {
 const monthlyChartConfig = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors;
   const variableTheme = vuetifyTheme.current.value.variables;
-  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['disabled-opacity']})`;
+  // Axis labels are content, not disabled chrome: at disabled-opacity (0.4)
+  // they fell under 3:1 on the dark surface.
+  const disabledTextColor = `rgba(${hexToRgb(String(currentTheme['on-surface']))},${variableTheme['medium-emphasis-opacity']})`;
   const borderColor = `rgba(${hexToRgb(String(variableTheme['border-color']))},${variableTheme['border-opacity']})`;
 
   return {
@@ -627,7 +631,7 @@ watch(
 .section-header h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-heading));
   position: relative;
   margin: 0;
 }
@@ -647,12 +651,12 @@ watch(
 }
 
 .table-bordered {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .table-bordered th,
 .table-bordered td {
-  border: 1px solid #dee2e6;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 8px;
   text-align: left;
   word-wrap: break-word;
@@ -660,12 +664,12 @@ watch(
 }
 
 .table-primary {
-  background-color: #696cff;
+  background-color: rgb(var(--v-theme-primary));
   color: #fff;
 }
 
 a {
-  color: #1e88e5;
+  color: rgb(var(--v-theme-link));
   text-decoration: none;
 }
 

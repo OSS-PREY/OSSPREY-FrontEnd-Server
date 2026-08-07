@@ -41,6 +41,17 @@ import { renderableRows } from '@/utils/networkRows';
 import { VCard, VCardTitle, VCardText, VProgressCircular, VCardItem } from 'vuetify/components';
 
 const projectStore = useProjectStore();
+
+// D3 sets inline attributes, so it cannot inherit the theme through CSS: read
+// the resolved tokens at draw time instead of hardcoding light-mode greys.
+const themeToken = token => {
+  // Vuetify defines its theme variables on the application root (.v-theme--dark),
+  // not on :root, so resolve them from an element inside the tree.
+  const el = sankeyDiv.value || document.querySelector('.v-application') || document.documentElement;
+  const value = getComputedStyle(el).getPropertyValue(`--v-theme-${token}`).trim();
+
+  return value ? `rgb(${value})` : null;
+};
 const sankeyDiv = ref(null);
 // How many links the last render actually drew. The no-data overlay keys off
 // this, so a month that renders nothing always says so instead of going blank.
@@ -201,7 +212,7 @@ const preparePlotData = () => {
     .attr("height", d => d.y1 - d.y0)
     .attr("width", d => d.x1 - d.x0)
     .attr("fill", d => colorScale(d.name))
-    .attr("stroke", "#333")
+    .attr("stroke", themeToken("net-stroke") || "#333")
     .attr("stroke-width", 0.5)
     .style("cursor", "pointer")
     .on("click", (event, d) => {
@@ -216,7 +227,7 @@ const preparePlotData = () => {
     .attr("dy", "0.35em")
     .text(d => d.name)
     .style("font-size", "12px")
-    .style("fill", "#424242")
+    .style("fill", themeToken("net-label") || "#424242")
     .style("text-anchor", d => d.side === "target" ? "end" : "start");
   renderedLinks.value = graph.links.length;
   console.log('SocialNet Sankey diagram rendered successfully.');
@@ -312,8 +323,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #424242;
-  background-color: rgba(255, 255, 255, 0.8);
+  color: rgb(var(--v-theme-on-surface));
+  background-color: rgba(var(--v-theme-surface), 0.88);
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 20px;
   border-radius: 8px;
   text-align: center;

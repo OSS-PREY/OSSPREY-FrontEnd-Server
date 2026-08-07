@@ -33,6 +33,16 @@ export const themes = {
       'on-background': '#22303E',
       'surface': '#fff',
       'on-surface': '#22303E',
+
+      // Semantic tokens shared with the dark theme. Panel headings, in-body
+      // links and the network diagrams read these instead of hardcoding a hex,
+      // which is what made every one of them illegible on a dark surface.
+      'heading': staticPrimaryColor,
+      'link': '#1565C0',         // was #1e88e5: 3.7:1 on white, under the 4.5:1 floor
+      'net-label': '#424242',
+      'net-stroke': '#333333',
+      'chip-surface': '#f5f5f5',
+      'chip-on-surface': '#616161',
       'grey-50': '#FAFAFA',
       'grey-100': '#F5F5F5',
       'grey-200': '#EEEEEE',
@@ -109,10 +119,23 @@ export const themes = {
       'on-error': '#fff',
       'error-darken-1': '#E6381A',
       'error-light': '#FF654A',
-      'background': '#232333',
+      // The page sits clearly below the cards: at #232333 against a #2B2C40
+      // surface the two were nearly the same lightness and every panel edge
+      // disappeared.
+      'background': '#1B1B26',
       'on-background': '#E6E6F1',
-      'surface': '#2B2C40',
+      'surface': '#252636',
       'on-surface': '#E6E6F1',
+
+      // Light enough to read on #252636. The old values were the light-theme
+      // ones: the indigo heading came out at 2.7:1, well under the 4.5:1 floor,
+      // and the network labels at #424242 were invisible outright.
+      'heading': '#A5B4FC',      // 7.6:1
+      'link': '#7CB8F7',         // 7.0:1
+      'net-label': '#D7D9E8',
+      'net-stroke': '#8A8FB0',
+      'chip-surface': '#32344A',
+      'chip-on-surface': '#C7CBE0',
       'grey-50': '#26293A',
       'grey-100': '#2F3349',
       'grey-200': '#26293A',

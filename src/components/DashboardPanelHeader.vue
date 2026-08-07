@@ -38,6 +38,6 @@ defineProps({
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-heading));
 }
 </style>

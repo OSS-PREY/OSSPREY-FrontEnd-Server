@@ -594,13 +594,13 @@ onMounted(() => {
 .normal-btn {
   background-color: white;
   color: inherit;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   font-weight: normal;
   text-transform: none;
 }
 
 .normal-btn:hover {
-  background-color: #f5f5f5;
+  background-color: rgb(var(--v-theme-chip-surface));
 }
 
 .coming-soon {
@@ -627,7 +627,7 @@ onMounted(() => {
 }
 
 .text-success {
-  color: #2e7d32;
+  color: rgb(var(--v-theme-success));
   font-size: 0.9rem;
 }
 </style>
