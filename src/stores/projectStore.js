@@ -4,6 +4,7 @@ import { ref, computed, watch } from 'vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { defaultMonth, renderableRows, rowsForMonth } from '@/utils/networkRows';
 import { countEntries } from '@/utils/linkCounts';
+import { topActionables } from '@/utils/rankActionables';
 // Same helper the pages use: adds the ngrok skip header and auth token.
 import { apiFetch as ngrokFetch } from '@/utils/apiFetch';
 
@@ -978,10 +979,10 @@ export const useProjectStore = defineStore('projectStore', () => {
             })
           );
 
-          const matched = normalizedReact
-            .filter((entry, idx) => reactFeatureSets[idx].some(f => strugglingFeatures.has(f)))
-            .sort((a, b) => (b.importance || 0) - (a.importance || 0))
-            .slice(0, 10);
+          const matched = topActionables(
+            normalizedReact.filter((entry, idx) =>
+              reactFeatureSets[idx].some(f => strugglingFeatures.has(f)))
+          );
 
           reactResultsByMonth[String(month)] = matched;
         }

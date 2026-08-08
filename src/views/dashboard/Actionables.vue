@@ -145,6 +145,7 @@ import { ref, computed } from 'vue';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';
+import { topActionables } from '@/utils/rankActionables';
 import statsVerticalWallet from '@images/cards/wallet-primary.png';
 
 const currentTab = ref('income');
@@ -297,9 +298,7 @@ const sortedActionables = computed(() => {
     }
   }
 
-  return Array.isArray(actionables)
-    ? [...actionables].sort((a, b) => (b.importance || 0) - (a.importance || 0)).slice(0, 10)
-    : [];
+  return topActionables(actionables);
 });
 // ---------------------------------------------------------------------------------------
 
