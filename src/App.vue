@@ -5,10 +5,12 @@ import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/ChatWidget.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { apiFetch } from '@/utils/apiFetch';
+import { useAuth } from '@/utils/useAuth';
 
 const route = useRoute();
 const router = useRouter();
-const isAuthenticated = ref(false);
+const { user, isAuthenticated, clearUser, refreshUser } = useAuth();
+
 const showInactivityWarning = ref(false);
 const warningCountdown = ref(0);
 
@@ -20,16 +22,6 @@ let inactivityTimeoutId = null;
 let warningIntervalId = null;
 
 const API_BASE = getApiBaseUrl();
-
-const updateAuthenticationState = () => {
-  try {
-    isAuthenticated.value = Boolean(localStorage.getItem('user'));
-  }
-  catch (error) {
-    console.error('Failed to read authentication state', error);
-    isAuthenticated.value = false;
-  }
-};
 
 const clearWarningState = () => {
   showInactivityWarning.value = false;
@@ -52,25 +44,13 @@ const clearInactivityTimers = () => {
   clearWarningState();
 };
 
-const getStoredUser = () => {
-  try {
-    const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
-  }
-  catch (error) {
-    console.error('Failed to parse stored user', error);
-    return null;
-  }
-};
-
 const handleAutoLogout = async () => {
   if (!isAuthenticated.value)
     return;
 
   clearInactivityTimers();
 
-  const storedUser = getStoredUser();
-  const email = storedUser?.email;
+  const email = user.value?.email;
 
   try {
     await apiFetch(`${API_BASE}/api/logout`, { method: 'POST' });
@@ -91,10 +71,7 @@ const handleAutoLogout = async () => {
     });
   }
 
-  localStorage.removeItem('user');
-  localStorage.removeItem('access_token');
-  window.dispatchEvent(new Event('user-auth-changed'));
-  updateAuthenticationState();
+  clearUser();
 
   try {
     await router.push({
@@ -161,10 +138,10 @@ const handleUserActivity = event => {
 };
 
 onMounted(() => {
-  updateAuthenticationState();
-  window.addEventListener('storage', updateAuthenticationState);
-  window.addEventListener('user-auth-changed', updateAuthenticationState);
-
+  // The composable owns the storage/auth listeners; this only covers a tab
+  // that was restored from bfcache with a stale value.
+  refreshUser();
+  
   const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'visibilitychange'];
   activityEvents.forEach(eventName => {
     window.addEventListener(eventName, handleUserActivity);
@@ -172,9 +149,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('storage', updateAuthenticationState);
-  window.removeEventListener('user-auth-changed', updateAuthenticationState);
-
+  
   const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'visibilitychange'];
   activityEvents.forEach(eventName => {
     window.removeEventListener(eventName, handleUserActivity);
@@ -186,7 +161,7 @@ onBeforeUnmount(() => {
 watch(
   () => route.fullPath,
   () => {
-    updateAuthenticationState();
+    refreshUser();
   },
 );
 

@@ -3,38 +3,15 @@ import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
 import AllReposButton from '@/layouts/components/AllReposButton.vue';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { apiFetch } from '@/utils/apiFetch';
+import { useAuth } from '@/utils/useAuth';
 
-const user = ref(null);
+// Shared state, not a private copy: the navbar previously resynced from a
+// window event, so any missed event left it offering "Login" to a signed-in
+// user.
+const { user, userName, clearUser } = useAuth();
+
 const router = useRouter();
 const API_BASE = getApiBaseUrl();
-
-const loadUserFromStorage = () => {
-  try {
-    const stored = localStorage.getItem('user');
-    user.value = stored ? JSON.parse(stored) : null;
-  }
-  catch {
-    user.value = null;
-  }
-};
-
-const handleStorage = event => {
-  if (!event || event.key === 'user')
-    loadUserFromStorage();
-};
-
-onMounted(() => {
-  loadUserFromStorage();
-  window.addEventListener('storage', handleStorage);
-  window.addEventListener('user-auth-changed', loadUserFromStorage);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('storage', handleStorage);
-  window.removeEventListener('user-auth-changed', loadUserFromStorage);
-});
-
-const userName = computed(() => user.value?.name || user.value?.email || '');
 
 const logout = async () => {
   const email = user.value?.email;
@@ -58,10 +35,7 @@ const logout = async () => {
     });
   }
 
-  localStorage.removeItem('user');
-  localStorage.removeItem('access_token');
-  window.dispatchEvent(new Event('user-auth-changed'));
-  user.value = null;
+  clearUser();
   router.push('/');
 };
 </script>

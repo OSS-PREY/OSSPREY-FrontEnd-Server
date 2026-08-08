@@ -358,7 +358,7 @@ const switchDataSource = (source) => {
   console.log("Switched to:", source);
   projectStore.isLocalMode = (source === 'local');
   if (source === 'local') {
-    // Full reset, not resetLocalProjectDetails: this runs on every dashboard
+    // Full reset: this runs on every dashboard
     // mount, and the partial reset left the previous repo's forecast,
     // actionables and networks on screen with nothing selected.
     projectStore.resetProjectDetails();

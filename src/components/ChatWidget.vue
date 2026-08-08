@@ -2,6 +2,7 @@
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { apiFetch } from '@/utils/apiFetch';
+import { renderMarkdown } from '@/utils/renderMarkdown';
 import { getApiBaseUrl } from '@/utils/apiBase';
 
 const chatButtonImage =
@@ -279,6 +280,30 @@ watch(isOpen, async value => {
 const handleSubmit = () => {
   sendMessage();
 };
+
+// Only the assistant's text is markdown. What the user typed is rendered as
+// plain text, so nothing they type can introduce markup.
+const renderAnswer = text => renderMarkdown(text);
+
+// One delegated listener rather than a component per code block: the blocks are
+// produced as an HTML string, so there is nothing to attach a handler to.
+const copyCode = async event => {
+  const button = event.target.closest('.md-code__copy');
+  if (!button) return;
+
+  const code = button.closest('.md-code')?.dataset.code;
+  if (!code) return;
+
+  try {
+    await navigator.clipboard.writeText(code);
+    button.textContent = 'Copied';
+  } catch {
+    // Clipboard access is denied outside a secure context; say so rather than
+    // leaving the button looking like it worked.
+    button.textContent = 'Press Ctrl+C';
+  }
+  window.setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+};
 </script>
 
 <template>
@@ -358,10 +383,14 @@ const handleSubmit = () => {
                   <span class="chat-thinking__word">{{ thinkingWord }}&hellip;</span>
                   <span class="chat-thinking__meta">({{ thinkingSeconds }}s)</span>
                 </span>
-                <span v-else class="chat-message__bubble">{{ message.text }}<span
-                  v-if="message.streaming"
-                  class="chat-caret"
-                >&#9612;</span></span>
+                <span
+                  v-else-if="message.role === 'assistant'"
+                  class="chat-message__bubble chat-message__bubble--rich"
+                  @click="copyCode"
+                  v-html="renderAnswer(message.text)"
+                />
+                <span v-else class="chat-message__bubble">{{ message.text }}</span>
+                <span v-if="message.streaming" class="chat-caret">&#9612;</span>
               </div>
             </div>
           </VCardText>
@@ -543,6 +572,111 @@ const handleSubmit = () => {
   border: 1px solid rgba(var(--v-theme-primary), 0.16);
   color: rgb(var(--v-theme-on-surface));
 }
+
+/* Markdown ------------------------------------------------------------- */
+
+.chat-message__bubble--rich {
+  white-space: normal;
+}
+
+.chat-message__bubble--rich :deep(p) {
+  margin: 0 0 0.6rem;
+}
+
+.chat-message__bubble--rich :deep(.md-link) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(var(--v-theme-primary), 0.4);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.chat-message__bubble--rich :deep(.md-link:hover) {
+  text-decoration-color: rgb(var(--v-theme-primary));
+}
+
+.chat-message__bubble--rich :deep(.md-inline-code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.35rem;
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  overflow-wrap: anywhere;
+}
+
+.chat-message__bubble--rich :deep(.md-code) {
+  margin: 0.6rem 0;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  /* Fixed dark surface in both themes: a code block reads as a distinct
+     artefact rather than as more prose, which is the whole point of it. */
+  background-color: #1e1e2e;
+}
+
+.chat-message__bubble--rich :deep(.md-code__bar) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.3rem 0.35rem 0.3rem 0.7rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-block-end: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-message__bubble--rich :deep(.md-code__lang) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.chat-message__bubble--rich :deep(.md-code__copy) {
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.chat-message__bubble--rich :deep(.md-code__copy:hover) {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.chat-message__bubble--rich :deep(.md-code__pre) {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  /* Long lines scroll inside the block instead of widening the panel. */
+  overflow-x: auto;
+}
+
+.chat-message__bubble--rich :deep(.md-code__code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #e4e4ef;
+  white-space: pre;
+}
+
+/* Prism tokens, tuned for the surface above. */
+.chat-message__bubble--rich :deep(.token.comment) { color: #7f849c; font-style: italic; }
+.chat-message__bubble--rich :deep(.token.string) { color: #a6e3a1; }
+.chat-message__bubble--rich :deep(.token.number) { color: #fab387; }
+.chat-message__bubble--rich :deep(.token.keyword) { color: #cba6f7; }
+.chat-message__bubble--rich :deep(.token.function) { color: #89b4fa; }
+.chat-message__bubble--rich :deep(.token.operator),
+.chat-message__bubble--rich :deep(.token.punctuation) { color: #9399b2; }
+.chat-message__bubble--rich :deep(.token.property) { color: #89dceb; }
 
 .chat-caret {
   color: #d97757;

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { setUser } from '@/utils/useAuth'
 import { useRouter, useRoute } from 'vue-router'
 import { recordView } from '@/utils/viewTracking'
 import { getApiBaseUrl } from '@/utils/apiBase'
@@ -62,8 +63,8 @@ const submit = async () => {
     }
 
     const userData = data.user || { name: data.name || email.value, email: email.value }
-    localStorage.setItem('user', JSON.stringify(userData))
-    window.dispatchEvent(new Event('user-auth-changed'))
+
+    setUser(userData, data.access_token || data.token)
 
     // Track login event
     apiFetch(`${API_BASE}/api/track_login`, {
@@ -95,8 +96,8 @@ const handleGoogleResponse = async (response) => {
     if (!res.ok) throw new Error(data.message || 'Google login failed.')
 
     const userData = data.user || { name: data.name, email: data.email }
-    localStorage.setItem('user', JSON.stringify(userData))
-    window.dispatchEvent(new Event('user-auth-changed'))
+
+    setUser(userData, data.access_token || data.token)
     router.push('/dashboard')
   } catch (err) {
     errorMessage.value = `Google login failed: ${err.message}`

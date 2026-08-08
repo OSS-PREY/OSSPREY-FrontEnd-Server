@@ -147,39 +147,29 @@ export const useProjectStore = defineStore('projectStore', () => {
   // Apply a finished pipeline result to the dashboard state. This is the same
   // post-processing the previous synchronous flow performed inline.
   const applyPipelineResult = async (data, git_link) => {
+    // Every field below is assigned unconditionally. Guarding each one with
+    // `if (data.x)` left the previous repo's value in place whenever the new
+    // result was missing that piece -- and a missing social network is routine,
+    // because the issue scrape is the part GitHub rate-limits. The dashboard
+    // then showed one repo's commits beside another repo's contributors.
+    clearProjectData();
+
     // Graduation Forecast
-    let monthKeys = [];
-    if (data.forecast_json) {
-      monthKeys = Object.keys(data.forecast_json).map(Number).sort((a, b) => a - b);
-      gradForecastData.value = monthKeys.map(k => data.forecast_json[k]);
-      xAxisCategories.value = [];
-      xAxisCategories.value = monthKeys.map(k => `Month ${k}`);
-    }
+    const forecast = data.forecast_json || {};
+    const monthKeys = Object.keys(forecast).map(Number).sort((a, b) => a - b);
+
+    gradForecastData.value = monthKeys.map(k => forecast[k]);
+    xAxisCategories.value = monthKeys.map(k => `Month ${k}`);
 
     // ReACT data handling — frontend-only: load the full catalog from
     // updated_react_set2.json; the backend's data.react is intentionally ignored.
     reactData.value = await loadFrontendActionables();
 
-    // Process metadata (store it for display in ProjectDetails)
-    if (data.metadata) {
-      localMetadata.value = data.metadata;
-    }
-
-    // Social & Technical Network Data (for Local mode)
-    if (data.social_net) {
-      socialNetData.value = data.social_net;
-    }
-    if (data.tech_net) {
-      techNetData.value = data.tech_net;
-    }
-
-    // In Local mode, store the full raw email/commit data.
-    if (data.issue_data) {
-      rawLocalEmailData.value = data.issue_data;
-    }
-    if (data.commit_data) {
-      rawLocalCommitData.value = data.commit_data;
-    }
+    localMetadata.value = data.metadata || null;
+    socialNetData.value = data.social_net || null;
+    techNetData.value = data.tech_net || null;
+    rawLocalEmailData.value = data.issue_data || null;
+    rawLocalCommitData.value = data.commit_data || null;
 
     // Local Mode Specific Logic: Set the project details based solely on the repo URL.
     if (isLocalMode.value) {
@@ -194,7 +184,10 @@ export const useProjectStore = defineStore('projectStore', () => {
       // keyed 0..N-1), and the newest month is routinely empty -- gem5's has no
       // commits at all -- so open on the newest month that actually shows
       // something. See utils/networkRows.js.
-      if ((selectedMonth.value === null || selectedMonth.value === undefined) && monthKeys.length > 0) {
+      // Unconditional: clearProjectData() has already dropped the previous
+      // repo's month, and keeping it would point at a month the new repo may
+      // not even have.
+      if (monthKeys.length > 0) {
         const opening = defaultMonth(monthKeys, techNetData.value, socialNetData.value);
         if (opening !== null) {
           selectedMonth.value = opening;
@@ -721,13 +714,10 @@ export const useProjectStore = defineStore('projectStore', () => {
     }
   };
 
-  const resetProjectDetails = () => {
-    console.log('Resetting project details.');
-    selectedProject.value = null;
-    github_url.value = 'N/A';
-    fork_count.value = 0;
-    stargazer_count.value = 0;
-    watch_count.value = 0;
+  // Everything derived from the selected repository. resetProjectDetails() and
+  // every new pipeline result both go through here, so there is a single list
+  // to keep correct.
+  const clearProjectData = () => {
     selectedMonth.value = null;
     monthlyRanges.value = {};
     commitMeasuresData.value = null;
@@ -748,37 +738,26 @@ export const useProjectStore = defineStore('projectStore', () => {
     showRangeSlider.value = false;
     rangeValue.value = [1, 12];
     singleValue.value = 1;
-    // Local-mode payload too: without this the previous repo's forecast,
-    // actionables and networks keep rendering after the selection is cleared.
     reactData.value = [];
     localMetadata.value = null;
     rawLocalEmailData.value = null;
     rawLocalCommitData.value = null;
     reducedCommits.value = null;
     reducedEmails.value = null;
+    monthCommitCount.value = 0;
+    monthCommitterCount.value = 0;
+    monthIssueCount.value = 0;
+    monthSenderCount.value = 0;
   };
 
-  // Local mode reset (preserving forecast/social data if desired)
-  const resetLocalProjectDetails = () => {
-    console.log('Resetting local project details (preserving forecast & social network data).');
+  const resetProjectDetails = () => {
+    console.log('Resetting project details.');
     selectedProject.value = null;
     github_url.value = 'N/A';
     fork_count.value = 0;
     stargazer_count.value = 0;
     watch_count.value = 0;
-    selectedMonth.value = null;
-    monthlyRanges.value = {};
-    commitMeasuresData.value = null;
-    commitMeasuresError.value = null;
-    emailMeasuresData.value = null;
-    emailMeasuresError.value = null;
-    commitLinksData.value = null;
-    commitLinksError.value = null;
-    emailLinksData.value = null;
-    emailLinksError.value = null;
-    showRangeSlider.value = false;
-    rangeValue.value = [1, 12];
-    singleValue.value = 1;
+    clearProjectData();
   };
 
   const fetchMonthlyRanges = async (project_id) => {
@@ -1363,7 +1342,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     fetchEclipseProjects,
     setCurrentProjectDetails,
     resetProjectDetails,
-    resetLocalProjectDetails,
+    clearProjectData,
+    applyPipelineResult,
     resetQueueState,
     fetchMonthlyRanges,
     // API Prefix
