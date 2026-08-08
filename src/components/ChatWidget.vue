@@ -370,20 +370,22 @@ const handleSubmit = () => {
 
           <VCardActions class="chat-card__actions">
             <VForm class="chat-input" @submit.prevent="handleSubmit">
-              <VTextField
+              <VTextarea
                 ref="messageInput"
                 v-model="newMessage"
                 aria-label="Type your message"
+                auto-grow
                 autocomplete="off"
                 class="chat-input__field"
                 density="comfortable"
                 hide-details
                 :disabled="busy"
-                :placeholder="busy ? 'Working on it...' : 'Type a message and press Enter...'"
+                max-rows="6"
+                :placeholder="busy ? 'Working on it...' : 'Type a message. Enter sends, Shift+Enter for a new line.'"
+                rows="1"
                 variant="solo"
-                clearable
                 append-inner-icon="fa-solid fa-paper-plane"
-                @keyup.enter.exact.prevent="handleSubmit"
+                @keydown.enter.exact.prevent="handleSubmit"
                 @click:append-inner="handleSubmit"
               />
             </VForm>
@@ -400,9 +402,17 @@ const handleSubmit = () => {
   inset-inline-end: 1.5rem;
   inset-block-end: 1.5rem;
   display: flex;
-  flex-direction: column;
+  /* column-reverse keeps the launcher (first in the DOM, so it stays first in
+     the tab order) pinned to the corner with the panel stacked above it. As a
+     plain column the button sat on top of the panel, and a tall conversation
+     pushed it off the top of the viewport -- unreachable, since this container
+     is position:fixed and cannot be scrolled. */
+  flex-direction: column-reverse;
   align-items: flex-end;
   gap: 0.75rem;
+  /* Never taller than the viewport, so the header's close button stays on
+     screen too. dvh so mobile browser chrome does not eat the corner. */
+  max-block-size: calc(100dvh - 3rem);
   z-index: 2100;
 }
 
@@ -420,6 +430,10 @@ const handleSubmit = () => {
 .chatbox {
   width: min(24.5rem, 88vw);
   transition: width 0.2s ease;
+  /* min-height:0 lets the message list shrink when the widget hits its cap;
+     without it a flex item refuses to go below its content size. */
+  min-block-size: 0;
+  display: flex;
 }
 
 .chatbox--expanded {
@@ -429,6 +443,10 @@ const handleSubmit = () => {
 .chat-card {
   border-radius: 1.25rem;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  inline-size: 100%;
 }
 
 .chat-card__title {
@@ -461,6 +479,12 @@ const handleSubmit = () => {
 .chat-card__body {
   padding-block: 1rem;
   padding-inline: 0.75rem;
+  /* The only part that gives when space runs short: the title and the input
+     keep their size so the close button and the field are always usable. */
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: hidden;
+  display: flex;
 }
 
 .chat-card--expanded .chat-messages {
@@ -474,6 +498,7 @@ const handleSubmit = () => {
   max-height: 22rem;
   overflow-y: auto;
   padding-inline-end: 0.25rem;
+  inline-size: 100%;
 }
 
 .chat-message {
@@ -586,7 +611,20 @@ const handleSubmit = () => {
 }
 
 .chat-input__field :deep(.v-field) {
-  border-radius: 999px;
+  border-radius: 1.25rem;
+}
+
+/* Let the textarea grow to max-rows, then scroll instead of pushing the
+   message list off the top. */
+.chat-input__field :deep(textarea) {
+  max-block-size: 8.5rem;
+  overflow-y: auto;
+  line-height: 1.35;
+}
+
+.chat-input__field :deep(.v-field__append-inner) {
+  align-items: flex-end;
+  padding-block-end: 0.35rem;
 }
 
 .chat-input__field :deep(.v-field__overlay) {
