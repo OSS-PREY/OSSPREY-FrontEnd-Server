@@ -11,7 +11,15 @@
           {{ title }}
         </h2>
       </template>
+
+      <!-- Panels with more to say than one sentence pass markup here; the
+           `tooltip` string still covers the plain case. -->
+      <template v-if="$slots.tooltip" #default>
+        <div class="section-tooltip"><slot name="tooltip" /></div>
+      </template>
     </VTooltip>
+
+    <slot name="action" />
   </div>
 </template>
 
@@ -33,6 +41,15 @@ defineProps({
 <style scoped>
 .section-header {
   gap: 8px;
+}
+
+/* Room to read a legend or a couple of lines without the tooltip going
+   full-width across the dashboard. */
+.section-tooltip {
+  max-inline-size: 22rem;
+  padding-block: 2px;
+  line-height: 1.45;
+  text-align: start;
 }
 
 .section-title {

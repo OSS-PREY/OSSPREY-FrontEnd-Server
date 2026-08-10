@@ -145,3 +145,60 @@ describe('Actionables project-specific selection', () => {
     expect(apiFetch).not.toHaveBeenCalled()
   })
 })
+
+// The card was 450px tall inside the 400px the dashboard gives it, with
+// overflow:hidden -- so the last 50px, where the scroll area ended up, was
+// clipped away and the list truncated with a scrollbar that did nothing.
+// Verified in a browser after the fix: 785px of content scrolling inside
+// 368px, last row fully reachable.
+describe('Actionables card layout', () => {
+  it('fills its container instead of overflowing it', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/views/dashboard/Actionables.vue', 'utf8')
+    const rule = src.slice(src.indexOf('.project-actionables-card {'))
+    const body = rule.slice(0, rule.indexOf('}'))
+
+    expect(body).toContain('block-size: 100%')
+    // A fixed pixel height here is what caused the clipping.
+    expect(body).not.toMatch(/height:\s*\d+px/)
+  })
+
+  it('keeps the shrink chain intact so the list can scroll', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/views/dashboard/Actionables.vue', 'utf8')
+
+    // Without min-block-size:0 a flex child refuses to shrink below its
+    // content height, and the scroll area never gets a bounded height. Both
+    // links in the chain need it -- name them rather than counting, so an
+    // unrelated rule elsewhere in the file cannot satisfy this by accident.
+    const ruleFor = name => {
+      const rest = src.slice(src.indexOf(`${name} {`))
+
+      return rest.slice(0, rest.indexOf('}'))
+    }
+
+    expect(ruleFor('.actionables-body')).toContain('min-block-size: 0')
+    expect(ruleFor('.table-container')).toContain('min-block-size: 0')
+    expect(ruleFor('.table-container')).toContain('overflow-y: auto')
+  })
+
+  it('declares the scroll area exactly once', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/views/dashboard/Actionables.vue', 'utf8')
+
+    // A second .table-container rule reintroduced a max-height and a
+    // horizontal scrollbar on the same element.
+    expect(src.match(/^\.table-container \{/gm) || []).toHaveLength(1)
+  })
+
+  it('does not carry the standing text that crowded the list out', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/views/dashboard/Actionables.vue', 'utf8')
+
+    // These moved into the title tooltip.
+    expect(src).not.toContain('How do you stay on track')
+    expect(src).not.toContain('priority-labels')
+    // The key itself must still exist, in the tooltip.
+    expect(src).toContain('tooltip-key')
+  })
+})

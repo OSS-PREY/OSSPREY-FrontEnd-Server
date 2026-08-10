@@ -1,49 +1,43 @@
 <!-- src/components/Actionables.vue -->
 <template>
   <VCard class="text-center text-sm-start project-actionables-card hover-elevate">
-    <VCardText>
+    <!-- The standing explanation, the priority key and the month lived in the
+         body and took most of the card, leaving the recommendations a sliver.
+         They are context, not content: they move to the title's tooltip. The
+         network link stays clickable, since a link inside a tooltip is not. -->
+    <VCardText class="actionables-head">
       <DashboardPanelHeader
         title="Researched Actionables (ReACTs)"
-        tooltip="Presents evidence-based interventions recommended when socio-technical metrics fall below historical baselines. Drawn from 186 peer-reviewed SE studies and mapped to project-specific needs."
-      />
-      <p class="explore-network mb-0">
-        Explore actionable network here:
-        <a
-          href="https://nafiz43.github.io/ReACT-GPT/"
-          target="_blank"
-          rel="noopener"
-          class="explore-link"
-        >https://nafiz43.github.io/ReACT-GPT/</a>
-      </p>
+        tooltip="Evidence-based interventions recommended when socio-technical metrics fall below historical baselines."
+      >
+        <template #tooltip>
+          <p class="mb-1">
+            Evidence-based interventions recommended when this project's
+            socio-technical metrics fall below historical baselines. Drawn from
+            186 peer-reviewed software-engineering studies, then matched to this
+            project's own signals.
+          </p>
+          <p v-if="monthLabel" class="mb-1">{{ monthLabel }}</p>
+          <div class="tooltip-key">
+            <span><span class="bullet" style="background-color: red;"></span>Critical</span>
+            <span><span class="bullet" style="background-color: yellow;"></span>Medium</span>
+            <span><span class="bullet" style="background-color: green;"></span>Low</span>
+          </div>
+        </template>
+
+        <template #action>
+          <a
+            href="https://nafiz43.github.io/ReACT-GPT/"
+            target="_blank"
+            rel="noopener"
+            class="explore-link"
+          >Explore network &#8599;</a>
+        </template>
+      </DashboardPanelHeader>
     </VCardText>
 
-    <VCardText class="d-flex align-center gap-3">
-      <div>
-        <p class="mb-0">{{ tabData.title }}</p>
-        <p class="mb-0">{{ tabData.monthDetail }}</p>
-        <div class="d-flex align-center gap-2">
-          <h6 class="text-h6">{{ tabData.stats }}</h6>
-        </div>
-      </div>
-    </VCardText>
-
-    <!-- Priority Labels -->
-    <VCardText>
-      <div class="priority-labels">
-        <div class="priority-item">
-          <span class="bullet" style="background-color: red;"></span> <span>Critical</span>
-        </div>
-        <div class="priority-item">
-          <span class="bullet" style="background-color: yellow;"></span> <span>Medium</span>
-        </div>
-        <div class="priority-item">
-          <span class="bullet" style="background-color: green;"></span> <span>Low</span>
-        </div>
-      </div>
-    </VCardText>
-
-    <!-- Table for Actionables -->
-    <VCardText>
+    <!-- The list, which now gets the rest of the card. -->
+    <VCardText class="actionables-body">
       <div v-if="selecting" class="thinking">
         <span class="thinking__star">&#10035;</span>
         <span class="thinking__word">{{ word }}&hellip;</span>
@@ -165,23 +159,11 @@ import { apiFetch } from '@/utils/apiFetch';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import { buildDigest } from '@/utils/painPointsDigest';
 import { useThinking } from '@/utils/thinking';
-import statsVerticalWallet from '@images/cards/wallet-primary.png';
-
-const currentTab = ref('income');
 
 const vuetifyTheme = useTheme();
 const projectStore = useProjectStore();
 
-const tabData = computed(() => {
-  return {
-    income: {
-      avatar: statsVerticalWallet,
-      title: '',
-      stats: 'How do you stay on track? With these steps below:',
-      monthDetail: `Current month: ${projectStore.selectedMonth ?? ''}`,
-    },
-  }[currentTab.value];
-});
+
 
 // Helper: Return bullet color based on importance (support score, 1-4)
 const getBulletColor = (importance) => {
@@ -326,6 +308,11 @@ const sortedActionables = computed(() => {
   return topActionables(actionables);
 });
 
+const monthLabel = computed(() => (projectStore.selectedMonth === null
+  || projectStore.selectedMonth === undefined
+  ? ''
+  : `Showing month ${projectStore.selectedMonth}.`));
+
 const { word, seconds, start: startThinking, stop: stopThinking } = useThinking();
 
 const selecting = computed(() => projectStore.projectActionablesLoading);
@@ -398,8 +385,26 @@ const shouldShowActionableEmptyState = computed(() => {
 
 <style scoped>
 .project-actionables-card {
-  height: 450px;
+  /* Fill the 400px the dashboard gives it -- never exceed it. */
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
   overflow: hidden;
+}
+
+.actionables-head {
+  flex: 0 0 auto;
+  padding-block-end: 8px;
+}
+
+/* min-block-size:0 is what lets this shrink into the card instead of pushing
+   past it; without it a flex child refuses to go below its content height. */
+.actionables-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding-block-start: 0;
 }
 
 /* Tabs */
@@ -415,41 +420,37 @@ const shouldShowActionableEmptyState = computed(() => {
   margin: 0;
 }
 
-/* Explore network link */
-.explore-network {
-  margin-top: 6px;
-  font-size: 0.85rem;
-  color: rgb(var(--v-theme-on-surface));
-}
-
+/* Explore network link, now inline in the header rather than a body line. */
 .explore-link {
+  margin-inline-start: auto;
   color: rgb(var(--v-theme-link));
+  font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
-  word-break: break-all;
+  white-space: nowrap;
 }
 
 .explore-link:hover {
   text-decoration: underline;
 }
 
-/* Priority Labels */
-.priority-labels {
+/* The priority key, as it appears inside the title tooltip. */
+.tooltip-key {
   display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 14px;
+  align-items: center;
 }
 
-.priority-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
+.tooltip-key .bullet {
+  margin-inline-end: 5px;
+  margin-block-start: 0;
 }
+
 
 /* Table */
 .table-container {
-  max-height: 300px; /* Adjust as needed */
+  flex: 1 1 auto;
+  min-block-size: 0;
   overflow-y: auto;
   display: block;
 }
@@ -541,10 +542,7 @@ const shouldShowActionableEmptyState = computed(() => {
 }
 
 /* Ensuring table doesn't get cut */
-.table-container {
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
+
 
 .empty-state {
   display: flex;
