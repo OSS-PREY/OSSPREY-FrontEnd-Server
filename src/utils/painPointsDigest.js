@@ -46,6 +46,26 @@ const seriesFor = (months, netData, measure) => months.map(month => ({
   value: measure(clean(rowsForMonth(netData, month))),
 }));
 
+/**
+ * The last month that actually recorded a developer.
+ *
+ * A scrape's final months routinely carry no commit data: gem5's last four hold
+ * a placeholder row and zero distinct developers, while its social network
+ * carries on normally. Handed a month with no committers the forecaster returns
+ * ~0, so the raw series ends 0.994, 0.0096, 0.005, 0.0001 -- and reported as-is
+ * that reads as "critical collapse, all developers gone" for a project whose
+ * forecast averages 0.88 over its last two years. It means the data ran out.
+ *
+ * Returns null when nothing was ever recorded, in which case nothing is trimmed.
+ */
+const lastRecordedMonth = (netData, months) => {
+  for (let i = months.length - 1; i >= 0; i -= 1) {
+    if (uniqueCount(clean(rowsForMonth(netData, months[i])), 0) > 0) return months[i];
+  }
+
+  return null;
+};
+
 // Every row the project ever recorded, for the lifetime view. Foundation mode
 // hands over a single month as a bare array, which is already everything it has.
 const everyRow = (netData, months) => (Array.isArray(netData)
@@ -130,18 +150,28 @@ export const buildDigest = ({
   const techMonths = monthsOf(techNetData);
   const socialMonths = monthsOf(socialNetData);
   const lifetime = span === 'all';
-  const techWindow = lifetime ? techMonths : windowEndingAt(techMonths, selectedMonth);
-  const socialWindow = lifetime ? socialMonths : windowEndingAt(socialMonths, selectedMonth);
+
+  // Trim the dead tail for the lifetime view. A month the user picked by hand
+  // is left alone -- that is their choice to inspect.
+  const recordedTo = lifetime ? lastRecordedMonth(techNetData, techMonths) : null;
+  const upto = ms => (recordedTo === null ? ms : ms.filter(m => m <= recordedTo));
+
+  const techWindow = lifetime
+    ? upto(techMonths)
+    : windowEndingAt(techMonths, selectedMonth);
+  const socialWindow = lifetime
+    ? upto(socialMonths)
+    : windowEndingAt(socialMonths, selectedMonth);
 
   // The rows the point-in-time measures are taken over. Lifetime aggregates
   // every month, so the bus factor is the share of ALL the work one person did
   // rather than one month's -- a far steadier signal. Otherwise it is the month
   // on screen.
   const techRows = lifetime
-    ? everyRow(techNetData, techMonths)
+    ? everyRow(techNetData, techWindow)
     : clean(rowsForMonth(techNetData, selectedMonth));
   const socialRows = lifetime
-    ? everyRow(socialNetData, socialMonths)
+    ? everyRow(socialNetData, socialWindow)
     : clean(rowsForMonth(socialNetData, selectedMonth));
 
   const forecastPoints = forecast
@@ -150,19 +180,22 @@ export const buildDigest = ({
 
   if (!forecastPoints.length && !techRows.length && !socialRows.length) return null;
 
-  const digest = {
-    month: lifetime ? (months[months.length - 1] ?? selectedMonth) : selectedMonth,
-    span,
-    months_covered: lifetime
-      ? Math.max(techMonths.length, socialMonths.length, forecastPoints.length)
-      : undefined,
-  };
-
   const forecastWindow = lifetime
-    ? forecastPoints
+    ? upto(forecastPoints.map(p => p.month)).map(m =>
+      forecastPoints.find(p => p.month === m))
     : (selectedMonth === null || selectedMonth === undefined
       ? forecastPoints
       : forecastPoints.filter(p => p.month <= selectedMonth)).slice(-WINDOW);
+
+  const digest = {
+    month: lifetime
+      ? (recordedTo ?? months[months.length - 1] ?? selectedMonth)
+      : selectedMonth,
+    span,
+    months_covered: lifetime
+      ? Math.max(techWindow.length, socialWindow.length, forecastWindow.length)
+      : undefined,
+  };
 
   if (forecastWindow.length) {
     // `latest` is the selected month's value, not the project's final one.
