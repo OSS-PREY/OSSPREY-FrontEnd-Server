@@ -472,7 +472,8 @@ const shouldShowActionableEmptyState = computed(() => {
   white-space: normal;
 }
 
-/* Fix for bullets getting squashed */
+/* The one-line reason the model gave for choosing this entry for this
+   project. Block so it sits under the title rather than trailing it. */
 .action-why {
   display: block;
   margin-block-start: 4px;
@@ -500,9 +501,10 @@ const shouldShowActionableEmptyState = computed(() => {
   text-decoration: underline;
 }
 
+/* Fix for bullets getting squashed */
 .actionable-cell {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   flex-wrap: wrap;
   word-break: break-word;
@@ -514,6 +516,7 @@ const shouldShowActionableEmptyState = computed(() => {
   height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-block-start: 5px;
 }
 
 .action-text {
