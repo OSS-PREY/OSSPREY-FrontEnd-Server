@@ -3,6 +3,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useProjectStore } from '@/stores/projectStore';
 import { apiFetch } from '@/utils/apiFetch';
 import { renderMarkdown } from '@/utils/renderMarkdown';
+import { streamText, useThinking } from '@/utils/thinking';
 import { getApiBaseUrl } from '@/utils/apiBase';
 
 const chatButtonImage =
@@ -23,72 +24,29 @@ const repoUrl = computed(() => {
 const repoLabel = computed(() =>
   (repoUrl.value || '').replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, ''));
 
-// Answers take several seconds; a static label reads as "stuck", a changing one
-// reads as "working". Words rotate every 3s alongside a live elapsed counter.
-const THINKING_WORDS = [
-  'Cooking', 'Noodling', 'Moonwalking', 'Percolating', 'Simmering', 'Puttering',
-  'Ruminating', 'Doodling', 'Whirring', 'Pondering', 'Marinating', 'Tinkering',
-  'Spelunking', 'Untangling', 'Rummaging', 'Brewing', 'Conjuring', 'Shimmying',
-];
+// The rotating word and the progressive reveal now live in utils/thinking.js,
+// so the pain points panel shows the same effects rather than a second copy.
+const {
+  word: thinkingWord,
+  seconds: thinkingSeconds,
+  start: startThinking,
+  stop: stopThinking,
+} = useThinking();
 
-const thinkingWord = ref(THINKING_WORDS[0]);
-const thinkingSeconds = ref(0);
-
-let thinkingTimer = null;
-
-const nextWord = () => {
-  const pool = THINKING_WORDS.filter(w => w !== thinkingWord.value);
-
-  thinkingWord.value = pool[Math.floor(Math.random() * pool.length)];
-};
-
-const startThinking = () => {
-  const startedAt = Date.now();
-
-  thinkingSeconds.value = 0;
-  nextWord();
-  thinkingTimer = window.setInterval(() => {
-    thinkingSeconds.value = Math.round((Date.now() - startedAt) / 1000);
-    if (thinkingSeconds.value % 3 === 0)
-      nextWord();
-  }, 1000);
-};
-
-// Answers arrive whole, but revealing them a few characters at a time reads as
-// generation-in-progress. Purely cosmetic: the text is already fully in hand.
-let streamTimer = null;
+let cancelStream = null;
 
 const stopStreaming = () => {
-  if (streamTimer) {
-    clearInterval(streamTimer);
-    streamTimer = null;
+  if (cancelStream) {
+    cancelStream();
+    cancelStream = null;
   }
 };
 
 const streamInto = (index, text) => {
   stopStreaming();
-
-  // Long answers must not take proportionally long to reveal - cap it at ~3s.
-  const step = Math.max(2, Math.ceil(text.length / 150));
-  let shown = 0;
-
-  streamTimer = window.setInterval(() => {
-    shown = Math.min(text.length, shown + step);
-    messages.value[index] = {
-      role: 'assistant',
-      text: text.slice(0, shown),
-      streaming: shown < text.length,
-    };
-    if (shown >= text.length)
-      stopStreaming();
-  }, 20);
-};
-
-const stopThinking = () => {
-  if (thinkingTimer) {
-    clearInterval(thinkingTimer);
-    thinkingTimer = null;
-  }
+  cancelStream = streamText(text, (partial, done) => {
+    messages.value[index] = { role: 'assistant', text: partial, streaming: !done };
+  });
 };
 
 onUnmounted(() => {

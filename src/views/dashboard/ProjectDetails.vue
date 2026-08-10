@@ -11,6 +11,9 @@
         </VCardItem>
 
         <VCardText class="h-100">
+          <!-- What is going wrong right now, ahead of the static metadata. -->
+          <ProjectPainPoints v-if="projectStore.selectedProject" />
+
           <!-- If no project is selected -->
           <div v-if="!projectStore.selectedProject">
             <em>Please select a project to see its details.</em>
@@ -194,6 +197,7 @@
 <script setup>
 import { computed } from 'vue';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
+import ProjectPainPoints from '@/views/dashboard/ProjectPainPoints.vue';
 import { useProjectStore } from '@/stores/projectStore';
 
 const projectStore = useProjectStore();

@@ -1,0 +1,165 @@
+// The measurement half of the getting-project-pain-points pipeline.
+//
+// RepoWise holds the project's markdown and nothing else -- no networks, no
+// forecast, no repository metrics -- so every socio-technical number the
+// analysis reasons over has to be computed here and sent explicitly.
+//
+// A digest rather than the raw networks: a processed repo's tech_net runs to
+// megabytes, and posting it back to the server to be summarised there would
+// move the same data twice for a result that is a couple of kilobytes.
+import { rowsForMonth } from '@/utils/networkRows';
+
+// Enough to show a direction without burying the model in history.
+const WINDOW = 6;
+
+// Rows arrive as [source, target, weight]; net-vis writes a bare [] for a month
+// with no activity, and parseInt(undefined) is NaN, which poisons every sum.
+const clean = rows => (Array.isArray(rows) ? rows : []).filter(
+  r => Array.isArray(r) && r.length >= 3 && Number.isFinite(parseInt(r[2], 10)),
+);
+
+const weight = row => parseInt(row[2], 10);
+
+// Foundation mode hands over one month's rows as a bare array; local mode hands
+// over every month keyed by number. Only the latter has a history to trend.
+const monthsOf = netData => {
+  if (!netData || Array.isArray(netData)) return [];
+
+  return Object.keys(netData).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+};
+
+const seriesFor = (netData, months, measure) => months.slice(-WINDOW).map(month => ({
+  month,
+  value: measure(clean(rowsForMonth(netData, month))),
+}));
+
+const uniqueCount = (rows, column) => new Set(rows.map(r => String(r[column]))).size;
+
+const totalWeight = rows => rows.reduce((sum, r) => sum + weight(r), 0);
+
+// Share of the month's activity carried by the busiest n participants. This is
+// the bus-factor signal: one developer at 60% means the project has one
+// developer, whatever the headcount says.
+const topShare = (rows, column, n) => {
+  const total = totalWeight(rows);
+  if (!total) return null;
+
+  const byActor = new Map();
+  for (const row of rows) {
+    const key = String(row[column]);
+    byActor.set(key, (byActor.get(key) || 0) + weight(row));
+  }
+
+  const top = [...byActor.values()].sort((a, b) => b - a).slice(0, n);
+
+  return top.reduce((sum, v) => sum + v, 0) / total;
+};
+
+// Files only one person has ever touched this month -- knowledge that leaves
+// with them.
+const soloFiles = rows => {
+  const devsPerFile = new Map();
+  for (const row of rows) {
+    const file = String(row[1]);
+    if (!devsPerFile.has(file)) devsPerFile.set(file, new Set());
+    devsPerFile.get(file).add(String(row[0]));
+  }
+
+  return {
+    count: [...devsPerFile.values()].filter(devs => devs.size === 1).length,
+    total: devsPerFile.size,
+  };
+};
+
+// Developers who shipped code this month but said nothing anywhere. Committing
+// in silence is how a project stops being a community and becomes a fork queue.
+const silentDevelopers = (techRows, socialRows) => {
+  const talking = new Set();
+  for (const row of socialRows) {
+    talking.add(String(row[0]));
+    talking.add(String(row[1]));
+  }
+
+  const committing = new Set(techRows.map(r => String(r[0])));
+
+  return {
+    count: [...committing].filter(dev => !talking.has(dev)).length,
+    total: committing.size,
+  };
+};
+
+/**
+ * Everything the analysis reasons over, from what the store already holds.
+ *
+ * Returns null when there is nothing to analyse -- no networks and no forecast
+ * -- so the caller can stay silent rather than asking the LLM about an empty
+ * project.
+ */
+export const buildDigest = ({
+  forecast = [],
+  months = [],
+  techNetData = null,
+  socialNetData = null,
+  selectedMonth = null,
+  metadata = null,
+} = {}) => {
+  const techMonths = monthsOf(techNetData);
+  const socialMonths = monthsOf(socialNetData);
+
+  // Whatever month the dashboard is showing; that is the month the user is
+  // looking at, so it is the month the findings should describe.
+  const techRows = clean(rowsForMonth(techNetData, selectedMonth));
+  const socialRows = clean(rowsForMonth(socialNetData, selectedMonth));
+
+  const forecastPoints = forecast
+    .map((value, index) => ({ month: months[index] ?? index, value: Number(value) }))
+    .filter(p => Number.isFinite(p.value));
+
+  if (!forecastPoints.length && !techRows.length && !socialRows.length) return null;
+
+  const digest = { month: selectedMonth };
+
+  if (forecastPoints.length) {
+    const window = forecastPoints.slice(-WINDOW);
+
+    digest.forecast = { series: window, latest: window[window.length - 1].value };
+  }
+
+  if (techRows.length || techMonths.length) {
+    digest.technical = {
+      series: {
+        developers: seriesFor(techNetData, techMonths, rows => uniqueCount(rows, 0)),
+        files: seriesFor(techNetData, techMonths, rows => uniqueCount(rows, 1)),
+        changes: seriesFor(techNetData, techMonths, totalWeight),
+      },
+      top_contributor_share: topShare(techRows, 0, 1),
+      top_two_share: topShare(techRows, 0, 2),
+      solo_files: soloFiles(techRows),
+    };
+  }
+
+  if (socialRows.length || socialMonths.length) {
+    digest.social = {
+      series: {
+        participants: seriesFor(socialNetData, socialMonths,
+          rows => new Set(rows.flatMap(r => [String(r[0]), String(r[1])])).size),
+        messages: seriesFor(socialNetData, socialMonths, totalWeight),
+      },
+      top_responder_share: topShare(socialRows, 0, 1),
+      silent_developers: silentDevelopers(techRows, socialRows),
+      empty: socialRows.length === 0,
+    };
+  }
+
+  if (metadata) {
+    digest.metadata = {
+      stars: metadata.stars,
+      forks: metadata.forks,
+      watchers: metadata.watchers,
+      languages: metadata.languages,
+      updated_at: metadata.updated_at,
+    };
+  }
+
+  return digest;
+};
