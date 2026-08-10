@@ -44,7 +44,19 @@
 
     <!-- Table for Actionables -->
     <VCardText>
-      <div v-if="hasActionables" class="table-container">
+      <div v-if="selecting" class="thinking">
+        <span class="thinking__star">&#10035;</span>
+        <span class="thinking__word">{{ word }}&hellip;</span>
+        <span class="thinking__meta">({{ seconds }}s) matching to this project</span>
+      </div>
+
+      <div v-else-if="projectStore.selectedProject" class="actionables-refresh">
+        <button type="button" class="refresh-link" @click="selectForProject({ refresh: true })">
+          Refresh for this month
+        </button>
+      </div>
+
+      <div v-if="hasActionables && !selecting" class="table-container">
         <table class="table table-bordered">
           <tbody>
             <template v-for="(actionable, index) in sortedActionables" :key="index">
@@ -61,7 +73,10 @@
                       class="bullet"
                       :style="{ backgroundColor: getBulletColor(actionable.importance) }"
                     ></span>
-                    <span class="action-text">{{ actionable.title }}</span>
+                    <span class="action-text">
+                      {{ actionable.title }}
+                      <span v-if="actionable.why" class="action-why">{{ actionable.why }}</span>
+                    </span>
                     <span class="refs">
                       <template v-for="(refItem, rIndex) in refsFor(actionable)" :key="rIndex">
                         <a v-if="refItem.link" :href="refItem.link" target="_blank" class="ref-link" @click.stop>[REF]</a>
@@ -141,11 +156,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onUnmounted, watch } from 'vue';
 import DashboardPanelHeader from '@/components/DashboardPanelHeader.vue';
 import { useTheme } from 'vuetify';
 import { useProjectStore } from '@/stores/projectStore';
 import { topActionables } from '@/utils/rankActionables';
+import { apiFetch } from '@/utils/apiFetch';
+import { getApiBaseUrl } from '@/utils/apiBase';
+import { buildDigest } from '@/utils/painPointsDigest';
+import { useThinking } from '@/utils/thinking';
 import statsVerticalWallet from '@images/cards/wallet-primary.png';
 
 const currentTab = ref('income');
@@ -298,8 +317,75 @@ const sortedActionables = computed(() => {
     }
   }
 
+  // The server's project-specific selection when it has run. The catalog
+  // order is the fallback -- it is what the panel showed for every project,
+  // which is exactly the genericness this replaces.
+  if (projectStore.projectActionables.length)
+    return projectStore.projectActionables;
+
   return topActionables(actionables);
 });
+
+const { word, seconds, start: startThinking, stop: stopThinking } = useThinking();
+
+const selecting = computed(() => projectStore.projectActionablesLoading);
+
+// Selection costs two model calls and a minute of inference on a cold model, so
+// it runs once when a project loads rather than on every slider move. The
+// button re-runs it against the month currently on screen.
+const selectForProject = async ({ refresh = false } = {}) => {
+  const project = projectStore.selectedProject;
+  if (!project || projectStore.projectActionablesLoading) return;
+
+  const digest = buildDigest({
+    forecast: projectStore.gradForecastData,
+    months: projectStore.xAxisCategories.map(l => parseInt(String(l).replace(/\D/g, ''), 10)),
+    techNetData: projectStore.techNetData,
+    socialNetData: projectStore.socialNetData,
+    selectedMonth: projectStore.selectedMonth,
+    metadata: projectStore.localMetadata,
+  });
+
+  if (!digest) return;
+
+  projectStore.projectActionablesLoading = true;
+  startThinking();
+
+  try {
+    const res = await apiFetch(`${getApiBaseUrl()}/api/actionables`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        github_url: project.github_url,
+        project_name: project.project_name || project.name || 'this project',
+        description: projectStore.localMetadata?.description || '',
+        digest,
+        refresh,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && Array.isArray(data.actionables) && data.actionables.length)
+      projectStore.projectActionables = data.actionables;
+  } catch {
+    // Keep the catalog order; the panel must never come up empty.
+  } finally {
+    projectStore.projectActionablesLoading = false;
+    stopThinking();
+  }
+};
+
+watch(
+  () => projectStore.selectedProject?.github_url || projectStore.selectedProject?.project_id,
+  () => {
+    projectStore.projectActionables = [];
+    selectForProject();
+  },
+  { immediate: true },
+);
+
+onUnmounted(stopThinking);
 // ---------------------------------------------------------------------------------------
 
 const hasActionables = computed(() => Array.isArray(sortedActionables.value) && sortedActionables.value.length > 0);
@@ -387,6 +473,33 @@ const shouldShowActionableEmptyState = computed(() => {
 }
 
 /* Fix for bullets getting squashed */
+.action-why {
+  display: block;
+  margin-block-start: 4px;
+  color: rgba(var(--v-theme-on-surface), 0.72);
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.actionables-refresh {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: 6px;
+}
+
+.refresh-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: rgb(var(--v-theme-link));
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.refresh-link:hover {
+  text-decoration: underline;
+}
+
 .actionable-cell {
   display: flex;
   align-items: center;

@@ -19,6 +19,10 @@ export const useProjectStore = defineStore('projectStore', () => {
   // React Data State (for actionables)
   // Can be an array (old style) or an object keyed by month (new style)
   const reactData = ref([]);
+  // Server-selected, project-specific actionables. Empty means the panel
+  // falls back to the catalog's own importance order.
+  const projectActionables = ref([]);
+  const projectActionablesLoading = ref(false);
 
   // Local Mode - Technical and Social Network Data
   const techNetData = ref(null);
@@ -739,6 +743,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     rangeValue.value = [1, 12];
     singleValue.value = 1;
     reactData.value = [];
+    projectActionables.value = [];
+    projectActionablesLoading.value = false;
     localMetadata.value = null;
     rawLocalEmailData.value = null;
     rawLocalCommitData.value = null;
@@ -1361,6 +1367,8 @@ export const useProjectStore = defineStore('projectStore', () => {
     cancelQueuedJob,
     // React Data
     reactData,
+    projectActionables,
+    projectActionablesLoading,
     // [Testing] Technical Network local mode stats
     reducedCommits,
     setReducedCommits,
