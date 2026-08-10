@@ -46,7 +46,7 @@
 
       <div v-else-if="projectStore.selectedProject" class="actionables-refresh">
         <button type="button" class="refresh-link" @click="selectForProject({ refresh: true })">
-          Refresh for this month
+          Recalculate for month {{ projectStore.selectedMonth }}
         </button>
       </div>
 
@@ -331,6 +331,10 @@ const selectForProject = async ({ refresh = false } = {}) => {
     socialNetData: projectStore.socialNetData,
     selectedMonth: projectStore.selectedMonth,
     metadata: projectStore.localMetadata,
+    // Lifetime by default, like pain points: on load, the recommendations
+    // should describe the project. Only an explicit refresh narrows to the
+    // month on screen, and the user chooses to pay the wait for it.
+    span: refresh ? 'window' : 'all',
   });
 
   if (!digest) return;
