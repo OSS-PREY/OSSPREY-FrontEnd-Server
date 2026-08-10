@@ -186,7 +186,7 @@ onUnmounted(() => {
 }
 
 .pain-points__icon {
-  color: var(--thinking-color);
+  color: rgb(var(--v-theme-thinking));
 }
 
 .pain-points__list {

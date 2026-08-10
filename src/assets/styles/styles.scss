@@ -29,33 +29,18 @@
 // panel. Defined globally on purpose: these two drifted apart when each SFC
 // carried its own scoped copy.
 //
-// Dark orange. The light-mode step is held at 4.6:1 on white; dark mode lifts
-// it two steps because #c2410c on a dark surface is under 3:1 and the glow
-// animation drops it to half opacity at the trough, which would make it
-// unreadable at the exact moment it is meant to draw the eye.
-:root {
-  --thinking-color: #c2410c;
-  --thinking-glow: rgba(194, 65, 12, 0.55);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --thinking-color: #f97316;
-    --thinking-glow: rgba(249, 115, 22, 0.6);
-  }
-}
-
-:root[data-theme="dark"] {
-  --thinking-color: #f97316;
-  --thinking-glow: rgba(249, 115, 22, 0.6);
-}
-
+// Dark orange, from the theme's own `thinking` token so it follows the app's
+// theme rather than the operating system's. Keying this off
+// prefers-color-scheme was wrong: Vuetify switches themes with
+// .v-theme--light / .v-theme--dark classes and sets no [data-theme] attribute,
+// so a light app on a dark-mode machine got the pale dark-mode step on a white
+// surface, at roughly 3:1.
 .thinking {
   display: inline-flex;
   align-items: baseline;
   gap: 0.5rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--thinking-color);
+  color: rgb(var(--v-theme-thinking));
   background-color: transparent;
   box-shadow: none;
 }
@@ -83,7 +68,9 @@
 @keyframes thinking-glow {
   0%, 100% {
     opacity: 1;
-    text-shadow: 0 0 6px var(--thinking-glow), 0 0 14px var(--thinking-glow);
+    text-shadow:
+      0 0 6px rgba(var(--v-theme-thinking), 0.55),
+      0 0 14px rgba(var(--v-theme-thinking), 0.55);
   }
 
   50% {

@@ -39,6 +39,7 @@ export const themes = {
       // which is what made every one of them illegible on a dark surface.
       'heading': staticPrimaryColor,
       'link': '#1565C0',         // was #1e88e5: 3.7:1 on white, under the 4.5:1 floor
+      'thinking': '#C2410C',     // loader word; dark orange, clears 4.5:1 on white
       'net-label': '#424242',
       'net-stroke': '#333333',
       'chip-surface': '#f5f5f5',
@@ -132,6 +133,7 @@ export const themes = {
       // and the network labels at #424242 were invisible outright.
       'heading': '#A5B4FC',      // 7.6:1
       'link': '#7CB8F7',         // 7.0:1
+      'thinking': '#F97316',     // 5.5:1 on #252636; #C2410C is under 3:1 there
       'net-label': '#D7D9E8',
       'net-stroke': '#8A8FB0',
       'chip-surface': '#32344A',

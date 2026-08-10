@@ -656,7 +656,7 @@ const copyCode = async event => {
      rule at (0,1,0) never applied and the word stayed black -- only the glow
      showed, because text-shadow had nothing competing with it. Set the colour
      on the selector that already wins. */
-  color: var(--thinking-color);
+  color: rgb(var(--v-theme-thinking));
 }
 
 /* Colour, glow and animation come from the shared .thinking styles in

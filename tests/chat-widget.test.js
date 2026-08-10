@@ -130,7 +130,7 @@ describe('ChatWidget layout invariants', () => {
     // own selector or the word renders black with an orange glow around it.
     const rule = src.slice(src.indexOf('.chat-message__bubble.chat-thinking {'))
 
-    expect(rule.slice(0, rule.indexOf('}'))).toContain('color: var(--thinking-color)')
+    expect(rule.slice(0, rule.indexOf('}'))).toContain('color: rgb(var(--v-theme-thinking))')
   })
 
   it('renders sent messages with their line breaks intact', async () => {
