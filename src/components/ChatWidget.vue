@@ -542,18 +542,18 @@ const copyCode = async event => {
 }
 
 .chat-message__bubble--rich :deep(.md-link) {
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-link));
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
-  text-decoration-color: rgba(var(--v-theme-primary), 0.4);
+  text-decoration-color: rgba(var(--v-theme-link), 0.4);
   font-weight: 500;
   overflow-wrap: anywhere;
   transition: text-decoration-color 0.15s ease;
 }
 
 .chat-message__bubble--rich :deep(.md-link:hover) {
-  text-decoration-color: rgb(var(--v-theme-primary));
+  text-decoration-color: rgb(var(--v-theme-link));
 }
 
 .chat-message__bubble--rich :deep(.md-inline-code) {

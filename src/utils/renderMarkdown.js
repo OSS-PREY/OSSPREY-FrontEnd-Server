@@ -75,15 +75,31 @@ const renderInline = text => {
       : whole
   })
 
-  // Bare URLs. The leading boundary keeps this off URLs already inside an
-  // href="..." produced by the step above.
-  out = out.replace(/(^|[\s(])(https?:\/\/[^\s<>()]+)/g, (whole, lead, url) => {
-    const href = safeHref(url)
+  // A URL runs until whitespace, a paren, or an escaped delimiter. `&` alone
+  // cannot end it -- query strings escape to &amp; and would be cut in half --
+  // so only the entities that really are delimiters stop the match.
+  const urlBody = String.raw`https?:\/\/(?:(?!&lt;|&gt;|&quot;|&#39;)[^\s()])+`
+
+  // Trailing sentence punctuation belongs to the prose, not the URL.
+  const linkify = url => {
+    const trimmed = url.replace(/[.,;:!?]+$/, '')
+    const href = safeHref(trimmed)
 
     return href
-      ? `${lead}<a class="md-link" href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`
-      : whole
-  })
+      ? `<a class="md-link" href="${href}" target="_blank" rel="noopener noreferrer">${trimmed}</a>`
+        + url.slice(trimmed.length)
+      : url
+  }
+
+  // Autolinks: <https://example.com>, the form the model writes most often.
+  // The angle brackets are markdown syntax and are dropped, as they are in
+  // every other renderer.
+  out = out.replace(new RegExp(`&lt;(${urlBody})&gt;`, 'g'), (_, url) => linkify(url))
+
+  // Bare URLs. The leading boundary keeps this off URLs already inside an
+  // href="..." produced by the steps above.
+  out = out.replace(new RegExp(`(^|[\\s(])(${urlBody})`, 'g'),
+    (whole, lead, url) => `${lead}${linkify(url)}`)
 
   out = out
     .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')

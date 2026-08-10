@@ -630,4 +630,13 @@ onMounted(() => {
   color: rgb(var(--v-theme-success));
   font-size: 0.9rem;
 }
+
+a {
+  color: rgb(var(--v-theme-link));
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
 </style>

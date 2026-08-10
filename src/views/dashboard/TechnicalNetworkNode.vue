@@ -156,5 +156,10 @@ watch(
 <style scoped lang="scss">
 .commit-hash {
   font-family: monospace;
+  color: rgb(var(--v-theme-link));
+}
+
+a:hover {
+  text-decoration: underline;
 }
 </style>

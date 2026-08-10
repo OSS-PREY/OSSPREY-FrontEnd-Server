@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
 }
 
 .footer-link {
-  color: #007bff; /* Standard link color */
+  color: rgb(var(--v-theme-link));
   text-decoration: none;
   font-weight: bold;
 }

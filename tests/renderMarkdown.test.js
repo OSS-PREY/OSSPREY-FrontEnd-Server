@@ -112,3 +112,42 @@ describe('renderMarkdown text', () => {
     expect(renderMarkdown(undefined)).toBe('')
   })
 })
+
+describe('renderMarkdown autolinks', () => {
+  // The model writes <https://...> constantly. escapeHtml turned it into
+  // &lt;https://...&gt; before the bare-URL rule ran, and that rule wanted
+  // whitespace or ( before the scheme -- it saw ';' and skipped every one, so a
+  // whole answer full of references rendered as plain black text.
+  it('links an angle-bracketed URL and drops the brackets', () => {
+    const html = renderMarkdown('Browse the tracker (<https://gem5.atlassian.net>) first')
+
+    expect(html).toContain('href="https://gem5.atlassian.net"')
+    expect(html).toContain('>https://gem5.atlassian.net</a>')
+    expect(html).not.toContain('&lt;https')
+  })
+
+  it('links every autolink in a paragraph of them', () => {
+    const html = renderMarkdown(
+      'See <https://github.com/gem5/gem5/issues> and <https://docs.github.com/en/pull-requests>.')
+
+    expect(html.match(/<a /g)).toHaveLength(2)
+  })
+
+  it('keeps sentence punctuation out of the href', () => {
+    const html = renderMarkdown('Read https://example.com/docs.')
+
+    expect(html).toContain('href="https://example.com/docs"')
+    expect(html).toContain('</a>.')
+  })
+
+  it('does not cut a query string at its escaped ampersand', () => {
+    // & escapes to &amp;, so a naive delimiter would truncate the URL.
+    const html = renderMarkdown('https://example.com/s?a=1&b=2')
+
+    expect(html).toContain('a=1&amp;b=2"')
+  })
+
+  it('still refuses a javascript: autolink', () => {
+    expect(renderMarkdown('<javascript:alert(1)>')).not.toContain('<a ')
+  })
+})

@@ -141,5 +141,12 @@ watch(
 </script>
 
 <style scoped lang="scss">
-/* Add any component-specific styles here */
+a {
+  color: rgb(var(--v-theme-link));
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
 </style>
