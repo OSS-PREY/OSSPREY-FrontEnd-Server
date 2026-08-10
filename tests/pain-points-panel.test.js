@@ -79,11 +79,13 @@ describe('ProjectPainPoints', () => {
 
     const wrapper = await mountPanel('https://github.com/o/c.git')
 
-    const word = wrapper.find('.pain-points__word')
+    // The same shared loader the chat bubble uses, so the two cannot drift.
+    const word = wrapper.find('.thinking__word')
 
     expect(word.exists()).toBe(true)
     expect(word.text().length).toBeGreaterThan(3)
-    expect(wrapper.find('.pain-points__elapsed').exists()).toBe(true)
+    expect(wrapper.find('.thinking__star').exists()).toBe(true)
+    expect(wrapper.find('.thinking__meta').exists()).toBe(true)
   })
 
   it('says nothing rather than asking about an empty project', async () => {

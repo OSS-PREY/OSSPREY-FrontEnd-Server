@@ -336,10 +336,10 @@ const copyCode = async event => {
                 :class="`chat-message--${message.role}`"
               >
                 <span class="chat-message__author">{{ message.role === 'user' ? 'You' : 'OSSPREY' }}</span>
-                <span v-if="message.pending" class="chat-message__bubble chat-thinking">
-                  <span class="chat-thinking__star">&#10035;</span>
-                  <span class="chat-thinking__word">{{ thinkingWord }}&hellip;</span>
-                  <span class="chat-thinking__meta">({{ thinkingSeconds }}s)</span>
+                <span v-if="message.pending" class="chat-message__bubble chat-thinking thinking">
+                  <span class="thinking__star">&#10035;</span>
+                  <span class="thinking__word">{{ thinkingWord }}&hellip;</span>
+                  <span class="thinking__meta">({{ thinkingSeconds }}s)</span>
                 </span>
                 <span
                   v-else-if="message.role === 'assistant'"
@@ -652,45 +652,10 @@ const copyCode = async event => {
   padding-inline: 0.15rem;
 }
 
+/* Colour, glow and animation come from the shared .thinking styles in
+   @styles/styles.scss; only the chat's own spacing lives here. */
 .chat-thinking {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #d97757;
-  background-color: transparent;
-  box-shadow: none;
   padding-inline: 0.35rem;
-}
-
-.chat-thinking__star {
-  display: inline-block;
-  animation: chat-thinking-spin 2.4s linear infinite;
-}
-
-.chat-thinking__word {
-  animation: chat-thinking-pulse 1.8s ease-in-out infinite;
-}
-
-.chat-thinking__meta {
-  font-size: 0.8em;
-  opacity: 0.65;
-}
-
-@keyframes chat-thinking-spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes chat-thinking-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-thinking__star,
-  .chat-thinking__word {
-    animation: none;
-  }
 }
 
 .chat-card__actions {

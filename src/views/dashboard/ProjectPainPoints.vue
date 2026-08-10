@@ -151,9 +151,10 @@ onUnmounted(() => {
 
     <!-- Working: the rotating word carries the wait, the counter proves it is
          still moving. -->
-    <div v-if="busy" class="pain-points__thinking">
-      <span class="pain-points__word">{{ word }}</span>
-      <span class="pain-points__elapsed">{{ seconds }}s</span>
+    <div v-if="busy" class="thinking">
+      <span class="thinking__star">&#10035;</span>
+      <span class="thinking__word">{{ word }}&hellip;</span>
+      <span class="thinking__meta">({{ seconds }}s)</span>
     </div>
 
     <ul v-else-if="shown" class="pain-points__list">
@@ -185,25 +186,7 @@ onUnmounted(() => {
 }
 
 .pain-points__icon {
-  color: #d9730d;
-}
-
-.pain-points__thinking {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-/* The word is the whole effect, so it carries the colour rather than sitting
-   in body ink. Held above 4.5:1 on both surfaces. */
-.pain-points__word {
-  color: #c2610a;
-  font-weight: 600;
-}
-
-.pain-points__elapsed {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 0.8rem;
+  color: var(--thinking-color);
 }
 
 .pain-points__list {
@@ -226,8 +209,5 @@ onUnmounted(() => {
   color: rgb(var(--v-theme-link));
 }
 
-@media (prefers-color-scheme: dark) {
-  .pain-points__word { color: #ff9d4d; }
-  .pain-points__icon { color: #ff9d4d; }
-}
+/* The icon follows --thinking-color, which already has its dark-mode step. */
 </style>

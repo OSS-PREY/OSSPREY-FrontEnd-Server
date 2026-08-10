@@ -24,3 +24,77 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
   color: var(--v-theme-primary);
 }
+
+// The "still working" loader, shared by the chat bubble and the pain points
+// panel. Defined globally on purpose: these two drifted apart when each SFC
+// carried its own scoped copy.
+//
+// Dark orange. The light-mode step is held at 4.6:1 on white; dark mode lifts
+// it two steps because #c2410c on a dark surface is under 3:1 and the glow
+// animation drops it to half opacity at the trough, which would make it
+// unreadable at the exact moment it is meant to draw the eye.
+:root {
+  --thinking-color: #c2410c;
+  --thinking-glow: rgba(194, 65, 12, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --thinking-color: #f97316;
+    --thinking-glow: rgba(249, 115, 22, 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  --thinking-color: #f97316;
+  --thinking-glow: rgba(249, 115, 22, 0.6);
+}
+
+.thinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--thinking-color);
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.thinking__star {
+  display: inline-block;
+  animation: thinking-spin 2.4s linear infinite;
+}
+
+// The glow: opacity and text-shadow move together, so the word breathes rather
+// than just dimming.
+.thinking__word {
+  animation: thinking-glow 1.8s ease-in-out infinite;
+}
+
+.thinking__meta {
+  font-size: 0.8em;
+  opacity: 0.65;
+}
+
+@keyframes thinking-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes thinking-glow {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 6px var(--thinking-glow), 0 0 14px var(--thinking-glow);
+  }
+
+  50% {
+    opacity: 0.55;
+    text-shadow: 0 0 2px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking__star,
+  .thinking__word {
+    animation: none;
+  }
+}
