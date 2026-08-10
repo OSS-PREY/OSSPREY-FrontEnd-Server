@@ -28,7 +28,20 @@ const monthsOf = netData => {
   return Object.keys(netData).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
 };
 
-const seriesFor = (netData, months, measure) => months.slice(-WINDOW).map(month => ({
+// The trend has to end at the month on screen. Slicing from the project's end
+// meant a month-5 view was described by months 264-270, and the analysis then
+// cited those numbers as if they belonged to month 5.
+const windowEndingAt = (months, selectedMonth) => {
+  const upto = selectedMonth === null || selectedMonth === undefined
+    ? months
+    : months.filter(m => m <= selectedMonth);
+
+  // Empty when the selected month precedes all recorded activity, which is
+  // honest: there is no history up to it to trend.
+  return upto.slice(-WINDOW);
+};
+
+const seriesFor = (months, netData, measure) => months.map(month => ({
   month,
   value: measure(clean(rowsForMonth(netData, month))),
 }));
@@ -105,6 +118,8 @@ export const buildDigest = ({
 } = {}) => {
   const techMonths = monthsOf(techNetData);
   const socialMonths = monthsOf(socialNetData);
+  const techWindow = windowEndingAt(techMonths, selectedMonth);
+  const socialWindow = windowEndingAt(socialMonths, selectedMonth);
 
   // Whatever month the dashboard is showing; that is the month the user is
   // looking at, so it is the month the findings should describe.
@@ -119,18 +134,24 @@ export const buildDigest = ({
 
   const digest = { month: selectedMonth };
 
-  if (forecastPoints.length) {
-    const window = forecastPoints.slice(-WINDOW);
+  const forecastWindow = (selectedMonth === null || selectedMonth === undefined
+    ? forecastPoints
+    : forecastPoints.filter(p => p.month <= selectedMonth)).slice(-WINDOW);
 
-    digest.forecast = { series: window, latest: window[window.length - 1].value };
+  if (forecastWindow.length) {
+    // `latest` is the selected month's value, not the project's final one.
+    digest.forecast = {
+      series: forecastWindow,
+      latest: forecastWindow[forecastWindow.length - 1].value,
+    };
   }
 
   if (techRows.length || techMonths.length) {
     digest.technical = {
       series: {
-        developers: seriesFor(techNetData, techMonths, rows => uniqueCount(rows, 0)),
-        files: seriesFor(techNetData, techMonths, rows => uniqueCount(rows, 1)),
-        changes: seriesFor(techNetData, techMonths, totalWeight),
+        developers: seriesFor(techWindow, techNetData, rows => uniqueCount(rows, 0)),
+        files: seriesFor(techWindow, techNetData, rows => uniqueCount(rows, 1)),
+        changes: seriesFor(techWindow, techNetData, totalWeight),
       },
       top_contributor_share: topShare(techRows, 0, 1),
       top_two_share: topShare(techRows, 0, 2),
@@ -141,9 +162,9 @@ export const buildDigest = ({
   if (socialRows.length || socialMonths.length) {
     digest.social = {
       series: {
-        participants: seriesFor(socialNetData, socialMonths,
+        participants: seriesFor(socialWindow, socialNetData,
           rows => new Set(rows.flatMap(r => [String(r[0]), String(r[1])])).size),
-        messages: seriesFor(socialNetData, socialMonths, totalWeight),
+        messages: seriesFor(socialWindow, socialNetData, totalWeight),
       },
       top_responder_share: topShare(socialRows, 0, 1),
       silent_developers: silentDevelopers(techRows, socialRows),
