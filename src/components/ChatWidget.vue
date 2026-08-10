@@ -650,6 +650,13 @@ const copyCode = async event => {
   border: none;
   box-shadow: none;
   padding-inline: 0.15rem;
+
+  /* The assistant bubble paints its text with the surface ink at (0,2,0), and
+     scoped styles add a [data-v-] attribute on top, so the shared .thinking
+     rule at (0,1,0) never applied and the word stayed black -- only the glow
+     showed, because text-shadow had nothing competing with it. Set the colour
+     on the selector that already wins. */
+  color: var(--thinking-color);
 }
 
 /* Colour, glow and animation come from the shared .thinking styles in

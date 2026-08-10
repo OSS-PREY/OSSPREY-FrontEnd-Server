@@ -121,6 +121,18 @@ describe('ChatWidget layout invariants', () => {
     expect(src).toContain('min-block-size: 0')
   })
 
+  it('paints the thinking word in the shared loader colour', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/components/ChatWidget.vue', 'utf8')
+
+    // The assistant bubble sets the surface ink at higher specificity than the
+    // shared .thinking rule, so the colour has to be restated on the bubble's
+    // own selector or the word renders black with an orange glow around it.
+    const rule = src.slice(src.indexOf('.chat-message__bubble.chat-thinking {'))
+
+    expect(rule.slice(0, rule.indexOf('}'))).toContain('color: var(--thinking-color)')
+  })
+
   it('renders sent messages with their line breaks intact', async () => {
     const { readFileSync } = await import('node:fs')
     const src = readFileSync('src/components/ChatWidget.vue', 'utf8')
