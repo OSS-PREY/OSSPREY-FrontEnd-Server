@@ -46,6 +46,12 @@ const seriesFor = (months, netData, measure) => months.map(month => ({
   value: measure(clean(rowsForMonth(netData, month))),
 }));
 
+// Every row the project ever recorded, for the lifetime view. Foundation mode
+// hands over a single month as a bare array, which is already everything it has.
+const everyRow = (netData, months) => (Array.isArray(netData)
+  ? clean(netData)
+  : months.flatMap(month => clean(rowsForMonth(netData, month))));
+
 const uniqueCount = (rows, column) => new Set(rows.map(r => String(r[column]))).size;
 
 const totalWeight = rows => rows.reduce((sum, r) => sum + weight(r), 0);
@@ -115,16 +121,28 @@ export const buildDigest = ({
   socialNetData = null,
   selectedMonth = null,
   metadata = null,
+  // 'window' -> the six months ending at selectedMonth, for the actionables
+  // panel, which tracks the timeline. 'all' -> the whole project, for pain
+  // points: "what is wrong here" is a question about the project, not about
+  // whichever month the slider happens to sit on.
+  span = 'window',
 } = {}) => {
   const techMonths = monthsOf(techNetData);
   const socialMonths = monthsOf(socialNetData);
-  const techWindow = windowEndingAt(techMonths, selectedMonth);
-  const socialWindow = windowEndingAt(socialMonths, selectedMonth);
+  const lifetime = span === 'all';
+  const techWindow = lifetime ? techMonths : windowEndingAt(techMonths, selectedMonth);
+  const socialWindow = lifetime ? socialMonths : windowEndingAt(socialMonths, selectedMonth);
 
-  // Whatever month the dashboard is showing; that is the month the user is
-  // looking at, so it is the month the findings should describe.
-  const techRows = clean(rowsForMonth(techNetData, selectedMonth));
-  const socialRows = clean(rowsForMonth(socialNetData, selectedMonth));
+  // The rows the point-in-time measures are taken over. Lifetime aggregates
+  // every month, so the bus factor is the share of ALL the work one person did
+  // rather than one month's -- a far steadier signal. Otherwise it is the month
+  // on screen.
+  const techRows = lifetime
+    ? everyRow(techNetData, techMonths)
+    : clean(rowsForMonth(techNetData, selectedMonth));
+  const socialRows = lifetime
+    ? everyRow(socialNetData, socialMonths)
+    : clean(rowsForMonth(socialNetData, selectedMonth));
 
   const forecastPoints = forecast
     .map((value, index) => ({ month: months[index] ?? index, value: Number(value) }))
@@ -132,11 +150,19 @@ export const buildDigest = ({
 
   if (!forecastPoints.length && !techRows.length && !socialRows.length) return null;
 
-  const digest = { month: selectedMonth };
+  const digest = {
+    month: lifetime ? (months[months.length - 1] ?? selectedMonth) : selectedMonth,
+    span,
+    months_covered: lifetime
+      ? Math.max(techMonths.length, socialMonths.length, forecastPoints.length)
+      : undefined,
+  };
 
-  const forecastWindow = (selectedMonth === null || selectedMonth === undefined
+  const forecastWindow = lifetime
     ? forecastPoints
-    : forecastPoints.filter(p => p.month <= selectedMonth)).slice(-WINDOW);
+    : (selectedMonth === null || selectedMonth === undefined
+      ? forecastPoints
+      : forecastPoints.filter(p => p.month <= selectedMonth)).slice(-WINDOW);
 
   if (forecastWindow.length) {
     // `latest` is the selected month's value, not the project's final one.

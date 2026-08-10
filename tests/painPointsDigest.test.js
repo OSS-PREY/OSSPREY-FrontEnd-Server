@@ -203,3 +203,64 @@ describe('buildDigest windows the trend at the selected month', () => {
     expect(digest.technical.series.changes.at(-1).month).toBe(9)
   })
 })
+
+// Pain points ask what is wrong with the PROJECT, so they get its whole
+// history: every month of trend, and the point-in-time measures aggregated
+// over all of it rather than taken from whichever month the slider opened on.
+describe('buildDigest lifetime span', () => {
+  const TECH = {
+    0: [['ann', 'a.py', '10']],
+    1: [['ann', 'b.py', '10']],
+    2: [['ann', 'c.py', '10'], ['bob', 'd.py', '10']],
+    9: [['bob', 'e.py', '10']],
+  }
+  const MONTHS = [0, 1, 2, 9]
+
+  const all = () => buildDigest({
+    forecast: [0.9, 0.8, 0.7, 0.2], months: MONTHS, techNetData: TECH,
+    socialNetData: { 2: [['ann', 'bob', '3']] }, selectedMonth: 2, span: 'all',
+  })
+
+  it('covers every month, not the six ending at the slider', () => {
+    expect(all().technical.series.developers.map(p => p.month)).toEqual(MONTHS)
+    expect(all().forecast.series).toHaveLength(4)
+  })
+
+  it('ignores the selected month entirely', () => {
+    const atTwo = buildDigest({ forecast: [0.9, 0.8, 0.7, 0.2], months: MONTHS,
+      techNetData: TECH, selectedMonth: 2, span: 'all' })
+    const atNine = buildDigest({ forecast: [0.9, 0.8, 0.7, 0.2], months: MONTHS,
+      techNetData: TECH, selectedMonth: 9, span: 'all' })
+
+    // Same project, same answer, wherever the slider sits.
+    expect(atTwo.technical).toEqual(atNine.technical)
+    expect(atTwo.forecast).toEqual(atNine.forecast)
+  })
+
+  it('measures the bus factor over the whole project, not one month', () => {
+    // ann did 30 of 50 changes across the project; in month 2 alone she did half.
+    expect(all().technical.top_contributor_share).toBeCloseTo(0.6)
+  })
+
+  it('counts a file as shared when different people touched it in different months', () => {
+    const shared = { 0: [['ann', 'x.py', '1']], 5: [['bob', 'x.py', '1']] }
+    const digest = buildDigest({ forecast: [0.5], months: [0, 5],
+      techNetData: shared, selectedMonth: 5, span: 'all' })
+
+    // One file, two developers across time -- not a silo.
+    expect(digest.technical.solo_files).toEqual({ count: 0, total: 1 })
+  })
+
+  it('reports the span so the analysis does not read it as one month', () => {
+    expect(all().span).toBe('all')
+    expect(all().months_covered).toBe(4)
+  })
+
+  it('leaves the windowed default untouched for the actionables panel', () => {
+    const windowed = buildDigest({ forecast: [0.9, 0.8, 0.7, 0.2], months: MONTHS,
+      techNetData: TECH, selectedMonth: 2 })
+
+    expect(windowed.span).toBe('window')
+    expect(windowed.technical.series.developers.map(p => p.month)).toEqual([0, 1, 2])
+  })
+})

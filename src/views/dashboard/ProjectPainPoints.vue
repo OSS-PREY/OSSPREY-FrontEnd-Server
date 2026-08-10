@@ -65,6 +65,10 @@ const analyse = async () => {
     socialNetData: projectStore.socialNetData,
     selectedMonth: projectStore.selectedMonth,
     metadata: projectStore.localMetadata,
+    // The whole project, not the month on screen: pain points answer "what is
+    // wrong with this project", and the answer must not depend on where the
+    // slider happens to have opened.
+    span: 'all',
   });
 
   if (!digest) {
