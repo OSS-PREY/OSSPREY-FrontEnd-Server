@@ -94,19 +94,23 @@ const topShare = (rows, column, n) => {
   return top.reduce((sum, v) => sum + v, 0) / total;
 };
 
-// Files only one person has ever touched this month -- knowledge that leaves
-// with them.
-const soloFiles = rows => {
-  const devsPerFile = new Map();
+// File TYPES only one person works on -- knowledge that leaves with them.
+//
+// Not files: a technical-network row is ["Amogh Bhagwat", "cc", 2], so the
+// second column is an extension. gem5 has 32 of them across its whole history,
+// which is why calling these "files" made the number read as far more alarming
+// than it is.
+const soloFileTypes = rows => {
+  const devsPerType = new Map();
   for (const row of rows) {
-    const file = String(row[1]);
-    if (!devsPerFile.has(file)) devsPerFile.set(file, new Set());
-    devsPerFile.get(file).add(String(row[0]));
+    const type = String(row[1]);
+    if (!devsPerType.has(type)) devsPerType.set(type, new Set());
+    devsPerType.get(type).add(String(row[0]));
   }
 
   return {
-    count: [...devsPerFile.values()].filter(devs => devs.size === 1).length,
-    total: devsPerFile.size,
+    count: [...devsPerType.values()].filter(devs => devs.size === 1).length,
+    total: devsPerType.size,
   };
 };
 
@@ -214,7 +218,7 @@ export const buildDigest = ({
       },
       top_contributor_share: topShare(techRows, 0, 1),
       top_two_share: topShare(techRows, 0, 2),
-      solo_files: soloFiles(techRows),
+      solo_file_types: soloFileTypes(techRows),
     };
   }
 

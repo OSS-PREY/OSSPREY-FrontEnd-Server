@@ -66,15 +66,15 @@ describe('buildDigest technical signals', () => {
     expect(technical.top_two_share).toBeCloseTo(1)
   })
 
-  it('counts files only one person touched', () => {
-    expect(digestFor().technical.solo_files).toEqual({ count: 3, total: 3 })
+  it('counts file types only one person works on', () => {
+    expect(digestFor().technical.solo_file_types).toEqual({ count: 3, total: 3 })
   })
 
-  it('does not count a file as siloed when two people touch it', () => {
+  it('does not count a file type as siloed when two people touch it', () => {
     const shared = { 1: [['ann', 'a.py', '1'], ['bob', 'a.py', '1']] }
     const digest = buildDigest({ techNetData: shared, selectedMonth: 1, forecast: [] })
 
-    expect(digest.technical.solo_files).toEqual({ count: 0, total: 1 })
+    expect(digest.technical.solo_file_types).toEqual({ count: 0, total: 1 })
   })
 })
 
@@ -248,7 +248,7 @@ describe('buildDigest lifetime span', () => {
       techNetData: shared, selectedMonth: 5, span: 'all' })
 
     // One file, two developers across time -- not a silo.
-    expect(digest.technical.solo_files).toEqual({ count: 0, total: 1 })
+    expect(digest.technical.solo_file_types).toEqual({ count: 0, total: 1 })
   })
 
   it('reports the span so the analysis does not read it as one month', () => {
