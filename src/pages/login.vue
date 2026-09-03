@@ -104,6 +104,23 @@ const handleGoogleResponse = async (response) => {
   }
 }
 
+// ------------------ GITHUB LOGIN ------------------
+// GitHub OAuth is a browser redirect flow: send the user to GitHub, which
+// returns them to /github/callback with a code that page exchanges at the
+// backend. The client id is public; the secret never leaves the backend.
+const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID
+
+const githubLogin = () => {
+  if (!GITHUB_CLIENT_ID) {
+    errorMessage.value = 'GitHub login is not configured on this deployment.'
+    return
+  }
+  const redirectUri = `${window.location.origin}/github/callback`
+  window.location.href =
+    `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user user:email`
+}
+
 // ------------------ FORGOT PASSWORD ------------------
 const forgotDialogOpen = ref(false)
 const forgotEmail = ref('')
@@ -205,8 +222,8 @@ const togglePasswordVisibility = () => {
       <!-- Google Login Button -->
       <div id="google-login-btn" class="mb-4"></div>
 
-      <!-- GitHub Login (still in development) -->
-      <VBtn block color="grey-darken-3" size="large" @click="() => alert('GitHub login under development')">
+      <!-- GitHub Login -->
+      <VBtn block color="grey-darken-3" size="large" @click="githubLogin">
         <template #prepend>
           <VImg
             src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"

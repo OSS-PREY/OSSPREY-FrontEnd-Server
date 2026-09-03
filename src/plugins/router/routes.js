@@ -19,6 +19,12 @@ export const routes = [
         name: 'ResetPassword',
         component: () => import('@/pages/reset-password.vue'),
       },
+      {
+        // GitHub redirects back here with ?code=... after the OAuth consent.
+        path: 'github/callback',
+        name: 'GitHubCallback',
+        component: () => import('@/pages/github-callback.vue'),
+      },
     ],
   },
   {
