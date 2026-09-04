@@ -35,7 +35,7 @@ app.use(vuetify); // Register Vuetify here
 registerPlugins(app);
 // google login
 app.use(vue3GoogleLogin, {
-  clientId: '442522216743-t2jp9sjf8r33j19j37f7p95pf09ap554.apps.googleusercontent.com'
+  clientId: '230810379165-29kjajonbq4mbdjakk5k2eb2c7r2cd6e.apps.googleusercontent.com'
 })
 // Mount vue app
 app.mount('#app');
