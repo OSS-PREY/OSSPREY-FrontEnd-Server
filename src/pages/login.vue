@@ -220,20 +220,18 @@ const togglePasswordVisibility = () => {
       <VDivider class="my-6" />
 
       <!-- Google Login Button -->
-      <div id="google-login-btn" class="mb-4"></div>
+      <div id="google-login-btn" class="mb-4 d-flex justify-center"></div>
 
       <!-- GitHub Login -->
-      <VBtn block color="grey-darken-3" size="large" @click="githubLogin">
-        <template #prepend>
-          <VImg
-            src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-            alt="GitHub logo"
-            height="24"
-            width="24"
-            class="mr-2"
-          />
-        </template>
-        Login with GitHub
+      <VBtn block variant="outlined" size="large" class="text-none" @click="githubLogin">
+        <VImg
+          src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          alt="GitHub logo"
+          height="20"
+          width="20"
+          class="mr-2"
+        />
+        Continue with GitHub
       </VBtn>
     </VCard>
 
